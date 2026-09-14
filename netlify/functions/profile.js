@@ -20,7 +20,7 @@ exports.handler=async(event)=>{
     if(ue||!user) return {statusCode:401,headers,body:JSON.stringify({error:"Invalid session"})};
 
     if(event.httpMethod==="GET"){
-      const {data,error}=await sb.from("profiles").select("id,name,age,country,gender,level,locked_until,created_at,updated_at").eq("id",user.id).maybeSingle();
+      const {data,error}=await sb.from("profiles").select("id,name,age,country,gender,english_level,gender_preference,locked_until,created_at,updated_at").eq("id",user.id).maybeSingle();
       if(data && !data.locked_until && data.updated_at){
         const inferred=new Date(new Date(data.updated_at).getTime()+30*24*60*60*1000);
         data.locked_until=inferred.toISOString();
@@ -34,6 +34,8 @@ exports.handler=async(event)=>{
       const age=Number(b.age);
       const country=String(b.country||"").trim();
       const gender=String(b.gender||"Prefer not to say");
+      const english_level=String(b.english_level||"A1");
+      const gender_preference=String(b.gender_preference||"any");
 
       if(!name||!Number.isInteger(age)||age<13||age>100||!country||!gender){
         return {statusCode:400,headers,body:JSON.stringify({error:"Please complete the required profile fields."})};
@@ -62,7 +64,7 @@ exports.handler=async(event)=>{
 
       const lockedUntil=new Date(now.getTime()+30*24*60*60*1000).toISOString();
       const {data,error}=await sb.from("profiles").upsert({
-        id:user.id,name,age,country,gender,
+        id:user.id,name,age,country,gender,english_level,gender_preference,
         updated_at:now.toISOString(),
         locked_until:lockedUntil
       }).select("id,name,age,country,gender,level,locked_until,created_at,updated_at").single();
