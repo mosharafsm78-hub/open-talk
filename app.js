@@ -6,11 +6,28 @@ function save(){
   localStorage.setItem(K,JSON.stringify(s));
   render();
 }
+function toast(message){
+  let t=document.getElementById('toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='toast';
+    t.style.cssText='position:fixed;right:22px;bottom:22px;z-index:100;background:#111735;color:#fff;padding:13px 17px;border-radius:14px;box-shadow:0 18px 45px rgba(0,0,0,.2);font-weight:700;font-size:13px;opacity:0;transform:translateY(8px);transition:.25s';
+    document.body.appendChild(t);
+  }
+  t.textContent=message;
+  requestAnimationFrame(()=>{t.style.opacity='1';t.style.transform='translateY(0)'});
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(8px)'},2600);
+}
 
 function render(){
   let p=s.profile,t=s.today,a=s.stats;
   if(!a.achievements)a.achievements=[];
-  if(!t.date)t.date=new Date().toISOString().slice(0,10);
+  const todayKey=new Date().toISOString().slice(0,10);
+  if(t.date!==todayKey){
+    s.today={conversations:0,minutes:0,date:todayKey};
+    t=s.today;
+  }
   $('#name').value=p.name||'';
   $('#age').value=p.age||'';
   $('#country').value=p.country||'';
@@ -34,8 +51,7 @@ function render(){
   $('#goalProgress').style.width=Math.min(100,t.conversations/4*100)+'%';
   let n={A1:12,A2:28,B1:45,B2:62,C1:82,C2:100};
   $('#levelBar').style.width=(n[l]||0)+'%';
-  let lock=p.savedAt&&Date.now()-p.savedAt<30*86400000;
-  $('#profileLock').textContent=lock?'Profile locked for 30 days after your last save.':'Ready to save. Saving starts a 30-day lock.';
+  $('#profileLock').textContent=p.savedAt?'Profile saved. You can update it whenever you want.':'Complete your profile to improve partner matching.';
   renderMilestones();
   renderAchievements();
 }
@@ -49,10 +65,9 @@ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
 
 $('#profileForm').onsubmit=e=>{
   e.preventDefault();
-  if(s.profile.savedAt&&Date.now()-s.profile.savedAt<30*86400000)return alert('Profile is locked for 30 days.');
   s.profile={name:$('#name').value.trim(),age:$('#age').value,country:$('#country').value,gender:$('#gender').value,savedAt:Date.now()};
   save();
-  alert('Profile saved and locked for 30 days.');
+  toast('Profile saved — matching will now be more personalized.');
 };
 
 let rec=null;
@@ -288,6 +303,7 @@ $('#finish').onclick=()=>{
   let lv=['A1','A2','B1','B2','C1','C2'];
   s.stats.level=s.stats.level||lv[Math.min(5,Math.floor(s.stats.conversations/2)+1)];
   if(s.stats.conversations>=1)s.stats.achievements=[...new Set([...s.stats.achievements,'first'])];
+  if(s.stats.level)s.stats.achievements=[...new Set([...s.stats.achievements,'level'])];
   if(s.stats.conversations>=4)s.stats.achievements=[...new Set([...s.stats.achievements,'four'])];
   if(s.stats.minutes>=30)s.stats.achievements=[...new Set([...s.stats.achievements,'thirty'])];
   if((s.stats.streak||0)>=7)s.stats.achievements=[...new Set([...s.stats.achievements,'streak'])];
@@ -299,6 +315,7 @@ $('#finish').onclick=()=>{
   $('#mic').textContent='🎙 Start speaking';
   $('#finish').disabled=true;
   $('#listen').textContent='Completed';
+  toast('Conversation saved. Your progress has been updated.');
 };
 
 function renderMilestones(){
