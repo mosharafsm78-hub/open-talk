@@ -1604,3 +1604,15 @@ nav button{
 .conversationOrb img{width:100%;height:100%;object-fit:cover;border-radius:50%;position:relative;z-index:2}
 .mobile-avatar-img{width:22px;height:22px;border-radius:50%;object-fit:cover;display:block}
 @media(max-width:760px){.auth-card{padding:24px;border-radius:24px}.auth-card h2{font-size:28px}.profile-photo-row{padding:13px}.profile-photo-wrap{width:62px;height:62px;flex-basis:62px}}
+
+/* Refined signup onboarding */
+.signup-fields{display:grid;gap:13px}.signup-fields.hidden{display:none}
+.auth-field-row{display:grid;grid-template-columns:1.5fr .7fr;gap:10px}
+.auth-photo{display:flex;align-items:center;gap:13px;padding:11px;border:1px solid #e4e6ef;border-radius:16px;background:#fafaff}
+.auth-photo-preview{width:50px;height:50px;flex:0 0 50px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:linear-gradient(145deg,#725df5,#a06fff);color:#fff;font-size:20px;font-weight:700}
+.auth-photo-preview img{width:100%;height:100%;object-fit:cover}
+.auth-photo>div+div{min-width:0;display:flex;flex-direction:column;gap:3px}
+.auth-photo b{font-size:12px;color:#1a203b}.auth-photo small{font-size:9px;color:#8a93aa;line-height:1.4}
+.auth-photo .photo-button{margin-top:3px;padding:6px 9px;font-size:10px}
+.logout-button{margin-top:10px;font-size:11px}
+@media(max-width:480px){.auth-field-row{grid-template-columns:1fr 90px}.auth-card{padding:22px}.auth-card h2{font-size:26px}}
