@@ -817,8 +817,11 @@ async function ensurePeer(){
     if(audio){
       audio.autoplay=true;
       audio.playsInline=true;
-      audio.muted=true;
-      audio.volume=0;
+      // The initial user gesture in findPartner() unlocks playback. Once the
+      // real remote track arrives, switch to normal speaker output and try
+      // playback immediately. The old code kept this element muted at volume
+      // 0, which made both users talk while hearing silence and kept the
+      // call timer at 00:00 forever.
       audio.srcObject=remoteStream;
     }
     remoteTrackReady=!!e.track;
@@ -1355,6 +1358,10 @@ $('#reportPartner')?.addEventListener('click',openReportPanel);
 $('#submitReport')?.addEventListener('click',submitPartnerReport);
 $('#cancelReport')?.addEventListener('click',()=>$('#reportPanel')?.classList.add('hidden'));
 
+
+// Expose a non-blocking cleanup hook for the inline close-button fallback.
+// The UI must never depend on a network request to close.
+window.__openTalkCleanup=()=>{ teardownCall().catch(err=>console.warn('Open Talk cleanup:',err)); };
 
 render();
 bootstrapBackend();
