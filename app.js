@@ -19,6 +19,7 @@ let callStartedAt=0;
 let callTimer=null;
 let finishing=false;
 let remoteSelectedBadges=[];
+let activeMatchPasses=[];
 
 function save(){
   localStorage.setItem(K,JSON.stringify(s));
@@ -202,21 +203,57 @@ $('#profileForm').onsubmit=async e=>{
   }else toast('Please wait a moment for Open Talk to connect.');
 };
 
+function passTarget(m){
+  if(m.filterCount>=2) return {type:'smart',target:(m.gender||'any')+'|'+(m.country||'')+'|'+(m.level||''),hours:24,cost:8,label:'Smart Match'};
+  if(m.gender!=='any') return {type:'gender',target:m.gender,hours:12,cost:4,label:'Gender'};
+  if(m.country) return {type:'country',target:m.country,hours:12,cost:5,label:'Country'};
+  if(m.level) return {type:'level',target:m.level,hours:12,cost:4,label:'Level'};
+  return null;
+}
+
+function hasActivePass(type,target){
+  return activeMatchPasses.some(p=>p.pass_type===type && p.target_value===target && new Date(p.expires_at)>new Date());
+}
+
+function activePassExpiry(type,target){
+  const p=activeMatchPasses.find(x=>x.pass_type===type && x.target_value===target && new Date(x.expires_at)>new Date());
+  return p?new Date(p.expires_at):null;
+}
+
+async function refreshMatchPasses(){
+  if(!supabaseClient||!currentUser)return;
+  try{
+    const r=await supabaseClient.from('match_passes')
+      .select('pass_type,target_value,expires_at')
+      .eq('user_id',currentUser.id)
+      .gt('expires_at',new Date().toISOString())
+      .order('expires_at',{ascending:true});
+    if(!r.error) activeMatchPasses=r.data||[];
+  }catch{}
+}
+
 function matchSelection(){
   const gender=$('#matchGender')?.value||'any';
   const country=$('#matchCountry')?.value||'';
   const level=$('#matchLevel')?.value||'';
   const priority=!!$('#matchPriority')?.checked;
   const filterCount=[gender!=='any',!!country,!!level].filter(Boolean).length;
-  let cost=0;
-  if(filterCount===3) cost=18;
-  else {
-    if(gender!=='any') cost+=8;
-    if(country) cost+=7;
-    if(level) cost+=6;
-  }
-  if(priority) cost+=4;
-  return {gender,country,level,priority,cost,filterCount};
+  const base=passTarget({gender,country,level,filterCount});
+  const baseActive=!!base&&hasActivePass(base.type,base.target);
+  const priorityActive=priority&&hasActivePass('priority','priority');
+  const baseCost=base&&!baseActive?base.cost:0;
+  const priorityCost=priority&&!priorityActive?3:0;
+  const cost=baseCost+priorityCost;
+  const hours=base?.hours||(priority?12:0);
+  return {gender,country,level,priority,cost,filterCount,base,baseActive,priorityActive,baseCost,priorityCost,hours};
+}
+
+function formatExpiry(date){
+  if(!date)return '';
+  const ms=Math.max(0,date.getTime()-Date.now());
+  const h=Math.max(1,Math.floor(ms/3600000));
+  const d=Math.floor(h/24);
+  return d>=1?d+'d '+(h%24)+'h':h+'h';
 }
 
 function updateMatchSelectionUI(){
@@ -225,11 +262,20 @@ function updateMatchSelectionUI(){
   const cost=$('#matchCost');
   const note=$('#matchCostNote');
   const startBtn=$('#mic');
-  if(cost) cost.textContent=m.cost?m.cost+' coins':'FREE';
-  if(note) note.textContent=m.cost
-    ? (balance>=m.cost ? 'Charged only after a real person is successfully matched.' : 'You need '+(m.cost-balance)+' more coins.')
-    : 'Open matching is free. No coins are used.';
-  if(startBtn && !currentPartner) startBtn.textContent=m.cost?'🪙 Find my match':'🎙 Join free queue';
+  if(cost) cost.textContent=m.cost?m.cost+' coins':(m.base||m.priority?'ACTIVE':'FREE');
+  const activeParts=[];
+  if(m.baseActive) activeParts.push((m.base.label)+' active · '+formatExpiry(activePassExpiry(m.base.type,m.base.target)));
+  if(m.priorityActive) activeParts.push('Priority active · '+formatExpiry(activePassExpiry('priority','priority')));
+  if(note){
+    if(activeParts.length && !m.cost) note.textContent=activeParts.join(' • ');
+    else if(m.cost) note.textContent=balance>=m.cost
+      ? (m.base?.hours===24?'24-hour Smart Match access.':'12-hour matching access.')+' Activated only when a real person is found.'
+      : 'You need '+(m.cost-balance)+' more coins.';
+    else note.textContent='Open matching is free. No coins are used.';
+  }
+  if(startBtn && !currentPartner){
+    startBtn.textContent=m.cost?'🪙 Find a match · '+m.cost+' coins':'🎙 Find a real person';
+  }
   const controls=$('#matchControls');
   if(controls) controls.classList.toggle('insufficient',m.cost>balance);
 }
@@ -251,6 +297,7 @@ async function findPartner(){
     updateMatchSelectionUI();
     return;
   }
+  await refreshMatchPasses();
   openConversationModal();
   stopMatchPolling();
   currentPartner=null;
@@ -281,11 +328,17 @@ async function findPartner(){
         s.stats.coins=Number(data.new_balance);
         save();
       }
+      if(Number(data.coins_charged||0)>0 && data.pass_expires_at){
+        toast((data.pass_type==='smart'?'Smart Match':'Matching preference')+' activated for '+(data.pass_type==='smart'?'24 hours':'12 hours')+'.');
+      }
+      await refreshMatchPasses();
+      updateMatchSelectionUI();
       if(data.candidate){
         setQueueStage(2);
         currentPartner={...data.candidate,call_id:data.call_id||data.session_id};
         stopMatchPolling();
         $('#partner').textContent='Your speaking partner is ready';
+        await refreshMatchPasses();
         $('#partnerMeta').textContent=(data.candidate.name||'Your speaking partner')+' • '+(data.candidate.country||'Global')+' • '+(data.candidate.level||'level not assessed');
         remoteSelectedBadges=[];
         renderRemoteBadges();
@@ -318,7 +371,7 @@ function stopMatchPolling(){
 function openConversationModal(){
   finishing=false;
   $('#modal').classList.remove('hidden');
-  updateMatchSelectionUI();
+  refreshMatchPasses().finally(updateMatchSelectionUI);
   $('#feedback').classList.add('hidden');
   $('#feedback').innerHTML='';
   $('#timer').textContent='00:00';
