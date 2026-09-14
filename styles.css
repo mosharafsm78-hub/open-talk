@@ -1585,3 +1585,303 @@ nav button{
 .report-panel label{display:block;font-size:12px;font-weight:800;margin-bottom:8px;color:#4d5569}
 .report-panel select{width:100%;border:1px solid #e2d7da;border-radius:10px;background:#fff;padding:11px 12px;margin-bottom:12px}
 .report-panel>div{display:flex;gap:10px;align-items:center}
+
+/* WORLD-CLASS MOBILE APP SHELL
+   Final override: one clean header, one bottom dock, one primary action. */
+@media (max-width:760px){
+  :root{--app-header:72px;--app-dock:72px}
+  html,body{overflow-x:hidden}
+  body{
+    padding-bottom:calc(var(--app-dock) + env(safe-area-inset-bottom) + 14px)!important;
+    background:#f8f9fd!important;
+  }
+  .topbar{
+    position:fixed!important;
+    inset:0 0 auto 0!important;
+    height:var(--app-header)!important;
+    background:rgba(250,251,255,.88)!important;
+    border-bottom:1px solid rgba(224,227,238,.75)!important;
+    backdrop-filter:blur(22px)!important;
+    -webkit-backdrop-filter:blur(22px)!important;
+    box-shadow:0 5px 24px rgba(31,38,75,.05)!important;
+  }
+  .header-inner{
+    height:100%!important;
+    padding:0 18px!important;
+    gap:10px!important;
+  }
+  .brand{
+    gap:10px!important;
+    min-width:0!important;
+  }
+  .brand-mark{
+    width:42px!important;height:42px!important;border-radius:14px!important;
+    box-shadow:0 8px 20px rgba(98,87,245,.22)!important;
+  }
+  .brand-name{font-size:19px!important;letter-spacing:-.5px!important}
+  .topbar nav{display:none!important}
+  .coin-wallet{
+    margin-left:auto!important;
+    order:3!important;
+    height:42px!important;
+    min-width:70px!important;
+    padding:4px 10px!important;
+    gap:7px!important;
+    border-radius:15px!important;
+    background:#fff!important;
+    border:1px solid #e7e9f1!important;
+    box-shadow:0 6px 18px rgba(30,38,75,.07)!important;
+  }
+  .coin-wallet .coin-icon{
+    width:27px!important;height:27px!important;min-width:27px!important;flex-basis:27px!important;
+  }
+  .coin-wallet .coin-icon:before{inset:4px!important;font-size:7px!important}
+  .coin-wallet .coin-icon:after{inset:2px!important}
+  .coin-wallet b{font-size:14px!important}
+  .avatar{
+    order:4!important;width:42px!important;height:42px!important;flex:none!important;
+    border-radius:50%!important;font-size:15px!important;
+  }
+
+  main{
+    padding-top:calc(var(--app-header) + 10px)!important;
+    padding-bottom:0!important;
+  }
+  .view{
+    padding:18px 16px 30px!important;
+    min-height:calc(100dvh - var(--app-header))!important;
+  }
+  #home .hero{
+    display:block!important;
+    padding:4px 0 0!important;
+    margin:0!important;
+  }
+  #home .hero-copy{
+    text-align:left!important;
+  }
+  #home .eyebrow{
+    font-size:9px!important;
+    letter-spacing:.13em!important;
+  }
+  #home .hero h1{
+    font-size:38px!important;
+    line-height:.98!important;
+    letter-spacing:-1.8px!important;
+    margin:10px 0 12px!important;
+  }
+  #home .hero-lead{
+    font-size:14px!important;
+    line-height:1.55!important;
+    margin:0 0 18px!important;
+    max-width:390px!important;
+  }
+  #home .hero-actions{margin:0!important}
+  #home .hero-actions .primary{
+    width:100%!important;
+    min-height:54px!important;
+    border-radius:17px!important;
+    justify-content:center!important;
+    box-shadow:0 12px 28px rgba(98,87,245,.22)!important;
+  }
+  #home .trust-row{display:none!important}
+  #home .hero-visual{display:none!important}
+  #home .section-heading{margin:30px 0 12px!important}
+  #home .section-heading h2{font-size:22px!important;letter-spacing:-.7px!important}
+  #home .mini-note{display:none!important}
+  #home .goal-card{
+    display:grid!important;
+    grid-template-columns:auto 1fr auto!important;
+    gap:12px!important;
+    padding:16px!important;
+    border-radius:19px!important;
+  }
+  #home .goal-icon{width:38px!important;height:38px!important}
+  #home .goal-main h3{font-size:14px!important;margin:2px 0 4px!important}
+  #home .goal-main p{font-size:11px!important;line-height:1.35!important}
+  #home .goal-progress{font-size:12px!important}
+  #home .goal-progress span{display:none!important}
+  #home .goal-card .progress{grid-column:1/-1!important;margin-top:2px!important}
+  #home .single-dashboard{display:none!important}
+  #home .metrics{grid-template-columns:1fr 1fr!important;gap:10px!important}
+  #home .metric{padding:15px!important;border-radius:18px!important}
+  #home .metric strong{font-size:24px!important}
+
+  /* Bottom navigation — never cover content. */
+  .mobile-bottom-nav{
+    position:fixed!important;
+    top:auto!important;
+    bottom:0!important;
+    left:0!important;
+    right:0!important;
+    width:100%!important;
+    height:calc(var(--app-dock) + env(safe-area-inset-bottom))!important;
+    min-height:var(--app-dock)!important;
+    padding:7px 10px calc(7px + env(safe-area-inset-bottom))!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,1fr)!important;
+    align-items:center!important;
+    gap:3px!important;
+    border:0!important;
+    border-top:1px solid rgba(221,225,237,.9)!important;
+    border-radius:22px 22px 0 0!important;
+    background:rgba(255,255,255,.96)!important;
+    box-shadow:0 -12px 32px rgba(27,34,69,.08)!important;
+    backdrop-filter:blur(24px)!important;
+    -webkit-backdrop-filter:blur(24px)!important;
+    z-index:10000!important;
+  }
+  .mobile-bottom-nav .mobile-nav-item{
+    min-width:0!important;
+    min-height:54px!important;
+    padding:6px 2px!important;
+    border-radius:16px!important;
+    gap:3px!important;
+    color:#8790a8!important;
+  }
+  .mobile-bottom-nav .mobile-nav-item.nav-active{
+    color:#6257f5!important;
+    background:#f0efff!important;
+  }
+  .mobile-bottom-nav .mobile-nav-item>span:first-child{
+    font-size:21px!important;
+    line-height:22px!important;
+  }
+  .mobile-bottom-nav .mobile-nav-item small{
+    font-size:9px!important;
+    font-weight:800!important;
+    letter-spacing:.01em!important;
+  }
+
+  /* Destination pages */
+  .page-intro{margin-bottom:18px!important}
+  .page-intro h1{font-size:32px!important;letter-spacing:-1.3px!important}
+  .page-intro p{font-size:13px!important;line-height:1.55!important}
+  .card{box-shadow:0 8px 25px rgba(30,38,75,.045)!important}
+
+  /* Live matching: turn the modal into a clean app screen. */
+  .modal{
+    align-items:flex-end!important;
+    padding:0!important;
+    background:rgba(13,17,38,.46)!important;
+    backdrop-filter:blur(6px)!important;
+  }
+  .live-modal{
+    width:100%!important;
+    max-width:none!important;
+    max-height:calc(100dvh - env(safe-area-inset-top) - 8px)!important;
+    margin:0!important;
+    border-radius:28px 28px 0 0!important;
+    padding:20px 16px calc(22px + env(safe-area-inset-bottom))!important;
+    overflow:auto!important;
+    box-shadow:0 -18px 55px rgba(18,22,48,.22)!important;
+  }
+  .modal-close{
+    width:38px!important;height:38px!important;
+    top:14px!important;right:14px!important;
+    border-radius:12px!important;
+    background:#f3f4f8!important;
+  }
+  .live-modal-head{padding-right:48px!important}
+  .live-modal .centered{text-align:left!important}
+  .live-modal h2{
+    font-size:25px!important;
+    line-height:1.08!important;
+    letter-spacing:-.9px!important;
+    margin:8px 0 6px!important;
+  }
+  .modal-subtitle{
+    font-size:12px!important;
+    line-height:1.45!important;
+    margin-bottom:10px!important;
+  }
+  .match-visual{display:none!important}
+  .match-controls{
+    margin:10px 0!important;
+    padding:13px!important;
+    border-radius:18px!important;
+    box-shadow:none!important;
+  }
+  .match-controls-head{margin-bottom:10px!important}
+  .match-controls-head b{font-size:13px!important}
+  .match-controls-head small{font-size:10px!important;max-width:220px!important}
+  .match-cost{min-width:62px!important}
+  .match-cost span{font-size:12px!important}
+  .match-cost small{font-size:8px!important;line-height:1.2!important}
+  .match-control-grid{grid-template-columns:1fr 1fr!important;gap:9px!important}
+  .match-control-grid label{
+    padding:0!important;
+  }
+  .match-control-grid label>span{
+    font-size:9px!important;
+    letter-spacing:.08em!important;
+    margin-bottom:5px!important;
+  }
+  .match-control-grid select{
+    height:43px!important;
+    min-height:43px!important;
+    padding:0 11px!important;
+    border-radius:12px!important;
+    font-size:12px!important;
+    background:#fff!important;
+  }
+  .priority-toggle{
+    grid-column:1/-1!important;
+    display:grid!important;
+    grid-template-columns:1fr auto!important;
+    align-items:center!important;
+    min-height:44px!important;
+    padding:8px 10px!important;
+    border:1px solid #e9eaf2!important;
+    border-radius:12px!important;
+    background:#fbfbfe!important;
+  }
+  .priority-toggle span{margin:0!important}
+  .priority-toggle small{font-size:9px!important;grid-column:1!important;color:#8992aa!important}
+  .priority-toggle input{grid-column:2!important;grid-row:1/3!important}
+  .match-smart-note{display:none!important}
+  .queue-live{
+    margin:10px 0!important;
+    padding:14px!important;
+    border-radius:17px!important;
+    gap:10px!important;
+  }
+  .queue-live>div b{font-size:12px!important}
+  .queue-live>div small{font-size:10px!important;line-height:1.35!important}
+  .queue-live>strong{font-size:22px!important}
+  .live-modal .queue-steps{display:none!important}
+  .live-modal .actions{
+    position:sticky!important;
+    bottom:0!important;
+    z-index:2!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+    padding-top:8px!important;
+    background:linear-gradient(180deg,rgba(255,255,255,0),#fff 18%)!important;
+  }
+  .live-modal .actions #mic{
+    order:1!important;
+    width:100%!important;
+    min-height:54px!important;
+    border-radius:16px!important;
+  }
+  .live-modal .actions #finish{
+    order:2!important;
+    min-height:45px!important;
+    border-radius:14px!important;
+  }
+  .live-modal .actions #reportPartner{
+    order:3!important;
+    min-height:40px!important;
+    border-radius:13px!important;
+    font-size:11px!important;
+  }
+}
+@media(max-width:430px){
+  .mobile-bottom-nav{
+    left:0!important;right:0!important;
+    border-radius:20px 20px 0 0!important;
+  }
+  .view{padding-left:14px!important;padding-right:14px!important}
+  .match-control-grid{grid-template-columns:1fr!important}
+}
