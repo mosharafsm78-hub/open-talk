@@ -44,6 +44,9 @@ jobs:
           cp ../index.html www/index.html
           cp ../app.js www/app.js
           cp ../styles.css www/styles.css
+          cp ../privacy.html www/privacy.html
+          cp ../terms.html www/terms.html
+          cp ../manifest.json www/manifest.json
 
       - name: Generate Android project
         run: npx cap add android
