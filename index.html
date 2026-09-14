@@ -7,7 +7,7 @@
 <meta name="description" content="Open Talk — real conversations, deliberate practice, visible progress.">
 <title>Open Talk — Speak with confidence.</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=20260915-11">
+<link rel="stylesheet" href="styles.css?v=20260915-17">
 </head>
 <body>
 <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
@@ -25,7 +25,7 @@
       <button data-view="profile">Profile</button>
     </nav>
     <button class="coin-wallet" data-view="coins" title="Open Talk coins"><span class="coin-icon" aria-hidden="true"></span><b id="coinBalance">0</b></button>
-    <button class="avatar" data-view="profile" aria-label="Open profile">M</button>
+    <div class="auth-area"><button id="authButton" class="auth-button" type="button">Sign in / Sign up</button><button class="avatar" data-view="profile" aria-label="Open profile">M</button></div>
   </div>
 </header>
 
@@ -202,6 +202,34 @@
   </div>
 </footer>
 
+<!-- Authentication -->
+<div id="authModal" class="auth-modal hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="auth-card">
+    <button id="authClose" class="auth-close" type="button" aria-label="Close">×</button>
+    <div class="auth-brand"><span class="brand-mark"><span>OT</span></span><div><b>Open Talk</b><small>Real people. Real practice.</small></div></div>
+    <div class="auth-tabs" role="tablist">
+      <button id="signInTab" class="active" type="button" role="tab">Sign in</button>
+      <button id="signUpTab" type="button" role="tab">Sign up</button>
+    </div>
+    <h2 id="authTitle">Welcome back</h2>
+    <p id="authSubtitle">Sign in to keep your profile, progress and conversations connected.</p>
+    <form id="authForm">
+      <div id="signupFields" class="auth-signup-fields hidden">
+        <label>Name<input id="authName" type="text" autocomplete="name" placeholder="Your name"></label>
+        <label>Age<input id="authAge" type="number" min="13" max="100" autocomplete="bday-year" placeholder="Age"></label>
+      </div>
+      <label>Email<input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+      <label>Password<input id="authPassword" type="password" minlength="6" autocomplete="current-password" required placeholder="At least 6 characters"></label>
+      <button id="authSubmit" class="primary auth-submit" type="submit">Sign in <b>→</b></button>
+      <p id="authMessage" class="auth-message" aria-live="polite"></p>
+    </form>
+    <div id="authUserPanel" class="auth-user-panel hidden">
+      <div><span class="card-kicker">SIGNED IN</span><strong id="authUserEmail">—</strong></div>
+      <button id="signOutButton" class="secondary" type="button">Sign out</button>
+    </div>
+  </div>
+</div>
+
 <!-- Mobile navigation: every core destination stays one thumb-tap away. -->
 <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
   <button data-view="home" class="mobile-nav-item nav-active"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 10.8 12 4l8.5 6.8"/><path d="M5.5 9.8V20h13V9.8M9.5 20v-5.5h5V20"/></svg></span><small>Home</small></button>
@@ -264,7 +292,7 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script type="module" src="app.js?v=20260915-16"></script>
+<script type="module" src="app.js?v=20260915-18"></script>
 <script>
 /* Emergency navigation fallback: this must work even if the app module/backend fails. */
 (function(){
