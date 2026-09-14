@@ -215,15 +215,16 @@
     <div class="match-visual">
       <div class="match-orbit orbit-a"></div><div class="match-orbit orbit-b"></div>
       <div class="conversationOrb"><div class="pulse"></div><span>👥</span></div>
+      <div class="radar-copy"><b>Finding your person</b><small>Scanning the live community…</small><span class="radar-dots"><i></i><i></i><i></i></span></div>
     </div>
 
     <div id="matchControls" class="match-controls">
       <div class="match-controls-head">
-        <div><span class="card-kicker">MATCH PREFERENCES</span><b>Who would you like to talk to?</b><small>Leave everything on “Any” for free matching.</small></div>
+        <div><span class="card-kicker">YOUR MATCH</span><b>Choose who you’d like to talk to</b><small>Specific preferences use coins. “Any” is free.</small></div>
         <div class="match-cost"><span id="matchCost">FREE</span><small id="matchCostNote">Open matching is free. No coins are used.</small></div>
       </div>
       <div class="match-control-grid">
-        <label><span>Gender</span><select id="matchGender"><option value="any">Anyone · Free</option><option value="female">Women · 8 coins</option><option value="male">Men · 8 coins</option><option value="other">Other · 8 coins</option></select></label>
+        <label><span>Gender</span><select id="matchGender"><option value="any">Anyone · Free</option><option value="female">Women · 4 coins</option><option value="male">Men · 4 coins</option><option value="other">Other · 4 coins</option></select></label>
         <label><span>Country</span><select id="matchCountry"><option value="">Any country · Free</option><option>Bangladesh</option><option>India</option><option>Malaysia</option><option>United Kingdom</option><option>United States</option><option>Saudi Arabia</option><option>United Arab Emirates</option><option>Philippines</option><option>Indonesia</option><option>Other</option></select></label>
         <label><span>Speaking level</span><select id="matchLevel"><option value="">Any level · Free</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
         <label class="priority-toggle"><span>Priority</span><input id="matchPriority" type="checkbox"><small>+3 coins</small></label>
@@ -231,13 +232,13 @@
       <div class="match-smart-note"><span>✦</span><span>Paid preferences last 12 hours. Smart Match lasts 24 hours. No charge until a real match is found.</span></div>
     </div>
 
-    <div class="queue-live">
+    <div class="queue-live hidden">
       <span class="queue-live-dot"></span>
       <div><b id="listen">Looking for someone who is online…</b><small>Keep this window open. The moment a real person is available, you'll be connected.</small></div>
       <strong id="timer">00:00</strong>
     </div>
 
-    <div class="queue-steps" aria-label="Connection status">
+    <div class="queue-steps hidden" aria-label="Connection status">
       <div class="queue-step active" id="queueStep1"><span>1</span><div><b>Join live queue</b><small>You're visible to other speakers</small></div></div>
       <div class="queue-step" id="queueStep2"><span>2</span><div><b>Find a good match</b><small>Level, country and preference are considered</small></div></div>
       <div class="queue-step" id="queueStep3"><span>3</span><div><b>Connect privately</b><small>Peer-to-peer audio begins only after you accept</small></div></div>
@@ -248,7 +249,7 @@
       <div class="queue-status"><span class="queue-spinner"></span><b>You're in the live waiting room</b><small>We're not going to switch you to an AI. We wait for a real human.</small></div>
     </div>
     <audio id="remoteAudio" autoplay playsinline></audio>
-    <div class="actions"><button id="mic" class="primary big" disabled>🎙 Waiting for partner</button><button id="finish" class="secondary" disabled>Leave queue</button><button id="reportPartner" class="danger-button" type="button" disabled>Report partner</button></div>
+    <div class="actions"><button id="mic" class="primary big">🎙 Find a real person</button><button id="finish" class="secondary" disabled>Leave queue</button><button id="reportPartner" class="danger-button" type="button" disabled>Report partner</button></div>
     <div id="reportPanel" class="report-panel hidden"><label for="reportReason">Why are you reporting this person?</label><select id="reportReason"><option value="harassment">Harassment or bullying</option><option value="sexual_content">Sexual or inappropriate content</option><option value="hate">Hate or hateful conduct</option><option value="spam">Spam or scam</option><option value="other">Other safety concern</option></select><div><button id="submitReport" class="primary" type="button">Submit report</button><button id="cancelReport" class="text-button" type="button">Cancel</button></div></div><div id="feedback" class="feedback hidden"></div>
     <div id="safety" class="safety-note">🔒 You can leave at any time. Your conversation audio is peer-to-peer and is not recorded by this frontend.</div>
   </div>
