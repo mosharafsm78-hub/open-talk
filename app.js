@@ -303,7 +303,6 @@ async function setupSignaling(sessionId,partner){
     try{
       if(msg.type==='hello'){
         remoteSelectedBadges=Array.isArray(msg.selectedBadges)?msg.selectedBadges.slice(0,3):[];
-        renderRemoteBadges();
         if(currentUser.id<partner.id) await createOffer();
       }else if(msg.type==='offer'){
         await ensurePeer();
@@ -361,6 +360,7 @@ async function ensurePeer(){
     audio.play().catch(()=>{});
     $('#listen').textContent='Connected — you are speaking with a real person.';
     $('#partnerMeta').textContent=`${currentPartner?.name||'Your partner'} • LIVE HUMAN CONVERSATION`;
+    renderRemoteBadges();
   };
   pc.onconnectionstatechange=()=>{
     if(['failed','disconnected','closed'].includes(pc.connectionState)&&!finishing){
