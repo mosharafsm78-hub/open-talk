@@ -1,7 +1,7 @@
 const K='openTalkV1';
 let s=JSON.parse(localStorage.getItem(K)||'null')||{
   profile:{},
-  stats:{conversations:0,minutes:0,level:null,achievements:[],streak:0,lastPracticeDate:null,coins:0,rewardedMilestones:[],coinSpend:0},
+  stats:{conversations:0,minutes:0,level:null,achievements:[],selectedBadges:[],streak:0,lastPracticeDate:null,coins:0,rewardedMilestones:[],coinSpend:0},
   today:{conversations:0,minutes:0,date:new Date().toISOString().slice(0,10)}
 };
 const $=x=>document.querySelector(x);
@@ -18,6 +18,7 @@ let pendingIce=[];
 let callStartedAt=0;
 let callTimer=null;
 let finishing=false;
+let remoteSelectedBadges=[];
 
 function save(){
   localStorage.setItem(K,JSON.stringify(s));
@@ -42,6 +43,8 @@ function render(){
   const p=s.profile||{},t=s.today||{},a=s.stats||{};
   a.coins=a.coins||0;
   a.rewardedMilestones=a.rewardedMilestones||[];
+  a.selectedBadges=a.selectedBadges||[];
+  a.selectedBadges=a.selectedBadges.filter(k=>getAchievement(k)?.unlocked).slice(0,3);
   const todayKey=new Date().toISOString().slice(0,10);
   if(t.date!==todayKey){
     s.today={conversations:0,minutes:0,date:todayKey};
@@ -78,6 +81,7 @@ function render(){
     :'Profile is editable locally. Live matching activates when the backend is connected.';
   renderMilestones();
   renderAchievements();
+  renderBadgeShowcase();
   if($('#shopCoins'))$('#shopCoins').textContent=a.coins||0;
 }
 
@@ -217,6 +221,8 @@ async function findPartner(){
         stopMatchPolling();
         $('#partner').textContent='Your speaking partner is ready';
         $('#partnerMeta').textContent='A real person has been matched with you. No AI is involved.';
+        remoteSelectedBadges=[];
+        renderRemoteBadges();
         $('#listen').textContent='Great match found — preparing your private connection…';
         $('#transcript').innerHTML='<div class="queue-status success"><span>✓</span><b>Real person found</b><small>Setting up a secure peer-to-peer audio connection.</small></div>';
         setQueueStage(3);
@@ -296,6 +302,8 @@ async function setupSignaling(sessionId,partner){
     if(msg.from===currentUser.id)return;
     try{
       if(msg.type==='hello'){
+        remoteSelectedBadges=Array.isArray(msg.selectedBadges)?msg.selectedBadges.slice(0,3):[];
+        renderRemoteBadges();
         if(currentUser.id<partner.id) await createOffer();
       }else if(msg.type==='offer'){
         await ensurePeer();
@@ -332,7 +340,7 @@ async function setupSignaling(sessionId,partner){
 
 async function sendSignal(message){
   if(!channel)return;
-  await channel.send({type:'broadcast',event:'signal',payload:{...message,from:currentUser.id}});
+  await channel.send({type:'broadcast',event:'signal',payload:{...message,from:currentUser.id,selectedBadges:s.stats.selectedBadges||[]}});
 }
 
 async function ensurePeer(){
@@ -431,6 +439,8 @@ async function finishConversation(){
     if(s.stats.minutes>=30)s.stats.achievements=[...new Set([...s.stats.achievements,'thirty'])];
     if((s.stats.streak||0)>=7)s.stats.achievements=[...new Set([...s.stats.achievements,'streak'])];
     if(s.stats.level)s.stats.achievements=[...new Set([...s.stats.achievements,'level'])];
+    s.stats.achievements=[...new Set(ACHIEVEMENTS.filter(x=>x[4]({...s.stats,today:Number(s.today?.conversations||0)})).map(x=>x[0]))];
+    s.stats.selectedBadges=(s.stats.selectedBadges||[]).filter(k=>s.stats.achievements.includes(k)).slice(0,3);
     save();
 
     if(backendReady){
@@ -484,28 +494,28 @@ function renderMilestones(){
   const m=[
     ['🌱','First Words','Complete your first real human conversation.',c>=1,1,'Take the first step'],
     ['💬','Two Talks','Complete 2 real conversations.',c>=2,1,'Keep going'],
-    ['✨','Three Conversations','Complete 3 real conversations.',c>=3,2,'Build the habit'],
-    ['⚡','Five Alive','Complete 5 real conversations.',c>=5,2,'You are showing up'],
-    ['🚀','Ten Talks','Complete 10 real conversations.',c>=10,3,'Become a regular'],
-    ['🌟','Twenty Strong','Complete 20 real conversations.',c>=20,4,'Consistency compounds'],
-    ['🏅','Thirty Conversations','Complete 30 real conversations.',c>=30,5,'You are building fluency'],
-    ['🏆','Half Century','Complete 50 real conversations.',c>=50,6,'A serious speaker'],
-    ['💎','Century Speaker','Complete 100 real conversations.',c>=100,8,'Legendary commitment'],
+    ['✨','Three Conversations','Complete 3 real conversations.',c>=3,1,'Build the habit'],
+    ['⚡','Five Alive','Complete 5 real conversations.',c>=5,1,'You are showing up'],
+    ['🚀','Ten Talks','Complete 10 real conversations.',c>=10,2,'Become a regular'],
+    ['🌟','Twenty Strong','Complete 20 real conversations.',c>=20,2,'Consistency compounds'],
+    ['🏅','Thirty Conversations','Complete 30 real conversations.',c>=30,3,'You are building fluency'],
+    ['🏆','Half Century','Complete 50 real conversations.',c>=50,3,'A serious speaker'],
+    ['💎','Century Speaker','Complete 100 real conversations.',c>=100,4,'Legendary commitment'],
     ['⏱️','Warm Up','Speak for 10 total minutes.',mins>=10,1,'Get your voice moving'],
-    ['🔥','30 Minute Club','Speak for 30 total minutes.',mins>=30,2,'Real practice adds up'],
-    ['🎧','One Hour In','Speak for 60 total minutes.',mins>=60,3,'Your fluency is growing'],
-    ['🗣️','Three Hour Speaker','Speak for 3 total hours.',mins>=180,4,'Keep the conversation going'],
-    ['🌙','Five Hour Speaker','Speak for 5 total hours.',mins>=300,5,'Momentum is becoming a habit'],
-    ['👑','Ten Hour Speaker','Speak for 10 total hours.',mins>=600,8,'You have real staying power'],
+    ['🔥','30 Minute Club','Speak for 30 total minutes.',mins>=30,1,'Real practice adds up'],
+    ['🎧','One Hour In','Speak for 60 total minutes.',mins>=60,2,'Your fluency is growing'],
+    ['🗣️','Three Hour Speaker','Speak for 3 total hours.',mins>=180,2,'Keep the conversation going'],
+    ['🌙','Five Hour Speaker','Speak for 5 total hours.',mins>=300,3,'Momentum is becoming a habit'],
+    ['👑','Ten Hour Speaker','Speak for 10 total hours.',mins>=600,4,'You have real staying power'],
     ['🌱','Two-Day Streak','Practice on 2 consecutive days.',streak>=2,1,'Come back tomorrow'],
-    ['🔥','Three-Day Streak','Practice on 3 consecutive days.',streak>=3,2,'Make showing up automatic'],
-    ['📅','Seven-Day Streak','Practice for 7 consecutive days.',streak>=7,3,'A week of courage'],
-    ['🌈','Fourteen-Day Streak','Practice for 14 consecutive days.',streak>=14,4,'Two weeks of momentum'],
-    ['👑','Thirty-Day Streak','Practice for 30 consecutive days.',streak>=30,6,'This is your new habit'],
-    ['🤝','Good Listener','Complete 5 conversations.',c>=5,2,'Listening is half of fluency'],
-    ['🎙️','Conversation Builder','Complete 15 conversations.',c>=15,3,'Keep the flow going'],
-    ['💫','Fluency Momentum','Complete 25 conversations.',c>=25,4,'Confidence grows through repetition'],
-    ['🌍','World Speaker','Complete 75 conversations.',c>=75,7,'Keep meeting the world']
+    ['🔥','Three-Day Streak','Practice on 3 consecutive days.',streak>=3,1,'Make showing up automatic'],
+    ['📅','Seven-Day Streak','Practice for 7 consecutive days.',streak>=7,2,'A week of courage'],
+    ['🌈','Fourteen-Day Streak','Practice for 14 consecutive days.',streak>=14,2,'Two weeks of momentum'],
+    ['👑','Thirty-Day Streak','Practice for 30 consecutive days.',streak>=30,3,'This is your new habit'],
+    ['🤝','Good Listener','Complete 5 conversations.',c>=5,1,'Listening is half of fluency'],
+    ['🎙️','Conversation Builder','Complete 15 conversations.',c>=15,2,'Keep the flow going'],
+    ['💫','Fluency Momentum','Complete 25 conversations.',c>=25,2,'Confidence grows through repetition'],
+    ['🌍','World Speaker','Complete 75 conversations.',c>=75,3,'Keep meeting the world']
   ];
   const rewarded=new Set(a.rewardedMilestones||[]),unlocked=m.filter(x=>x[3]).length;
   $('#coinBalance').textContent=coins;$('#milestoneCoins').textContent=coins;
@@ -535,16 +545,79 @@ function renderMilestones(){
   }).join('');
 }
 
-function renderAchievements(){
-  const a=s.stats.achievements||[],x=[
-    ['first','🎙','First Words'],
-    ['four','⚡','Conversation Sprint'],
-    ['thirty','⏱','30 Minute Club'],
-    ['streak','🔥','On Fire'],
-    ['level','🧠','Level Up']
-  ];
-  $('#achievementGrid').innerHTML=x.map(q=>`<article style="opacity:${a.includes(q[0])?1:.45}"><b style="font-size:32px">${q[1]}</b><h3>${q[2]}</h3><p>${a.includes(q[0])?'Unlocked':'Locked'}</p></article>`).join('');
+const ACHIEVEMENTS=[
+  ['first','🎙️','First Words','Complete your first human conversation.',s=>s.conversations>=1],
+  ['three','💬','Getting Comfortable','Complete 3 conversations.',s=>s.conversations>=3],
+  ['five','🔥','On Fire','Complete 5 conversations.',s=>s.conversations>=5],
+  ['ten','⚡','Conversation Sprint','Complete 10 conversations.',s=>s.conversations>=10],
+  ['twenty','🌟','Twenty Strong','Complete 20 conversations.',s=>s.conversations>=20],
+  ['fifty','🏆','Half Century','Complete 50 conversations.',s=>s.conversations>=50],
+  ['hundred','💎','Century Speaker','Complete 100 conversations.',s=>s.conversations>=100],
+  ['tenmin','⏱️','Warm Up','Speak for 10 minutes.',s=>s.minutes>=10],
+  ['thirtymin','⏳','30 Minute Club','Speak for 30 minutes.',s=>s.minutes>=30],
+  ['sixtymin','🎧','One Hour In','Speak for 60 minutes.',s=>s.minutes>=60],
+  ['threehours','🗣️','Three Hour Speaker','Speak for 3 hours.',s=>s.minutes>=180],
+  ['tenhours','👑','Ten Hour Speaker','Speak for 10 hours.',s=>s.minutes>=600],
+  ['streak2','🌱','Day Two','Practice 2 days in a row.',s=>s.streak>=2],
+  ['streak3','🔥','Three-Day Fire','Practice 3 days in a row.',s=>s.streak>=3],
+  ['streak7','📅','Week Warrior','Practice 7 days in a row.',s=>s.streak>=7],
+  ['streak14','🌈','Fortnight Flow','Practice 14 days in a row.',s=>s.streak>=14],
+  ['streak30','👑','Thirty-Day Speaker','Practice 30 days in a row.',s=>s.streak>=30],
+  ['listener','🤝','Good Listener','Complete 5 conversations.',s=>s.conversations>=5],
+  ['builder','🎙️','Conversation Builder','Complete 15 conversations.',s=>s.conversations>=15],
+  ['momentum','💫','Fluency Momentum','Complete 25 conversations.',s=>s.conversations>=25],
+  ['world','🌍','World Speaker','Complete 75 conversations.',s=>s.conversations>=75],
+  ['fortyfive','🧠','Deep Practice','Speak for 45 minutes.',s=>s.minutes>=45],
+  ['ninety','🚀','Ninety Minutes','Speak for 90 minutes.',s=>s.minutes>=90],
+  ['fivehours','🌙','Five Hour Speaker','Speak for 5 hours.',s=>s.minutes>=300],
+  ['early','🌅','Showed Up','Complete 1 conversation today.',s=>s.today>=1],
+  ['daily2','☀️','Double Down','Complete 2 conversations today.',s=>s.today>=2],
+  ['daily4','🎯','Goal Getter','Complete 4 conversations today.',s=>s.today>=4],
+  ['level','🧠','Level Up','Receive a speaking level.',s=>!!s.level],
+  ['consistent','💫','Consistency Wins','Practice on 5 separate days.',s=>s.streak>=5]
+];
+function getAchievement(key){
+  const item=ACHIEVEMENTS.find(x=>x[0]===key);
+  if(!item)return null;
+  const a=s.stats||{};
+  return {key:item[0],icon:item[1],title:item[2],desc:item[3],unlocked:!!item[4]({...a,today:Number(s.today?.conversations||0)})};
 }
+function toggleBadge(key){
+  const badge=getAchievement(key);
+  if(!badge?.unlocked)return toast('Earn this achievement first.');
+  const selected=new Set(s.stats.selectedBadges||[]);
+  if(selected.has(key)) selected.delete(key);
+  else if(selected.size>=3) return toast('Choose up to 3 badges to showcase.');
+  else selected.add(key);
+  s.stats.selectedBadges=[...selected];
+  save();
+  toast(selected.has(key)?badge.title+' added to your showcase.':'Badge removed from your showcase.');
+}
+function renderBadgeShowcase(){
+  const host=$('#badgeShowcase'); if(!host)return;
+  const selected=s.stats.selectedBadges||[];
+  host.innerHTML=selected.length?selected.map(k=>{const a=getAchievement(k);return a?'<span class="showcase-badge"><b>'+a.icon+'</b>'+a.title+'</span>':''}).join(''):'<span class="showcase-empty">Choose up to 3 earned badges below. People you connect with will see them.</span>';
+}
+function renderRemoteBadges(){
+  const host=$('#remoteBadges'); if(!host)return;
+  const badges=(remoteSelectedBadges||[]).map(getAchievement).filter(Boolean);
+  host.innerHTML=badges.length?'<span class="remote-label">THEIR ACHIEVEMENTS</span>'+badges.map(a=>'<span class="remote-badge"><b>'+a.icon+'</b>'+a.title+'</span>').join(''):'<span class="remote-empty">Achievement badges will appear here when your partner has chosen them.</span>';
+}
+function renderAchievements(){
+  const host=$('#achievementGrid'); if(!host)return;
+  const selected=new Set(s.stats.selectedBadges||[]);
+  host.innerHTML=ACHIEVEMENTS.map(q=>{
+    const a=getAchievement(q[0]), isSelected=selected.has(q[0]);
+    return '<button type="button" class="achievement-card '+(a.unlocked?'earned':'locked')+(isSelected?' selected':'')+'" data-achievement="'+a.key+'" '+(a.unlocked?'':'disabled')+'>'+
+      '<span class="achievement-icon">'+a.icon+'</span><span class="achievement-copy"><b>'+a.title+'</b><small>'+a.desc+'</small><em>'+ (a.unlocked?(isSelected?'✓ Showcased':'Earned · tap to showcase'):'Locked') +'</em></span>'+
+      '<span class="achievement-check">'+(isSelected?'✓':a.unlocked?'＋':'🔒')+'</span></button>';
+  }).join('');
+  host.querySelectorAll('[data-achievement]').forEach(btn=>btn.onclick=()=>toggleBadge(btn.dataset.achievement));
+  const count=(s.stats.selectedBadges||[]).length;
+  if($('#badgeCount'))$('#badgeCount').textContent=count+'/3';
+  renderBadgeShowcase();
+}
+
 
 render();
 bootstrapBackend();
