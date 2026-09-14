@@ -165,10 +165,42 @@ async function api(path,method='GET',body=null){
       const r=await supabaseClient.from('profiles').select('id,name,age,country,gender,english_level,gender_preference,locked_until').eq('id',currentUser.id).maybeSingle();
       return new Response(JSON.stringify(r.data||{id:currentUser.id}),{status:r.error?500:200,headers:{'content-type':'application/json'}});
     }
-    return fetch(edgeBase+'/profile',{
-      method:'POST',
-      headers:{authorization:'Bearer '+authSession.access_token,apikey:'sb_publishable_RrciEiRwRPkbU6yO6wt8Zg_BI0tSYEW','content-type':'application/json'},
-      body:JSON.stringify(body||{})
+    if(method==='POST'){
+      // Save directly through Supabase. The previous implementation called a
+      // non-existent/stale edge function, which caused the browser to show
+      // "Failed to fetch" even though the profile form itself was valid.
+      const payload={
+        id:currentUser.id,
+        name:String(body?.name||'').trim(),
+        age:Number(body?.age),
+        country:String(body?.country||'').trim(),
+        gender:String(body?.gender||'').trim(),
+        english_level:String(body?.english_level||s.stats?.level||'A1'),
+        gender_preference:String(body?.gender_preference||'any')
+      };
+      const existing=await supabaseClient.from('profiles')
+        .select('locked_until')
+        .eq('id',currentUser.id)
+        .maybeSingle();
+      if(existing.error) throw existing.error;
+      if(existing.data?.locked_until && new Date(existing.data.locked_until)>new Date()){
+        return new Response(JSON.stringify({
+          error:'Your profile is locked for 30 days after saving.',
+          locked_until:existing.data.locked_until
+        }),{status:423,headers:{'content-type':'application/json'}});
+      }
+      const lockedUntil=new Date(Date.now()+30*24*60*60*1000).toISOString();
+      const r=await supabaseClient.from('profiles')
+        .upsert({...payload,locked_until:lockedUntil,updated_at:new Date().toISOString()})
+        .select('id,name,age,country,gender,english_level,gender_preference,locked_until,created_at,updated_at')
+        .single();
+      return new Response(JSON.stringify(r.data||{error:r.error?.message||'Profile could not be saved'}),{
+        status:r.error?500:200,
+        headers:{'content-type':'application/json'}
+      });
+    }
+    return new Response(JSON.stringify({error:'Method not allowed'}),{
+      status:405,headers:{'content-type':'application/json'}
     });
   }
   if(path==='/api/complete-conversation'){
@@ -219,7 +251,10 @@ $('#profileForm').onsubmit=async e=>{
       save();
       render();
       toast('Profile saved. It is now locked for 30 days.');
-    }catch(err){toast(err.message);}
+    }catch(err){
+      console.error('Open Talk profile:',err);
+      toast(err?.message||'We couldn’t save your profile. Please try again.');
+    }
   }else toast('Please wait a moment for Open Talk to connect.');
 };
 
