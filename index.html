@@ -23,6 +23,7 @@
       <button data-view="milestones">Milestones</button>
       <button data-view="achievements">Achievements</button>
     </nav>
+    <div class="coin-wallet" title="Open Talk coins"><span>🪙</span><b id="coinBalance">0</b><small>coins</small></div>
     <button class="avatar" data-view="profile" aria-label="Open profile">M</button>
   </div>
 </header>
@@ -133,7 +134,19 @@
   <div class="features stats"><article><span>CONVERSATIONS</span><b id="statConvos">0</b><p>Total completed</p></article><article><span>MINUTES</span><b id="statMinutes">0</b><p>Time spent speaking</p></article><article><span>STREAK</span><b id="statStreak">0</b><p>Days in a row</p></article><article><span>ACHIEVEMENTS</span><b id="statAch">0</b><p>Unlocked</p></article></div>
 </section>
 
-<section id="milestones" class="view"><div class="page-intro"><span class="eyebrow">YOUR JOURNEY</span><h1>Milestones</h1><p>Every conversation is another step toward confident speaking.</p></div><div class="journey-banner card"><span>✦</span><div><b>Progress is built in small moments.</b><p>Complete conversations, build time, and unlock the next chapter.</p></div></div><div id="milestoneList" class="milestone-list"></div></section>
+<section id="milestones" class="view">
+  <div class="page-intro milestone-intro">
+    <div><span class="eyebrow">YOUR JOURNEY</span><h1>Milestones</h1><p>Small wins become speaking confidence. Complete challenges, earn coins, and keep moving forward.</p></div>
+    <div class="coin-hero card"><span>🪙</span><div><small>YOUR COINS</small><strong id="milestoneCoins">0</strong></div><b>Keep earning →</b></div>
+  </div>
+  <div class="journey-banner card"><span>✦</span><div><b>Every milestone pays you back.</b><p>Finish a challenge once and the coins are yours. Your rewards never disappear.</p></div></div>
+  <div class="milestone-summary">
+    <div><b id="milestoneUnlocked">0</b><span>unlocked</span></div>
+    <div><b id="milestoneRemaining">15</b><span>to discover</span></div>
+    <div><b id="milestoneEarned">0</b><span>coins earned</span></div>
+  </div>
+  <div id="milestoneList" class="milestone-list"></div>
+</section>
 
 <section id="achievements" class="view"><div class="page-intro"><span class="eyebrow">RECOGNITION</span><h1>Achievements</h1><p>Collect proof that you're showing up and getting better.</p></div><div id="achievementGrid" class="features achievement-grid"></div></section>
 </main>
