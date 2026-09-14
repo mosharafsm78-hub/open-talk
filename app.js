@@ -589,6 +589,12 @@ async function ensurePeer(){
   pc.onconnectionstatechange=()=>{
     const state=pc.connectionState;
     if(state==='connected'){
+      // Mark the call active as soon as WebRTC is actually connected. This
+      // distinguishes a live conversation from a stale "matched" handshake.
+      if(supabaseClient && currentPartner?.call_id){
+        supabaseClient.from('calls').update({status:'active',started_at:new Date().toISOString()})
+          .eq('id',currentPartner.call_id).then(()=>{}).catch(()=>{});
+      }
       startCallClock();
       $('#listen').textContent='You’re live — speaking with a real person.';
       $('#partnerMeta').textContent=(currentPartner?.name||'Your partner')+' • LIVE HUMAN CONVERSATION';
@@ -745,6 +751,7 @@ async function finishConversation(){
     if(backendReady){
       try{
         await api('/api/complete-conversation','POST',{
+          call_id:currentPartner?.call_id||null,
           partner_id:currentPartner?.id||null,
           duration_seconds:seconds
         });
@@ -770,6 +777,12 @@ async function finishConversation(){
 
 async function leaveConversation(){
   document.body.classList.remove('modal-open');
+  // Tell the server immediately that this browser left. This removes the
+  // waiting row and cancels an unstarted match so the partner cannot be
+  // offered again on another device.
+  if(backendReady){
+    try{await api('/api/match','POST',{action:'leave'});}catch{}
+  }
   if(!$('#modal').classList.contains('hidden'))await teardownCall();
   $('#modal').classList.add('hidden');
   currentPartner=null;
