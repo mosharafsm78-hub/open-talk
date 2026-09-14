@@ -79,9 +79,22 @@ function render(){
 
   const n={A1:12,A2:28,B1:45,B2:62,C1:82,C2:100};
   if($('#levelBar'))$('#levelBar').style.width=(n[l]||0)+'%';
-  if($('#profileLock'))$('#profileLock').textContent=backendReady
-    ?'Your profile stays editable. Changes are used for future matching.'
-    :'Profile is editable locally. Live matching activates when the backend is connected.';
+  if($('#profileLock')){
+    const lockedUntil=s.profile.locked_until?new Date(s.profile.locked_until):null;
+    const locked=lockedUntil&&lockedUntil>new Date();
+    const form=$('#profileForm');
+    form?.querySelectorAll('input,select,button').forEach(el=>{el.disabled=!!locked;});
+    if(locked){
+      const days=Math.ceil((lockedUntil-new Date())/86400000);
+      $('#profileLock').textContent='Profile locked for '+days+' day'+(days===1?'':'s')+' · you can edit again on '+lockedUntil.toLocaleDateString();
+      form?.classList.add('profile-locked');
+    }else{
+      $('#profileLock').textContent=backendReady
+        ?'After saving, your profile is locked for 30 days to keep matching consistent.'
+        :'Complete your profile. After saving, it is locked for 30 days.';
+      form?.classList.remove('profile-locked');
+    }
+  }
   renderMilestones();
   renderCoinEarningPreview();
   renderAchievements();
@@ -108,7 +121,7 @@ async function bootstrapBackend(){
     }
     backendReady=!!currentUser;
     const {data:p,error:pe}=await supabaseClient.from('profiles')
-      .select('id,name,age,country,gender,english_level,gender_preference')
+      .select('id,name,age,country,gender,english_level,gender_preference,locked_until')
       .eq('id',currentUser.id).maybeSingle();
     if(!pe&&p){s.profile={...s.profile,...p};save();}
     try{
@@ -189,16 +202,21 @@ $('#profileForm').onsubmit=async e=>{
     english_level:s.stats.level||s.profile.english_level||'A1',
     gender_preference:s.profile.gender_preference||'any'
   };
-  s.profile={...s.profile,...profile,savedAt:Date.now()};
-  save();
+  const lockedUntil=s.profile.locked_until?new Date(s.profile.locked_until):null;
+  if(lockedUntil&&lockedUntil>new Date()){
+    toast('Your profile is locked until '+lockedUntil.toLocaleDateString()+'.');
+    render();
+    return;
+  }
   if(backendReady){
     try{
       const r=await api('/api/profile','POST',profile);
       const data=await r.json();
       if(!r.ok)throw new Error(data.error||'Profile could not be saved');
-      s.profile={...s.profile,...data};
+      s.profile={...s.profile,...data,savedAt:Date.now()};
       save();
-      toast('Profile saved. You can edit it again anytime.');
+      render();
+      toast('Profile saved. It is now locked for 30 days.');
     }catch(err){toast(err.message);}
   }else toast('Please wait a moment for Open Talk to connect.');
 };
