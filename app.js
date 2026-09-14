@@ -156,8 +156,7 @@ $('#profileForm').onsubmit=async e=>{
     name:$('#name').value.trim(),
     age:Number($('#age').value),
     country:$('#country').value,
-    gender_preference:$('#gender').value==='Female'?'female':$('#gender').value==='Male'?'male':'any',
-    gender:$('#gender').value
+    gender_preference:$('#gender').value==='Female'?'female':$('#gender').value==='Male'?'male':'any'
   };
   s.profile={...s.profile,...profile,savedAt:Date.now()};
   save();
@@ -191,22 +190,33 @@ async function findPartner(){
   $('#mic').textContent='🎙 Waiting for partner';
   $('#finish').disabled=false;
 
+  const setQueueStage=(stage)=>{
+    [1,2,3].forEach(n=>$('#queueStep'+n)?.classList.toggle('active',n===stage));
+  };
   const attempt=async()=>{
     try{
+      setQueueStage(1);
       const r=await api('/api/match','POST',{preference});
       const data=await r.json();
       if(!r.ok)throw new Error(data.error||'Matching failed');
       if(data.candidate){
+        setQueueStage(2);
         currentPartner={...data.candidate,call_id:data.call_id||data.session_id};
         stopMatchPolling();
+        $('#partner').textContent='Your speaking partner is ready';
+        $('#partnerMeta').textContent='A real person has been matched with you. No AI is involved.';
+        $('#listen').textContent='Great match found — preparing your private connection…';
+        $('#transcript').innerHTML='<div class="queue-status success"><span>✓</span><b>Real person found</b><small>Setting up a secure peer-to-peer audio connection.</small></div>';
+        setQueueStage(3);
         await startHumanCall(data.session_id,data.candidate);
       }else{
-        $('#partner').textContent='Waiting for a speaking partner…';
-        $('#partnerMeta').textContent='You are in the live matching queue.';
-        $('#listen').textContent='Still searching — we will connect you as soon as someone is available.';
+        $('#partner').textContent='Waiting for a real person…';
+        $('#partnerMeta').textContent='You are safely in the live matching queue. We will never substitute an AI.';
+        $('#listen').textContent='Still looking for someone who is online…';
       }
     }catch(err){
       $('#listen').textContent=err.message||'Unable to reach the matching service.';
+      $('#transcript').innerHTML='<div class="queue-status error"><span>!</span><b>We lost the matching connection</b><small>Try again — your profile is safe.</small></div>';
     }
   };
   await attempt();
