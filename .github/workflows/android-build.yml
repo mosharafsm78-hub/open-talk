@@ -37,6 +37,14 @@ jobs:
       - name: Install Capacitor
         run: npm install
 
+      - name: Prepare web assets
+        run: |
+          rm -rf www
+          mkdir -p www
+          cp ../index.html www/index.html
+          cp ../app.js www/app.js
+          cp ../styles.css www/styles.css
+
       - name: Generate Android project
         run: npx cap add android
 
