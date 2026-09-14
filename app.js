@@ -1,7 +1,7 @@
 const K='openTalkV1';
 let s=JSON.parse(localStorage.getItem(K)||'null')||{
   profile:{},
-  stats:{conversations:0,minutes:0,level:null,achievements:[],streak:0,lastPracticeDate:null},
+  stats:{conversations:0,minutes:0,level:null,achievements:[],streak:0,lastPracticeDate:null,coins:0,rewardedMilestones:[],coinSpend:0},
   today:{conversations:0,minutes:0,date:new Date().toISOString().slice(0,10)}
 };
 const $=x=>document.querySelector(x);
@@ -78,6 +78,7 @@ function render(){
     :'Profile is editable locally. Live matching activates when the backend is connected.';
   renderMilestones();
   renderAchievements();
+  if($('#shopCoins'))$('#shopCoins').textContent=a.coins||0;
 }
 
 async function bootstrapBackend(){
@@ -475,42 +476,61 @@ async function teardownCall(){
   callStartedAt=0;
 }
 
+function milestoneKey(title){return title.toLowerCase().replace(/[^a-z0-9]+/g,'');}
+
 function renderMilestones(){
-  const a=s.stats||{};
-  const coins=Number(a.coins||0);
-  const c=Number(a.conversations||0), mins=Number(a.minutes||0), streak=Number(a.streak||0);
+  const a=s.stats||{},coins=Number(a.coins||0);
+  const c=Number(a.conversations||0),mins=Number(a.minutes||0),streak=Number(a.streak||0);
   const m=[
-    ['🌱','First Words','Complete your first real human conversation.',c>=1,2,'Start your journey'],
-    ['💬','Three Conversations','Finish 3 real conversations.',c>=3,3,'Build the habit'],
-    ['⚡','Five Alive','Finish 5 real conversations.',c>=5,5,'You are showing up'],
-    ['🚀','Ten Talks','Complete 10 real conversations.',c>=10,7,'Become a regular'],
-    ['🌟','Twenty Strong','Complete 20 real conversations.',c>=20,10,'Consistency compounds'],
-    ['🏆','Half Century','Complete 50 real conversations.',c>=50,15,'A serious speaker'],
-    ['💎','Century Speaker','Complete 100 real conversations.',c>=100,20,'Legendary commitment'],
-    ['⏱️','Warm Up','Speak for 10 total minutes.',mins>=10,2,'Get your voice moving'],
-    ['🔥','30 Minute Club','Speak for 30 total minutes.',mins>=30,4,'Real practice adds up'],
-    ['🎧','One Hour In','Speak for 60 total minutes.',mins>=60,7,'Your fluency is growing'],
-    ['🗣️','Three Hour Speaker','Speak for 3 total hours.',mins>=180,12,'Keep the conversation going'],
-    ['🌙','Ten Hour Speaker','Speak for 10 total hours.',mins>=600,20,'You have momentum'],
-    ['🔥','Three-Day Streak','Practice on 3 consecutive days.',streak>=3,3,'Make showing up automatic'],
-    ['📅','Seven-Day Streak','Practice for 7 consecutive days.',streak>=7,6,'A week of courage'],
-    ['👑','Thirty-Day Streak','Practice for 30 consecutive days.',streak>=30,15,'This is your new habit']
+    ['🌱','First Words','Complete your first real human conversation.',c>=1,1,'Take the first step'],
+    ['💬','Two Talks','Complete 2 real conversations.',c>=2,1,'Keep going'],
+    ['✨','Three Conversations','Complete 3 real conversations.',c>=3,2,'Build the habit'],
+    ['⚡','Five Alive','Complete 5 real conversations.',c>=5,2,'You are showing up'],
+    ['🚀','Ten Talks','Complete 10 real conversations.',c>=10,3,'Become a regular'],
+    ['🌟','Twenty Strong','Complete 20 real conversations.',c>=20,4,'Consistency compounds'],
+    ['🏅','Thirty Conversations','Complete 30 real conversations.',c>=30,5,'You are building fluency'],
+    ['🏆','Half Century','Complete 50 real conversations.',c>=50,6,'A serious speaker'],
+    ['💎','Century Speaker','Complete 100 real conversations.',c>=100,8,'Legendary commitment'],
+    ['⏱️','Warm Up','Speak for 10 total minutes.',mins>=10,1,'Get your voice moving'],
+    ['🔥','30 Minute Club','Speak for 30 total minutes.',mins>=30,2,'Real practice adds up'],
+    ['🎧','One Hour In','Speak for 60 total minutes.',mins>=60,3,'Your fluency is growing'],
+    ['🗣️','Three Hour Speaker','Speak for 3 total hours.',mins>=180,4,'Keep the conversation going'],
+    ['🌙','Five Hour Speaker','Speak for 5 total hours.',mins>=300,5,'Momentum is becoming a habit'],
+    ['👑','Ten Hour Speaker','Speak for 10 total hours.',mins>=600,8,'You have real staying power'],
+    ['🌱','Two-Day Streak','Practice on 2 consecutive days.',streak>=2,1,'Come back tomorrow'],
+    ['🔥','Three-Day Streak','Practice on 3 consecutive days.',streak>=3,2,'Make showing up automatic'],
+    ['📅','Seven-Day Streak','Practice for 7 consecutive days.',streak>=7,3,'A week of courage'],
+    ['🌈','Fourteen-Day Streak','Practice for 14 consecutive days.',streak>=14,4,'Two weeks of momentum'],
+    ['👑','Thirty-Day Streak','Practice for 30 consecutive days.',streak>=30,6,'This is your new habit'],
+    ['🤝','Good Listener','Complete 5 conversations.',c>=5,2,'Listening is half of fluency'],
+    ['🎙️','Conversation Builder','Complete 15 conversations.',c>=15,3,'Keep the flow going'],
+    ['💫','Fluency Momentum','Complete 25 conversations.',c>=25,4,'Confidence grows through repetition'],
+    ['🌍','World Speaker','Complete 75 conversations.',c>=75,7,'Keep meeting the world']
   ];
-  const rewarded=new Set(a.rewardedMilestones||[]);
-  const unlocked=m.filter(x=>x[3]).length;
-  $('#coinBalance').textContent=coins;
-  $('#milestoneCoins').textContent=coins;
-  $('#milestoneUnlocked').textContent=unlocked;
-  $('#milestoneRemaining').textContent=m.length-unlocked;
+  const rewarded=new Set(a.rewardedMilestones||[]),unlocked=m.filter(x=>x[3]).length;
+  $('#coinBalance').textContent=coins;$('#milestoneCoins').textContent=coins;
+  $('#milestoneUnlocked').textContent=unlocked;$('#milestoneRemaining').textContent=m.length-unlocked;
   $('#milestoneEarned').textContent=coins;
   $('#milestoneList').innerHTML=m.map(x=>{
-    const unlocked=x[3], claimed=rewarded.has(x[1].toLowerCase().replace(/[^a-z0-9]+/g,''));
-    const pct=unlocked?100:Math.min(99,Math.round((x[1].includes('Minute')||x[1].includes('Hour')||x[1].includes('Speaker')?mins:x[1].includes('Streak')?streak:c)/(x[1].includes('Minute')?30:x[1].includes('Hour')?60:x[1].includes('Streak')?7:x[1].includes('Century')?100:x[1].includes('Half')?50:x[1].includes('Twenty')?20:x[1].includes('Ten')?10:x[1].includes('Five')?5:x[1].includes('Three')?3:1)*100));
-    return `<article class="milestone-card card ${unlocked?'is-unlocked':'is-locked'}">
+    const key=milestoneKey(x[1]),claimed=rewarded.has(key),title=x[1];
+    let target=1,current=c;
+    if(title.includes('Minute')||title.includes('Hour')||title.includes('Speaker')){
+      const targets={'Warm Up':10,'30 Minute Club':30,'One Hour In':60,'Three Hour Speaker':180,'Five Hour Speaker':300,'Ten Hour Speaker':600};
+      target=targets[title]||1;current=mins;
+    }else if(title.includes('Streak')){
+      const targets={'Two-Day Streak':2,'Three-Day Streak':3,'Seven-Day Streak':7,'Fourteen-Day Streak':14,'Thirty-Day Streak':30};
+      target=targets[title]||1;current=streak;
+    }else{
+      const targets={'First Words':1,'Two Talks':2,'Three Conversations':3,'Five Alive':5,'Ten Talks':10,'Twenty Strong':20,'Thirty Conversations':30,'Half Century':50,'Century Speaker':100,'Good Listener':5,'Conversation Builder':15,'Fluency Momentum':25,'World Speaker':75};
+      target=targets[title]||1;
+    }
+    const pct=x[3]?100:Math.min(99,Math.round((current/target)*100));
+    return `<article class="milestone-card card ${x[3]?'is-unlocked':'is-locked'}">
       <div class="milestone-icon">${x[0]}</div>
-      <div class="milestone-body"><div class="milestone-title"><h3>${x[1]}</h3><span class="reward-pill">🪙 +${x[4]}</span></div>
-      <p>${x[2]}</p><div class="milestone-bar"><span style="width:${pct}%"></span></div><small>${unlocked?'Milestone complete':'Locked · '+x[5]}</small></div>
-      <div class="milestone-state">${unlocked?'✓':'🔒'}</div>
+      <div class="milestone-body"><div class="milestone-title"><h3>${title}</h3><span class="reward-pill">🪙 +${x[4]}</span></div>
+      <p>${x[2]}</p><div class="milestone-bar"><span style="width:${pct}%"></span></div>
+      <small>${x[3]?(claimed?'Reward credited':'Milestone complete'):'Locked · '+x[5]}</small></div>
+      <div class="milestone-state">${x[3]?'✓':'🔒'}</div>
     </article>`;
   }).join('');
 }
