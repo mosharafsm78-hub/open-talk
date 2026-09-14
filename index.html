@@ -257,6 +257,38 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script type="module" src="app.js?v=20260915-13"></script>
 <script>
+/* Emergency navigation fallback: this must work even if the app module/backend fails. */
+(function(){
+  function go(view){
+    var target=document.getElementById(view);
+    if(!target)return;
+    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+    target.classList.add('active');
+    document.querySelectorAll('[data-view]').forEach(function(b){
+      b.classList.toggle('nav-active',b.getAttribute('data-view')===view);
+    });
+    window.scrollTo(0,0);
+  }
+  document.addEventListener('click',function(e){
+    var b=e.target.closest && e.target.closest('[data-view]');
+    if(b && b.getAttribute('data-view')){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      go(b.getAttribute('data-view'));
+      return false;
+    }
+  },true);
+  window.__openTalkFallback=function(){
+    var m=document.getElementById('modal');
+    if(m){m.classList.remove('hidden');m.style.display='grid';}
+  };
+  var talk=document.getElementById('talkNow');
+  if(talk)talk.addEventListener('click',function(e){
+    e.preventDefault(); e.stopImmediatePropagation(); window.__openTalkFallback();
+  },true);
+})();
+</script>
+<script>
 document.getElementById('talkNowBottom')?.addEventListener('click',()=>document.getElementById('talkNow')?.click());
 </script>
 </body>
