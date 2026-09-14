@@ -248,8 +248,8 @@
       <div class="queue-status"><span class="queue-spinner"></span><b>You're in the live waiting room</b><small>We're not going to switch you to an AI. We wait for a real human.</small></div>
     </div>
     <audio id="remoteAudio" autoplay playsinline></audio>
-    <div class="actions"><button id="mic" class="primary big" disabled>🎙 Waiting for partner</button><button id="finish" class="secondary" disabled>Leave queue</button></div>
-    <div id="feedback" class="feedback hidden"></div>
+    <div class="actions"><button id="mic" class="primary big" disabled>🎙 Waiting for partner</button><button id="finish" class="secondary" disabled>Leave queue</button><button id="reportPartner" class="danger-button" type="button" disabled>Report partner</button></div>
+    <div id="reportPanel" class="report-panel hidden"><label for="reportReason">Why are you reporting this person?</label><select id="reportReason"><option value="harassment">Harassment or bullying</option><option value="sexual_content">Sexual or inappropriate content</option><option value="hate">Hate or hateful conduct</option><option value="spam">Spam or scam</option><option value="other">Other safety concern</option></select><div><button id="submitReport" class="primary" type="button">Submit report</button><button id="cancelReport" class="text-button" type="button">Cancel</button></div></div><div id="feedback" class="feedback hidden"></div>
     <div id="safety" class="safety-note">🔒 You can leave at any time. Your conversation audio is peer-to-peer and is not recorded by this frontend.</div>
   </div>
 </div>
