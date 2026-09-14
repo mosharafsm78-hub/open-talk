@@ -107,16 +107,16 @@ async function bootstrapBackend(){
     }
     backendReady=!!currentUser;
     const {data:p,error:pe}=await supabaseClient.from('profiles')
-      .select('id,name,age,country,english_level,gender_preference')
+      .select('id,name,age,country,gender,english_level,gender_preference')
       .eq('id',currentUser.id).maybeSingle();
     if(!pe&&p){s.profile={...s.profile,...p};save();}
     try{
       const rewards=await supabaseClient.from('user_milestone_rewards').select('milestone_key,coins').eq('user_id',currentUser.id);
-      if(!rewards.error){
-        s.stats.rewardedMilestones=(rewards.data||[]).map(x=>x.milestone_key);
-        s.stats.coins=(rewards.data||[]).reduce((sum,x)=>sum+Number(x.coins||0),0);
-        save();
-      }
+      const balance=await supabaseClient.rpc('available_coins',{p_user_id:currentUser.id});
+      if(!rewards.error) s.stats.rewardedMilestones=(rewards.data||[]).map(x=>x.milestone_key);
+      if(!balance.error && Number.isFinite(Number(balance.data))) s.stats.coins=Number(balance.data);
+      else s.stats.coins=(rewards.data||[]).reduce((sum,x)=>sum+Number(x.coins||0),0);
+      save();
     }catch{}
     updateBackendStatus();
   }catch(e){
@@ -152,7 +152,7 @@ async function api(path,method='GET',body=null){
       return new Response(JSON.stringify(r.data||{id:currentUser.id}),{status:r.error?500:200,headers:{'content-type':'application/json'}});
     }
     const profile={...body,id:currentUser.id,updated_at:new Date().toISOString()};
-    const r=await supabaseClient.from('profiles').upsert(profile).select('id,name,age,country,english_level,gender_preference').single();
+    const r=await supabaseClient.from('profiles').upsert(profile).select('id,name,age,country,gender,english_level,gender_preference').single();
     return new Response(JSON.stringify(r.data||{error:r.error?.message}),{status:r.error?500:200,headers:{'content-type':'application/json'}});
   }
   if(path==='/api/complete-conversation'){
@@ -183,7 +183,8 @@ $('#profileForm').onsubmit=async e=>{
     name:$('#name').value.trim(),
     age:Number($('#age').value),
     country:$('#country').value,
-    gender_preference:$('#gender').value==='Female'?'female':$('#gender').value==='Male'?'male':'any'
+    gender:$('#gender').value==='Female'?'female':$('#gender').value==='Male'?'male':$('#gender').value==='Other'?'other':'',
+    gender_preference:s.profile.gender_preference||'any'
   };
   s.profile={...s.profile,...profile,savedAt:Date.now()};
   save();
@@ -199,57 +200,113 @@ $('#profileForm').onsubmit=async e=>{
   }else toast('Please wait a moment for Open Talk to connect.');
 };
 
+function matchSelection(){
+  const gender=$('#matchGender')?.value||'any';
+  const country=$('#matchCountry')?.value||'';
+  const level=$('#matchLevel')?.value||'';
+  const priority=!!$('#matchPriority')?.checked;
+  const filterCount=[gender!=='any',!!country,!!level].filter(Boolean).length;
+  let cost=0;
+  if(filterCount===3) cost=18;
+  else {
+    if(gender!=='any') cost+=8;
+    if(country) cost+=7;
+    if(level) cost+=6;
+  }
+  if(priority) cost+=4;
+  return {gender,country,level,priority,cost,filterCount};
+}
+
+function updateMatchSelectionUI(){
+  const m=matchSelection();
+  const balance=Number(s.stats?.coins||0);
+  const cost=$('#matchCost');
+  const note=$('#matchCostNote');
+  const startBtn=$('#mic');
+  if(cost) cost.textContent=m.cost?m.cost+' coins':'FREE';
+  if(note) note.textContent=m.cost
+    ? (balance>=m.cost ? 'Charged only after a real person is successfully matched.' : 'You need '+(m.cost-balance)+' more coins.')
+    : 'Open matching is free. No coins are used.';
+  if(startBtn && !currentPartner) startBtn.textContent=m.cost?'🪙 Find my match':'🎙 Join free queue';
+  const controls=$('#matchControls');
+  if(controls) controls.classList.toggle('insufficient',m.cost>balance);
+}
+
 async function findPartner(){
   if(finishing)return;
-  if(!backendReady){
-    toast('Connecting to Open Talk… please try again in a moment.');
+  if(!backendReady){ toast('Connecting to Open Talk… please try again in a moment.'); return; }
+  const p=s.profile||{};
+  if(!p.name||!p.age||!p.country||!p.gender){
+    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='profile'));
+    document.querySelectorAll('nav button[data-view]').forEach(v=>v.classList.toggle('nav-active',v.dataset.view==='profile'));
+    toast('Complete your profile first — it takes less than a minute.');
+    return;
+  }
+  const match=matchSelection();
+  if(match.cost>Number(s.stats?.coins||0)){
+    toast('Not enough coins. Choose Open Match or earn more coins from Milestones.');
+    openConversationModal();
+    updateMatchSelectionUI();
     return;
   }
   openConversationModal();
   stopMatchPolling();
   currentPartner=null;
-  const preference=$('#matchPreference')?.value||'any';
   $('#partner').textContent='Looking for someone to talk to…';
-  $('#partnerMeta').textContent='Open Talk is finding another real person for you. No AI will replace your partner.';
+  $('#partnerMeta').textContent=match.cost
+    ? 'Your premium preference is active for one successful human connection.'
+    : 'Open Talk is finding another real person for you. No AI will replace your partner.';
   $('#listen').textContent='Searching the live waiting room…';
-  $('#transcript').innerHTML='<div class="queue-status"><span class="queue-spinner"></span><b>Waiting for a real person</b><small>Keep this window open. We will connect you automatically.</small></div>';
+  $('#transcript').innerHTML='<div class="queue-status"><span class="queue-spinner"></span><b>Waiting for a real person</b><small>Keep this window open. Your coins are safe until a match is found.</small></div>';
   $('#mic').disabled=true;
-  $('#mic').textContent='🎙 Waiting for partner';
   $('#finish').disabled=false;
+  updateMatchSelectionUI();
 
-  const setQueueStage=(stage)=>{
-    [1,2,3].forEach(n=>$('#queueStep'+n)?.classList.toggle('active',n===stage));
-  };
+  const setQueueStage=(stage)=>{ [1,2,3].forEach(n=>$('#queueStep'+n)?.classList.toggle('active',n===stage)); };
   const attempt=async()=>{
     try{
       setQueueStage(1);
-      const r=await api('/api/match','POST',{preference});
+      const r=await api('/api/match','POST',{
+        target_country:match.country,
+        target_level:match.level,
+        gender_preference:match.gender,
+        priority:match.priority,
+        coin_cost:match.cost
+      });
       const data=await r.json();
       if(!r.ok)throw new Error(data.error||'Matching failed');
+      if(data.new_balance!==null && data.new_balance!==undefined){
+        s.stats.coins=Number(data.new_balance);
+        save();
+      }
       if(data.candidate){
         setQueueStage(2);
         currentPartner={...data.candidate,call_id:data.call_id||data.session_id};
         stopMatchPolling();
         $('#partner').textContent='Your speaking partner is ready';
-        $('#partnerMeta').textContent='A real person has been matched with you. No AI is involved.';
+        $('#partnerMeta').textContent=(data.candidate.name||'Your speaking partner')+' • '+(data.candidate.country||'Global')+' • '+(data.candidate.level||'level not assessed');
         remoteSelectedBadges=[];
         renderRemoteBadges();
         $('#listen').textContent='Great match found — preparing your private connection…';
-        $('#transcript').innerHTML='<div class="queue-status success"><span>✓</span><b>Real person found</b><small>Setting up a secure peer-to-peer audio connection.</small></div>';
+        $('#transcript').innerHTML='<div class="queue-status success"><span>✓</span><b>Real person found</b><small>Your selected preferences matched. Setting up the private audio connection.</small></div>';
         setQueueStage(3);
         await startHumanCall(data.session_id,data.candidate);
       }else{
         $('#partner').textContent='Waiting for a real person…';
-        $('#partnerMeta').textContent='You are safely in the live matching queue. We will never substitute an AI.';
+        $('#partnerMeta').textContent=match.cost
+          ? 'Your preferred match is not online yet. Your coins remain untouched.'
+          : 'You are safely in the live matching queue. We will never substitute an AI.';
         $('#listen').textContent='Still looking for someone who is online…';
       }
     }catch(err){
-      $('#listen').textContent=err.message||'Unable to reach the matching service.';
-      $('#transcript').innerHTML='<div class="queue-status error"><span>!</span><b>We lost the matching connection</b><small>Try again — your profile is safe.</small></div>';
+      console.error('Open Talk match:',err);
+      $('#listen').textContent='The live matching service needs another attempt.';
+      $('#transcript').innerHTML='<div class="queue-status error"><span>!</span><b>We could not reach the matching service</b><small>Your profile and coins are safe. Please try again.</small></div>';
+      stopMatchPolling();
     }
   };
   await attempt();
-  if(!currentPartner)matchPoll=setInterval(attempt,3000);
+  if(!currentPartner)matchPoll=setInterval(attempt,4000);
 }
 
 function stopMatchPolling(){
@@ -259,6 +316,7 @@ function stopMatchPolling(){
 function openConversationModal(){
   finishing=false;
   $('#modal').classList.remove('hidden');
+  updateMatchSelectionUI();
   $('#feedback').classList.add('hidden');
   $('#feedback').innerHTML='';
   $('#timer').textContent='00:00';
@@ -268,6 +326,7 @@ function openConversationModal(){
 
 $('#talkNow')?.addEventListener('click',findPartner);
 $('#findPartner')?.addEventListener('click',findPartner);
+['matchGender','matchCountry','matchLevel','matchPriority'].forEach(id=>$('#'+id)?.addEventListener('change',updateMatchSelectionUI));
 
 $('#close').onclick=leaveConversation;
 $('#finish').onclick=finishConversation;
