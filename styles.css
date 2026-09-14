@@ -2349,3 +2349,40 @@ body.modal-open{overflow:hidden!important;height:100%!important}
   .profile-summary-grid>div{padding:13px}
   .profile-summary-grid strong{font-size:14px}
 }
+
+
+/* Read-only profile details: compact rows, never editable. */
+.profile-summary{padding:24px 26px}
+.profile-readonly-list{
+  margin-top:14px;
+  border-top:1px solid #e8ebf2;
+}
+.profile-readonly-row{
+  min-height:58px;
+  display:grid;
+  grid-template-columns:120px minmax(0,1fr) 34px;
+  align-items:center;
+  gap:14px;
+  border-bottom:1px solid #e8ebf2;
+}
+.profile-readonly-row>span{
+  color:#66708a;
+  font-size:13px;
+  font-weight:700;
+}
+.profile-readonly-row>strong{
+  color:#17203b;
+  font-size:15px;
+  font-weight:700;
+  overflow-wrap:anywhere;
+}
+.profile-readonly-row>button{
+  width:30px;height:30px;
+  border:0;background:transparent;
+  color:#159bb1;
+  font-size:17px;
+  cursor:pointer;
+  border-radius:8px;
+}
+.profile-readonly-row>button:hover{background:#eef9fb}
+.profile-locked-note{display:none!important}
