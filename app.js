@@ -57,28 +57,28 @@ function render(){
   if($('#gender'))$('#gender').value=p.gender||'Prefer not to say';
 
   const l=a.level||'Not assessed yet';
-  $('#levelValue').textContent=l;
-  $('#homeLevel').textContent=l;
-  $('#homeMinutes').textContent=a.minutes||0;
-  $('#homeConvos').textContent=a.conversations||0;
-  $('#homeMinutes2').textContent=a.minutes||0;
-  $('#homeLevel2').textContent=a.level||'—';
-  $('#homeAch').textContent=(a.achievements||[]).length;
-  $('#statStreakHome').textContent=a.streak||0;
-  $('#statConvos').textContent=a.conversations||0;
-  $('#statMinutes').textContent=a.minutes||0;
-  $('#statStreak').textContent=a.streak||0;
-  $('#statAch').textContent=(a.achievements||[]).length;
-  $('#coinBalance').textContent=a.coins||0;
+  if($('#levelValue'))$('#levelValue').textContent=l;
+  if($('#homeLevel'))$('#homeLevel').textContent=l;
+  if($('#homeMinutes'))$('#homeMinutes').textContent=a.minutes||0;
+  if($('#homeConvos'))$('#homeConvos').textContent=a.conversations||0;
+  if($('#homeMinutes2'))$('#homeMinutes2').textContent=a.minutes||0;
+  if($('#homeLevel2'))$('#homeLevel2').textContent=a.level||'—';
+  if($('#homeAch'))$('#homeAch').textContent=(a.achievements||[]).length;
+  if($('#statStreakHome'))$('#statStreakHome').textContent=a.streak||0;
+  if($('#statConvos'))$('#statConvos').textContent=a.conversations||0;
+  if($('#statMinutes'))$('#statMinutes').textContent=a.minutes||0;
+  if($('#statStreak'))$('#statStreak').textContent=a.streak||0;
+  if($('#statAch'))$('#statAch').textContent=(a.achievements||[]).length;
+  if($('#coinBalance'))$('#coinBalance').textContent=a.coins||0;
 
   const goalDone=Math.min(s.today.conversations||0,4);
-  $('#goalCount').textContent=`${goalDone}/4`;
-  $('#goalStatus').textContent=goalDone>=4?'Goal completed — beautiful work.':`${4-goalDone} conversation${4-goalDone===1?'':'s'} to go`;
-  $('#goalProgress').style.width=Math.min(100,goalDone/4*100)+'%';
+  if($('#goalCount'))$('#goalCount').textContent=`${goalDone}/4`;
+  if($('#goalStatus'))$('#goalStatus').textContent=goalDone>=4?'Goal completed — beautiful work.':`${4-goalDone} conversation${4-goalDone===1?'':'s'} to go`;
+  if($('#goalProgress'))$('#goalProgress').style.width=Math.min(100,goalDone/4*100)+'%';
 
   const n={A1:12,A2:28,B1:45,B2:62,C1:82,C2:100};
-  $('#levelBar').style.width=(n[l]||0)+'%';
-  $('#profileLock').textContent=backendReady
+  if($('#levelBar'))$('#levelBar').style.width=(n[l]||0)+'%';
+  if($('#profileLock'))$('#profileLock').textContent=backendReady
     ?'Your profile stays editable. Changes are used for future matching.'
     :'Profile is editable locally. Live matching activates when the backend is connected.';
   renderMilestones();
@@ -208,7 +208,7 @@ async function findPartner(){
   openConversationModal();
   stopMatchPolling();
   currentPartner=null;
-  const preference=$('#matchPreference').value;
+  const preference=$('#matchPreference')?.value||'any';
   $('#partner').textContent='Looking for someone to talk to…';
   $('#partnerMeta').textContent='Open Talk is finding another real person for you. No AI will replace your partner.';
   $('#listen').textContent='Searching the live waiting room…';
@@ -266,8 +266,8 @@ function openConversationModal(){
   $('#mic').disabled=true;
 }
 
-$('#talkNow').onclick=findPartner;
-$('#findPartner').onclick=findPartner;
+$('#talkNow')?.addEventListener('click',findPartner);
+$('#findPartner')?.addEventListener('click',findPartner);
 
 $('#close').onclick=leaveConversation;
 $('#finish').onclick=finishConversation;
