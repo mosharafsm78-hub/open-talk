@@ -656,3 +656,37 @@ nav button.nav-active{background:#efedff;color:var(--purple);font-weight:800}
   .hero-stats span{font-size:8px}
   .hero-stats strong{font-size:16px}
 }
+
+/* THREE-TIER REWARD ECONOMY */
+.tier-heading,.achievement-tier-heading{
+  display:flex;align-items:center;gap:12px;margin:24px 0 11px;padding:12px 14px;
+  border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.78);
+}
+.tier-heading .tier-icon,.achievement-tier-heading .tier-icon{
+  width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:#f0eeff;font-size:17px;flex:none;
+}
+.tier-heading>div:nth-child(2),.achievement-tier-heading>div:nth-child(2){min-width:0;flex:1}
+.tier-heading span,.achievement-tier-heading span{display:block;font-size:11px;font-weight:900;letter-spacing:.15px}
+.tier-heading small,.achievement-tier-heading small{display:block;margin-top:2px;font-size:9px;color:#8c95a9}
+.tier-heading>b,.achievement-tier-heading>b{
+  font-size:10px;color:#7167d7;background:#f3f1ff;padding:6px 8px;border-radius:999px;white-space:nowrap;
+}
+.milestone-tier-easy .tier-heading{border-color:#e5ebdf}
+.milestone-tier-medium .tier-heading{border-color:#e7e1c9}
+.milestone-tier-hard .tier-heading{border-color:#e8d8dc}
+.tier-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.milestone-tier-card{margin:0}
+.achievement-tier{margin-top:8px}
+.achievement-tier:first-child{margin-top:0}
+.achievement-tier-heading{margin-bottom:11px}
+.achievement-grid-inner{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.achievement-tier-hard .achievement-card.locked{opacity:.62}
+.achievement-tier-hard .achievement-card.earned{box-shadow:0 12px 34px rgba(98,87,245,.10)}
+@media(max-width:900px){
+  .achievement-grid-inner{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .tier-grid{grid-template-columns:1fr}
+  .achievement-grid-inner{grid-template-columns:1fr}
+  .tier-heading,.achievement-tier-heading{margin-top:18px}
+}
