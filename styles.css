@@ -1026,3 +1026,45 @@ html{scroll-padding-top:72px}body{padding-bottom:calc(var(--mobile-nav-height) +
 .coin-hero .gold-bar{width:62px;height:38px}.coin-balance-icon.gold-bar{width:64px;height:38px;border-radius:8px}.coin-wallet .gold-bar{width:38px;height:24px;border-radius:5px}.coin-wallet .gold-bar:before{font-size:7px}
 .mobile-bottom-nav .gold-bar{width:27px;height:17px;border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 4px rgba(106,64,11,.18),0 3px 8px rgba(143,91,19,.12)}.mobile-bottom-nav .gold-bar:before{font-size:5px}.mobile-bottom-nav .gold-bar:after{left:4px;right:4px;top:3px}
 @media(max-width:760px){.mobile-bottom-nav{grid-template-columns:repeat(5,1fr)!important}.gold-bar{width:54px;height:32px}.coin-hero .gold-bar{width:58px;height:35px}.coin-balance-icon.gold-bar{width:58px;height:35px}.milestone-intro{padding-bottom:12px}.journey-banner{margin-top:8px;margin-bottom:10px}.milestone-summary{margin-top:10px}}
+
+/* Mobile navigation: premium top dock */
+@media (max-width:760px){
+  .mobile-bottom-nav{
+    position:fixed!important;
+    top:74px!important;
+    bottom:auto!important;
+    left:12px!important;
+    right:12px!important;
+    width:auto!important;
+    max-width:none!important;
+    z-index:1000!important;
+    margin:0!important;
+    padding:7px!important;
+    border-radius:22px!important;
+    box-shadow:0 12px 34px rgba(26,31,70,.14),0 2px 8px rgba(26,31,70,.06)!important;
+    backdrop-filter:blur(18px)!important;
+    -webkit-backdrop-filter:blur(18px)!important;
+  }
+  body{padding-bottom:0!important}
+  .mobile-bottom-nav .mobile-nav-item{
+    min-height:54px!important;
+  }
+  .mobile-bottom-nav .mobile-nav-item small{
+    font-size:10px!important;
+  }
+  main, .page, .view, .app-main{
+    scroll-margin-top:145px;
+  }
+  /* Prevent the floating dock from covering the first content row */
+  .hero, .page-header, .view-header, .content{
+    scroll-margin-top:145px;
+  }
+}
+@media (max-width:420px){
+  .mobile-bottom-nav{
+    top:70px!important;
+    left:8px!important;
+    right:8px!important;
+    border-radius:20px!important;
+  }
+}
