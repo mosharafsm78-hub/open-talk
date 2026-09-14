@@ -19,6 +19,7 @@ exports.handler=async(event)=>{
       headers,
       body:JSON.stringify({
         supabase_url:process.env.SUPABASE_URL,
+        supabase_key:process.env.SUPABASE_ANON_KEY,
         session:data.session,
         user:data.user
       })
