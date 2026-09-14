@@ -325,7 +325,14 @@ async function findPartner(){
         target_level:match.level,
         gender_preference:match.gender,
         priority:match.priority,
-        coin_cost:match.cost
+        coin_cost:match.cost,
+        profile:{
+          name:String(p.name||'').trim(),
+          age:Number(p.age||0),
+          country:String(p.country||'').trim(),
+          gender:String(p.gender||'').trim(),
+          english_level:String(p.english_level||s.stats.level||'A1').trim()
+        }
       });
       const data=await r.json();
       if(!r.ok)throw new Error(data.error||'Matching failed');
