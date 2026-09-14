@@ -40,6 +40,8 @@ function toast(message){
 
 function render(){
   const p=s.profile||{},t=s.today||{},a=s.stats||{};
+  a.coins=a.coins||0;
+  a.rewardedMilestones=a.rewardedMilestones||[];
   const todayKey=new Date().toISOString().slice(0,10);
   if(t.date!==todayKey){
     s.today={conversations:0,minutes:0,date:todayKey};
@@ -62,6 +64,7 @@ function render(){
   $('#statMinutes').textContent=a.minutes||0;
   $('#statStreak').textContent=a.streak||0;
   $('#statAch').textContent=(a.achievements||[]).length;
+  $('#coinBalance').textContent=a.coins||0;
 
   const goalDone=Math.min(s.today.conversations||0,4);
   $('#goalCount').textContent=`${goalDone}/4`;
@@ -427,6 +430,14 @@ async function finishConversation(){
           partner_id:currentPartner?.id||null,
           duration_seconds:seconds
         });
+        const rewardResult=await supabaseClient.rpc('award_eligible_milestones',{p_user_id:currentUser.id});
+        const reward=rewardResult.data?.[0];
+        if(!rewardResult.error && reward){
+          s.stats.coins=Number(reward.total_coins||s.stats.coins||0);
+          s.stats.rewardedMilestones=[...new Set([...(s.stats.rewardedMilestones||[]),...(reward.newly_awarded||[])])];
+          save();
+          if(Number(reward.coins_earned||0)>0) toast('Milestone unlocked! +'+reward.coins_earned+' coins 🪙');
+        }
       }catch{}
     }
   }
@@ -457,13 +468,43 @@ async function teardownCall(){
 }
 
 function renderMilestones(){
-  const a=s.stats,m=[
-    ['🌱','First conversation','Complete your first real human conversation.',a.conversations>=1],
-    ['⚡','Conversation sprint','Complete 4 conversations.',a.conversations>=4],
-    ['⏱','30 minute club','Speak for 30 minutes.',a.minutes>=30],
-    ['🚀','10 conversations','Become a regular speaker.',a.conversations>=10]
+  const a=s.stats||{};
+  const coins=Number(a.coins||0);
+  const c=Number(a.conversations||0), mins=Number(a.minutes||0), streak=Number(a.streak||0);
+  const m=[
+    ['🌱','First Words','Complete your first real human conversation.',c>=1,25,'Start your journey'],
+    ['💬','Three Conversations','Finish 3 real conversations.',c>=3,40,'Build the habit'],
+    ['⚡','Five Alive','Finish 5 real conversations.',c>=5,60,'You are showing up'],
+    ['🚀','Ten Talks','Complete 10 real conversations.',c>=10,100,'Become a regular'],
+    ['🌟','Twenty Strong','Complete 20 real conversations.',c>=20,175,'Consistency compounds'],
+    ['🏆','Half Century','Complete 50 real conversations.',c>=50,400,'A serious speaker'],
+    ['💎','Century Speaker','Complete 100 real conversations.',c>=100,1000,'Legendary commitment'],
+    ['⏱️','Warm Up','Speak for 10 total minutes.',mins>=10,30,'Get your voice moving'],
+    ['🔥','30 Minute Club','Speak for 30 total minutes.',mins>=30,75,'Real practice adds up'],
+    ['🎧','One Hour In','Speak for 60 total minutes.',mins>=60,125,'Your fluency is growing'],
+    ['🗣️','Three Hour Speaker','Speak for 3 total hours.',mins>=180,300,'Keep the conversation going'],
+    ['🌙','Ten Hour Speaker','Speak for 10 total hours.',mins>=600,750,'You have momentum'],
+    ['🔥','Three-Day Streak','Practice on 3 consecutive days.',streak>=3,50,'Make showing up automatic'],
+    ['📅','Seven-Day Streak','Practice for 7 consecutive days.',streak>=7,125,'A week of courage'],
+    ['👑','Thirty-Day Streak','Practice for 30 consecutive days.',streak>=30,500,'This is your new habit']
   ];
-  $('#milestoneList').innerHTML=m.map(x=>`<div class="card"><b>${x[0]} ${x[1]} ${x[3]?'✓':''}</b><p>${x[2]}</p></div>`).join('');
+  const rewarded=new Set(a.rewardedMilestones||[]);
+  const unlocked=m.filter(x=>x[3]).length;
+  $('#coinBalance').textContent=coins;
+  $('#milestoneCoins').textContent=coins;
+  $('#milestoneUnlocked').textContent=unlocked;
+  $('#milestoneRemaining').textContent=m.length-unlocked;
+  $('#milestoneEarned').textContent=coins;
+  $('#milestoneList').innerHTML=m.map(x=>{
+    const unlocked=x[3], claimed=rewarded.has(x[1].toLowerCase().replace(/[^a-z0-9]+/g,''));
+    const pct=unlocked?100:Math.min(99,Math.round((x[1].includes('Minute')||x[1].includes('Hour')||x[1].includes('Speaker')?mins:x[1].includes('Streak')?streak:c)/(x[1].includes('Minute')?30:x[1].includes('Hour')?60:x[1].includes('Streak')?7:x[1].includes('Century')?100:x[1].includes('Half')?50:x[1].includes('Twenty')?20:x[1].includes('Ten')?10:x[1].includes('Five')?5:x[1].includes('Three')?3:1)*100));
+    return `<article class="milestone-card card ${unlocked?'is-unlocked':'is-locked'}">
+      <div class="milestone-icon">${x[0]}</div>
+      <div class="milestone-body"><div class="milestone-title"><h3>${x[1]}</h3><span class="reward-pill">🪙 +${x[4]}</span></div>
+      <p>${x[2]}</p><div class="milestone-bar"><span style="width:${pct}%"></span></div><small>${unlocked?'Milestone complete':'Locked · '+x[5]}</small></div>
+      <div class="milestone-state">${unlocked?'✓':'🔒'}</div>
+    </article>`;
+  }).join('');
 }
 
 function renderAchievements(){
