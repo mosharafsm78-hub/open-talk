@@ -942,6 +942,15 @@ function renderAchievements(){
 
 
 
+$('#logoutButton')?.addEventListener('click',async()=>{
+  try{
+    await supabaseClient?.auth.signOut();
+    authSession=null; currentUser=null; backendReady=false;
+    setAuthGate(true); setAuthMode('login');
+    toast('You have been signed out.');
+  }catch(err){toast('Could not sign out. Please try again.');}
+});
+
 $('#showLogin')?.addEventListener('click',()=>setAuthMode('login'));
 $('#showSignup')?.addEventListener('click',()=>setAuthMode('signup'));
 $('#authForm')?.addEventListener('submit',async e=>{
