@@ -298,13 +298,12 @@ async function findPartner(){
     updateMatchSelectionUI();
     return;
   }
-  await refreshMatchPasses();
   openConversationModal();
   stopMatchPolling();
   currentPartner=null;
   $('#partner').textContent='Looking for someone to talk to…';
   $('#partnerMeta').textContent=match.cost
-    ? 'Your premium preference is active for one successful human connection.'
+    ? (match.base?.hours===24?'Smart Match is ready for 24-hour access.':'Your preference is ready for 12-hour access.')+' No charge until a real person is found.'
     : 'Open Talk is finding another real person for you. No AI will replace your partner.';
   $('#listen').textContent='Searching the live waiting room…';
   $('#transcript').innerHTML='<div class="queue-status"><span class="queue-spinner"></span><b>Waiting for a real person</b><small>Keep this window open. Your coins are safe until a match is found.</small></div>';
