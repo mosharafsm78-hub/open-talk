@@ -377,6 +377,8 @@ function openConversationModal(){
   $('#timer').textContent='00:00';
   $('#finish').disabled=true;
   $('#mic').disabled=true;
+  $('#reportPartner').disabled=true;
+  $('#reportPanel')?.classList.add('hidden');
 }
 
 $('#talkNow')?.addEventListener('click',findPartner);
@@ -391,6 +393,7 @@ async function startHumanCall(sessionId,partner){
     toast('Live human matching is not initialized.');
     return;
   }
+  $('#reportPartner').disabled=false;
   $('#partner').textContent=`${partner.name||'Your speaking partner'} is ready`;
   $('#partnerMeta').textContent=`${partner.country||'A nearby speaker'} • ${partner.level||'level not assessed'} • Real person`;
   $('#listen').textContent='Connecting securely…';
@@ -819,6 +822,35 @@ function renderAchievements(){
 
 
 
+
+async function submitPartnerReport(){
+  if(!supabaseClient||!currentUser||!currentPartner?.id)return toast('No partner is available to report.');
+  const reason=$('#reportReason')?.value||'other';
+  const button=$('#submitReport');
+  if(button)button.disabled=true;
+  try{
+    const {error}=await supabaseClient.from('reports').insert({
+      reporter_id:currentUser.id,
+      reported_user_id:currentPartner.id,
+      reason
+    });
+    if(error)throw error;
+    $('#reportPanel')?.classList.add('hidden');
+    toast('Report submitted. Thank you for helping keep Open Talk safe.');
+  }catch(err){
+    console.error('Open Talk report:',err);
+    toast('We could not submit the report. Please try again.');
+  }finally{
+    if(button)button.disabled=false;
+  }
+}
+function openReportPanel(){
+  if(!currentPartner?.id)return toast('You can report a partner after a match.');
+  $('#reportPanel')?.classList.remove('hidden');
+}
+$('#reportPartner')?.addEventListener('click',openReportPanel);
+$('#submitReport')?.addEventListener('click',submitPartnerReport);
+$('#cancelReport')?.addEventListener('click',()=>$('#reportPanel')?.classList.add('hidden'));
 
 render();
 bootstrapBackend();
