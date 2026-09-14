@@ -496,6 +496,32 @@ function milestoneKey(title){return title.toLowerCase().replace(/[^a-z0-9]+/g,''
 function renderMilestones(){
   const a=s.stats||{},coins=Number(a.coins||0);
   const c=Number(a.conversations||0),mins=Number(a.minutes||0),streak=Number(a.streak||0);
+  const m=[
+    ['🌱','First Words','Complete your first real human conversation.',c>=1,1,'Take the first step','easy'],
+    ['💬','Two Talks','Complete 2 real conversations.',c>=2,1,'Keep going','easy'],
+    ['⏱️','Warm Up','Speak for 10 total minutes.',mins>=10,1,'Get your voice moving','easy'],
+    ['🌱','Two-Day Streak','Practice on 2 consecutive days.',streak>=2,1,'Come back tomorrow','easy'],
+    ['✨','Three Conversations','Complete 3 real conversations.',c>=3,1,'Build the habit','easy'],
+    ['⚡','Five Alive','Complete 5 real conversations.',c>=5,1,'You are showing up','easy'],
+    ['🔥','30 Minute Club','Speak for 30 total minutes.',mins>=30,1,'Real practice adds up','easy'],
+    ['🚀','Ten Talks','Complete 10 real conversations.',c>=10,2,'Become a regular','medium'],
+    ['🌟','Twenty Strong','Complete 20 real conversations.',c>=20,2,'Consistency compounds','medium'],
+    ['🎧','One Hour In','Speak for 60 total minutes.',mins>=60,2,'Your fluency is growing','medium'],
+    ['📅','Seven-Day Streak','Practice for 7 consecutive days.',streak>=7,2,'A week of courage','medium'],
+    ['🏅','Thirty Conversations','Complete 30 real conversations.',c>=30,2,'You are building fluency','medium'],
+    ['🗣️','Three Hour Speaker','Speak for 3 total hours.',mins>=180,2,'Keep the conversation going','medium'],
+    ['🌈','Fourteen-Day Streak','Practice for 14 consecutive days.',streak>=14,2,'Two weeks of momentum','medium'],
+    ['🎙️','Conversation Builder','Complete 15 real conversations.',c>=15,2,'Keep the flow going','medium'],
+    ['💫','Fluency Momentum','Complete 25 real conversations.',c>=25,2,'Confidence grows through repetition','medium'],
+    ['🏆','Half Century','Complete 50 real conversations.',c>=50,4,'A serious speaker','hard'],
+    ['💎','Century Speaker','Complete 100 real conversations.',c>=100,4,'Legendary commitment','hard'],
+    ['🌙','Five Hour Speaker','Speak for 5 total hours.',mins>=300,4,'Real staying power','hard'],
+    ['👑','Ten Hour Speaker','Speak for 10 total hours.',mins>=600,4,'Exceptional commitment','hard'],
+    ['🔥','Thirty-Day Streak','Practice for 30 consecutive days.',streak>=30,4,'This is a real habit','hard'],
+    ['🌍','World Speaker','Complete 75 real conversations.',c>=75,4,'Keep meeting the world','hard'],
+    ['🛡️','Two Hundred Conversations','Complete 200 real conversations.',c>=200,4,'You are part of the community','hard'],
+    ['🚀','Twenty Hour Speaker','Speak for 20 total hours.',mins>=1200,4,'Mastery takes time','hard']
+  ];
   const rewarded=new Set(a.rewardedMilestones||[]);
   const tiers=[
     {key:'easy',label:'Easy wins',sub:'Start small · 1 coin each',icon:'🌱'},
