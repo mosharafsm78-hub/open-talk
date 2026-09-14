@@ -102,6 +102,14 @@ async function bootstrapBackend(){
       .select('id,name,age,country,english_level,gender_preference')
       .eq('id',currentUser.id).maybeSingle();
     if(!pe&&p){s.profile={...s.profile,...p};save();}
+    try{
+      const rewards=await supabaseClient.from('user_milestone_rewards').select('milestone_key,coins').eq('user_id',currentUser.id);
+      if(!rewards.error){
+        s.stats.rewardedMilestones=(rewards.data||[]).map(x=>x.milestone_key);
+        s.stats.coins=(rewards.data||[]).reduce((sum,x)=>sum+Number(x.coins||0),0);
+        save();
+      }
+    }catch{}
     updateBackendStatus();
   }catch(e){
     backendReady=false;
