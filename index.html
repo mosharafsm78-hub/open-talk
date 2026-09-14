@@ -117,14 +117,13 @@
       <label>Gender<select id="gender" required><option value="">Choose</option><option>Male</option><option>Female</option><option>Other</option></select></label>
     </div><button id="saveProfile" class="primary" type="submit">Save profile <b>→</b></button><small id="profileLock"></small></form>
     <div id="profileSummary" class="card profile-summary hidden">
-      <span class="card-kicker">PROFILE COMPLETE</span>
-      <div class="profile-summary-grid">
-        <div><small>NAME</small><strong id="profileSummaryName">—</strong></div>
-        <div><small>AGE</small><strong id="profileSummaryAge">—</strong></div>
-        <div><small>COUNTRY</small><strong id="profileSummaryCountry">—</strong></div>
-        <div><small>GENDER</small><strong id="profileSummaryGender">—</strong></div>
+      <span class="card-kicker">PROFILE DETAILS</span>
+      <div class="profile-readonly-list">
+        <div class="profile-readonly-row"><span>Name</span><strong id="profileSummaryName">—</strong><button type="button" data-copy-profile="name" aria-label="Copy name">▣</button></div>
+        <div class="profile-readonly-row"><span>Age</span><strong id="profileSummaryAge">—</strong><button type="button" data-copy-profile="age" aria-label="Copy age">▣</button></div>
+        <div class="profile-readonly-row"><span>Country</span><strong id="profileSummaryCountry">—</strong><button type="button" data-copy-profile="country" aria-label="Copy country">▣</button></div>
+        <div class="profile-readonly-row"><span>Gender</span><strong id="profileSummaryGender">—</strong><button type="button" data-copy-profile="gender" aria-label="Copy gender">▣</button></div>
       </div>
-      <div class="profile-locked-note">✓ Your profile is saved and locked. These details are used for matching.</div>
     </div>
     <div class="card assessment"><span class="card-kicker">AI ASSESSMENT</span><div id="levelValue" class="level">Not assessed yet</div><p>Your level is determined automatically from your conversations.</p><div class="levelbar"><span id="levelBar"></span></div><div class="scale"><span>A1</span><span>A2</span><span>B1</span><span>B2</span><span>C1</span><span>C2</span></div><div class="assessment-tip">💡 Keep speaking — your level becomes clearer with more practice.</div></div>
   </div>
