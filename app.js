@@ -25,6 +25,8 @@ let remoteTrackReady=false;
 let audioPlaybackReady=false;
 let rtcConnected=false;
 let rtcOfferInFlight=false;
+let audioFlowReady=false;
+let audioFlowTimer=null;
 let activeMatchPasses=[];
 
 function save(){
@@ -442,6 +444,9 @@ function openConversationModal(){
   remoteTrackReady=false;
   audioPlaybackReady=false;
   rtcConnected=false;
+  audioFlowReady=false;
+  clearTimeout(audioFlowTimer);
+  audioFlowTimer=null;
   rtcOfferInFlight=false;
   stopMatchPolling();
   $('#modal').classList.remove('hidden');
@@ -630,16 +635,48 @@ async function enableRemoteAudio(){
     $('#mic').style.display='none';
     $('#mic').disabled=true;
     $('#mic').onclick=null;
-    maybeMarkRtcUsable();
+    verifyAudioFlow();
   }catch(err){
     audioPlaybackReady=false;
     $('#listen').textContent='Speaker access is still blocked. Tap again or check Safari audio permissions.';
   }
 }
 
+function verifyAudioFlow(){
+  if(audioFlowTimer || !pc || finishing)return;
+  const deadline=Date.now()+8000;
+  const check=async()=>{
+    audioFlowTimer=null;
+    if(!pc || finishing || pc.connectionState!=='connected')return;
+    try{
+      const report=await pc.getStats();
+      let inbound=false;
+      let outbound=false;
+      report.forEach(stat=>{
+        if(stat.kind!=='audio')return;
+        if(stat.type==='inbound-rtp' && ((stat.packetsReceived||0)>0 || (stat.bytesReceived||0)>0)) inbound=true;
+        if(stat.type==='outbound-rtp' && ((stat.packetsSent||0)>0 || (stat.bytesSent||0)>0)) outbound=true;
+      });
+      if(inbound && outbound){
+        audioFlowReady=true;
+        maybeMarkRtcUsable();
+        return;
+      }
+    }catch(err){
+      console.warn('Open Talk audio stats:',err);
+    }
+    if(Date.now()<deadline){
+      audioFlowTimer=setTimeout(check,500);
+    }else{
+      $('#listen').textContent='The private link is connected, but audio is not flowing yet. Retrying…';
+      if(!finishing && signalingSessionId)scheduleRtcRecovery();
+    }
+  };
+  check();
+}
 function maybeMarkRtcUsable(){
   if(finishing || !currentPartner || !pc)return;
-  if(pc.connectionState!=='connected' || !remoteTrackReady || !audioPlaybackReady)return;
+  if(pc.connectionState!=='connected' || !remoteTrackReady || !audioPlaybackReady || !audioFlowReady)return;
   clearTimeout(rtcConnectTimer);
   if(!callStartedAt) startCallClock();
   if(supabaseClient && currentPartner.call_id){
@@ -708,7 +745,7 @@ async function ensurePeer(){
     renderRemoteBadges();
     audio.play().then(()=>{
       audioPlaybackReady=true;
-      maybeMarkRtcUsable();
+      verifyAudioFlow();
     }).catch(err=>{
       audioPlaybackReady=false;
       console.warn('Open Talk remote audio autoplay:',err);
@@ -725,7 +762,7 @@ async function ensurePeer(){
     if(state==='connected'){
       clearTimeout(rtcConnectTimer);
       $('#finish').disabled=false;
-      maybeMarkRtcUsable();
+      verifyAudioFlow();
     }else if(state==='failed'){
       $('#listen').textContent='We couldn’t establish the voice connection. Retrying…';
       if(!finishing && signalingSessionId)scheduleRtcRecovery();
@@ -954,6 +991,9 @@ async function teardownCall(){
   audioPlaybackReady=false;
   rtcConnected=false;
   rtcOfferInFlight=false;
+  audioFlowReady=false;
+  clearTimeout(audioFlowTimer);
+  audioFlowTimer=null;
   try{
     if(navigator.audioSession) navigator.audioSession.type='auto';
   }catch{}
