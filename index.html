@@ -3,17 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#5b55e8">
-<meta name="description" content="Open Talk — practice speaking, connect with people, and improve with AI-powered coaching.">
-<title>Open Talk — Speak. Connect. Improve.</title>
+<meta name="theme-color" content="#6257f5">
+<meta name="description" content="Open Talk — real conversations, deliberate practice, visible progress.">
+<title>Open Talk — Speak with confidence.</title>
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+
 <header class="topbar">
   <div class="header-inner">
-    <button class="brand" data-view="home" aria-label="Open Talk home"><b>OT</b><span>Open Talk</span></button>
+    <button class="brand" data-view="home" aria-label="Open Talk home">
+      <span class="brand-mark"><span>OT</span></span><span class="brand-name">Open Talk</span>
+    </button>
     <nav aria-label="Main navigation">
       <button data-view="home" class="nav-active">Home</button>
       <button data-view="profile">Profile</button>
@@ -29,22 +32,24 @@
   <div class="hero">
     <div class="hero-copy">
       <div class="eyebrow"><span class="eyebrow-dot"></span> SPEAKING PRACTICE, REIMAGINED</div>
-      <h1>Speak with confidence.<br><span>One conversation at a time.</span></h1>
-      <p class="hero-lead">Talk with real people, build fluency naturally, and let AI turn every conversation into a personalized speaking journey.</p>
+      <h1>Speak with<br><span>confidence.</span></h1>
+      <p class="hero-lead">One conversation at a time. Talk with real people, build fluency naturally, and turn every conversation into measurable progress.</p>
       <div class="hero-actions">
         <button id="talkNow" class="primary big"><span>🎙</span> Start a conversation <b>→</b></button>
         <button class="text-button" data-view="profile">Complete your profile <span>↗</span></button>
       </div>
-      <div class="trust-row"><span>● No pressure</span><span>● Real conversations</span><span>● AI coaching</span></div>
+      <div class="trust-row"><span><i>✓</i> No pressure</span><span><i>✓</i> Real conversations</span><span><i>✓</i> AI coaching</span></div>
     </div>
+
     <div class="hero-visual">
       <div class="visual-card">
+        <div class="visual-glow"></div>
         <div class="visual-top"><span class="live-pill"><i></i> LIVE PRACTICE</span><span class="spark">✦</span></div>
-        <div class="orb-wrap"><div class="orb-ring"></div><div class="orb"></div><div class="orb-core">◉</div></div>
-        <div class="visual-caption"><strong>Your voice is your progress.</strong><span>Practice consistently. Improve visibly.</span></div>
+        <div class="orb-wrap"><div class="orb-ring ring-one"></div><div class="orb-ring ring-two"></div><div class="orb"></div><div class="orb-core">◉</div></div>
+        <div class="visual-caption"><span class="caption-kicker">YOUR VOICE IS YOUR PROGRESS</span><strong>Practice consistently.<br>Improve visibly.</strong></div>
         <div class="hero-stats">
-          <div><strong id="homeLevel">Not assessed</strong><span>Speaking level</span></div>
-          <div><strong id="homeMinutes">0</strong><span>Minutes practiced</span></div>
+          <div><span>LEVEL</span><strong id="homeLevel">Not assessed</strong></div>
+          <div><span>MINUTES</span><strong id="homeMinutes">0</strong></div>
         </div>
       </div>
     </div>
@@ -52,7 +57,7 @@
 
   <div class="section-heading">
     <div><span class="eyebrow">YOUR DAILY RHYTHM</span><h2>Small practice. Real progress.</h2></div>
-    <span class="mini-note">Keep the streak alive ✦</span>
+    <span class="mini-note">Keep the streak alive <b>✦</b></span>
   </div>
 
   <div class="goal-card card">
@@ -62,32 +67,73 @@
     <div class="progress wide"><span id="goalProgress"></span></div>
   </div>
 
-  <div class="match card">
-    <div class="match-icon">✦</div>
-    <div><span class="card-kicker">SMART MATCH</span><h2>Find your next conversation</h2><p>Choose a practice style and we'll help you find a useful speaking partner.</p></div>
-    <select id="matchPreference" aria-label="Conversation preference"><option>Anyone</option><option>Similar level</option><option>Challenge me</option><option>Practice weak areas</option></select>
-    <button id="findPartner" class="primary">Find partner <b>→</b></button>
+  <div class="dashboard-grid">
+    <div class="match card">
+      <div class="match-top">
+        <div class="match-icon">✦</div>
+        <div><span class="card-kicker">SMART MATCH</span><h2>Find your next conversation</h2><p>Tell us how you want to practice. We'll take it from there.</p></div>
+      </div>
+      <div class="match-controls">
+        <select id="matchPreference" aria-label="Conversation preference">
+          <option>Anyone</option><option>Similar level</option><option>Challenge me</option><option>Practice weak areas</option>
+        </select>
+        <button id="findPartner" class="primary">Find partner <b>→</b></button>
+      </div>
+      <div class="match-meta"><span><i></i> Best available match</span><span>Based on your profile & history</span></div>
+    </div>
+
+    <div class="streak-card card">
+      <div class="streak-top"><span class="card-kicker">CONSISTENCY</span><span class="streak-flame">🔥</span></div>
+      <div class="streak-number"><b id="statStreakHome">0</b><span>day streak</span></div>
+      <div class="week"><span class="done">M</span><span class="done">T</span><span class="done">W</span><span class="today">T</span><span>F</span><span>S</span><span>S</span></div>
+      <p>Show up today. Future you will thank you.</p>
+    </div>
   </div>
 
-  <div class="section-heading compact"><div><span class="eyebrow">WHY OPEN TALK</span><h2>Built around how people actually learn.</h2></div></div>
+  <div class="section-heading compact">
+    <div><span class="eyebrow">YOUR PROGRESS</span><h2>Everything in one place.</h2></div>
+    <button class="text-button" data-view="profile">View profile ↗</button>
+  </div>
+
+  <div class="metrics">
+    <article class="metric card"><span class="metric-icon">💬</span><span class="card-kicker">CONVERSATIONS</span><strong id="homeConvos">0</strong><small>completed</small></article>
+    <article class="metric card"><span class="metric-icon">⏱</span><span class="card-kicker">SPEAKING TIME</span><strong id="homeMinutes2">0</strong><small>minutes practiced</small></article>
+    <article class="metric card"><span class="metric-icon">🧠</span><span class="card-kicker">AI LEVEL</span><strong id="homeLevel2">—</strong><small>current estimate</small></article>
+    <article class="metric card"><span class="metric-icon">🏆</span><span class="card-kicker">ACHIEVEMENTS</span><strong id="homeAch">0</strong><small>unlocked</small></article>
+  </div>
+
+  <div class="section-heading compact">
+    <div><span class="eyebrow">WHY OPEN TALK</span><h2>Built around how people actually learn.</h2></div>
+  </div>
+
   <div class="features">
-    <article><div class="feature-icon">🧠</div><span class="feature-number">01</span><h3>AI level detection</h3><p>Your speaking level evolves from real conversations, not a one-time test.</p></article>
-    <article><div class="feature-icon">💬</div><span class="feature-number">02</span><h3>Practice that feels human</h3><p>Talk naturally, make mistakes, recover, and build the confidence to keep going.</p></article>
-    <article><div class="feature-icon">🏆</div><span class="feature-number">03</span><h3>Progress worth coming back to</h3><p>Milestones, achievements, streaks and feedback turn practice into momentum.</p></article>
+    <article><div class="feature-icon">🧠</div><span class="feature-number">01</span><h3>AI level detection</h3><p>Your speaking level evolves from real conversations, not a one-time test.</p><div class="feature-line"></div></article>
+    <article><div class="feature-icon">💬</div><span class="feature-number">02</span><h3>Practice that feels human</h3><p>Talk naturally, make mistakes, recover, and build the confidence to keep going.</p><div class="feature-line"></div></article>
+    <article><div class="feature-icon">🏆</div><span class="feature-number">03</span><h3>Progress worth returning to</h3><p>Milestones, achievements and streaks turn practice into momentum.</p><div class="feature-line"></div></article>
+  </div>
+
+  <div class="closing-card">
+    <div><span class="eyebrow">ONE MORE CONVERSATION</span><h2>Your next breakthrough might be five minutes away.</h2><p>Don't wait until you feel fluent. Practice is how you get there.</p></div>
+    <button id="talkNowBottom" class="primary">Start speaking <b>→</b></button>
   </div>
 </section>
 
 <section id="profile" class="view">
-  <div class="page-intro"><span class="eyebrow">YOUR IDENTITY</span><h1>Your profile</h1><p>Tell Open Talk a little about yourself so your practice can become more useful.</p></div>
+  <div class="page-intro"><span class="eyebrow">YOUR IDENTITY</span><h1>Your profile</h1><p>Tell Open Talk a little about yourself so every match and practice session can become more useful.</p></div>
   <div class="notice">🔒 <b>30-day profile protection</b><span>After saving, your profile cannot be edited for 30 days.</span></div>
   <div class="two">
-    <form id="profileForm" class="card"><span class="card-kicker">PROFILE DETAILS</span><label>Name<input id="name" required></label><label>Age<input id="age" type="number" min="13" max="100" required></label><label>Country<select id="country" required><option value="">Choose</option><option>Bangladesh</option><option>India</option><option>Malaysia</option><option>United Kingdom</option><option>United States</option><option>Other</option></select></label><label>Gender<select id="gender"><option>Prefer not to say</option><option>Male</option><option>Female</option><option>Other</option></select></label><button class="primary">Save profile <b>→</b></button><small id="profileLock"></small></form>
+    <form id="profileForm" class="card"><span class="card-kicker">PROFILE DETAILS</span><div class="form-grid">
+      <label>Name<input id="name" required placeholder="Your name"></label>
+      <label>Age<input id="age" type="number" min="13" max="100" required placeholder="Age"></label>
+      <label>Country<select id="country" required><option value="">Choose</option><option>Bangladesh</option><option>India</option><option>Malaysia</option><option>United Kingdom</option><option>United States</option><option>Other</option></select></label>
+      <label>Gender<select id="gender"><option>Prefer not to say</option><option>Male</option><option>Female</option><option>Other</option></select></label>
+    </div><button class="primary">Save profile <b>→</b></button><small id="profileLock"></small></form>
     <div class="card assessment"><span class="card-kicker">AI ASSESSMENT</span><div id="levelValue" class="level">Not assessed yet</div><p>Your level is determined automatically from your conversations.</p><div class="levelbar"><span id="levelBar"></span></div><div class="scale"><span>A1</span><span>A2</span><span>B1</span><span>B2</span><span>C1</span><span>C2</span></div><div class="assessment-tip">💡 Keep speaking — your level becomes clearer with more practice.</div></div>
   </div>
   <div class="features stats"><article><span>CONVERSATIONS</span><b id="statConvos">0</b><p>Total completed</p></article><article><span>MINUTES</span><b id="statMinutes">0</b><p>Time spent speaking</p></article><article><span>STREAK</span><b id="statStreak">0</b><p>Days in a row</p></article><article><span>ACHIEVEMENTS</span><b id="statAch">0</b><p>Unlocked</p></article></div>
 </section>
 
-<section id="milestones" class="view"><div class="page-intro"><span class="eyebrow">YOUR JOURNEY</span><h1>Milestones</h1><p>Every conversation is another step toward confident speaking.</p></div><div id="milestoneList" class="milestone-list"></div></section>
+<section id="milestones" class="view"><div class="page-intro"><span class="eyebrow">YOUR JOURNEY</span><h1>Milestones</h1><p>Every conversation is another step toward confident speaking.</p></div><div class="journey-banner card"><span>✦</span><div><b>Progress is built in small moments.</b><p>Complete conversations, build time, and unlock the next chapter.</p></div></div><div id="milestoneList" class="milestone-list"></div></section>
 
 <section id="achievements" class="view"><div class="page-intro"><span class="eyebrow">RECOGNITION</span><h1>Achievements</h1><p>Collect proof that you're showing up and getting better.</p></div><div id="achievementGrid" class="features achievement-grid"></div></section>
 </main>
@@ -95,8 +141,9 @@
 <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="partner">
   <div class="modalCard">
     <button id="close" class="modal-close" aria-label="Close">×</button>
-    <span class="eyebrow">LIVE CONVERSATION</span>
+    <span class="eyebrow centered">LIVE CONVERSATION</span>
     <h2 id="partner">Your speaking partner is ready</h2>
+    <p class="modal-subtitle">Take a breath. There is no perfect answer.</p>
     <div class="conversationOrb"><div class="pulse"></div><span>🎙</span></div>
     <div class="timer" id="timer">00:00</div><div id="listen">Ready</div>
     <div id="transcript" class="transcript">Press Start speaking and allow microphone access.</div>
@@ -105,5 +152,8 @@
   </div>
 </div>
 <script src="app.js"></script>
+<script>
+document.getElementById('talkNowBottom')?.addEventListener('click',()=>document.getElementById('talkNow')?.click());
+</script>
 </body>
 </html>
