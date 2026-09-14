@@ -7,7 +7,7 @@
 <meta name="description" content="Open Talk — real conversations, deliberate practice, visible progress.">
 <title>Open Talk — Speak with confidence.</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=20260914-10">
+<link rel="stylesheet" href="styles.css?v=20260915-11">
 </head>
 <body>
 <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
@@ -115,7 +115,17 @@
       <label>Age<input id="age" type="number" min="13" max="100" required placeholder="Age"></label>
       <label>Country<select id="country" required><option value="">Choose</option><option>Bangladesh</option><option>India</option><option>Malaysia</option><option>United Kingdom</option><option>United States</option><option>Other</option></select></label>
       <label>Gender<select id="gender" required><option value="">Choose</option><option>Male</option><option>Female</option><option>Other</option></select></label>
-    </div><button class="primary">Save profile <b>→</b></button><small id="profileLock"></small></form>
+    </div><button id="saveProfile" class="primary" type="submit">Save profile <b>→</b></button><small id="profileLock"></small></form>
+    <div id="profileSummary" class="card profile-summary hidden">
+      <span class="card-kicker">PROFILE COMPLETE</span>
+      <div class="profile-summary-grid">
+        <div><small>NAME</small><strong id="profileSummaryName">—</strong></div>
+        <div><small>AGE</small><strong id="profileSummaryAge">—</strong></div>
+        <div><small>COUNTRY</small><strong id="profileSummaryCountry">—</strong></div>
+        <div><small>GENDER</small><strong id="profileSummaryGender">—</strong></div>
+      </div>
+      <div class="profile-locked-note">✓ Your profile is saved and locked. These details are used for matching.</div>
+    </div>
     <div class="card assessment"><span class="card-kicker">AI ASSESSMENT</span><div id="levelValue" class="level">Not assessed yet</div><p>Your level is determined automatically from your conversations.</p><div class="levelbar"><span id="levelBar"></span></div><div class="scale"><span>A1</span><span>A2</span><span>B1</span><span>B2</span><span>C1</span><span>C2</span></div><div class="assessment-tip">💡 Keep speaking — your level becomes clearer with more practice.</div></div>
   </div>
   <div class="features stats"><article><span>CONVERSATIONS</span><b id="statConvos">0</b><p>Total completed</p></article><article><span>MINUTES</span><b id="statMinutes">0</b><p>Time spent speaking</p></article><article><span>STREAK</span><b id="statStreak">0</b><p>Days in a row</p></article><article><span>ACHIEVEMENTS</span><b id="statAch">0</b><p>Unlocked</p></article></div>
