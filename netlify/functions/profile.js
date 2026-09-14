@@ -21,6 +21,10 @@ exports.handler=async(event)=>{
 
     if(event.httpMethod==="GET"){
       const {data,error}=await sb.from("profiles").select("id,name,age,country,gender,level,locked_until,created_at,updated_at").eq("id",user.id).maybeSingle();
+      if(data && !data.locked_until && data.updated_at){
+        const inferred=new Date(new Date(data.updated_at).getTime()+30*24*60*60*1000);
+        data.locked_until=inferred.toISOString();
+      }
       return {statusCode:200,headers,body:JSON.stringify(data||{id:user.id})};
     }
 
@@ -36,13 +40,16 @@ exports.handler=async(event)=>{
       }
 
       const {data:existing,error:existingError}=await sb.from("profiles")
-        .select("id,locked_until")
+        .select("id,locked_until,updated_at")
         .eq("id",user.id).maybeSingle();
       if(existingError) throw existingError;
 
       const now=new Date();
-      if(existing?.locked_until && new Date(existing.locked_until)>now){
-        const unlockAt=new Date(existing.locked_until);
+      const effectiveLockedUntil=existing?.locked_until
+        ? new Date(existing.locked_until)
+        : (existing?.updated_at ? new Date(new Date(existing.updated_at).getTime()+30*24*60*60*1000) : null);
+      if(effectiveLockedUntil && effectiveLockedUntil>now){
+        const unlockAt=effectiveLockedUntil;
         return {
           statusCode:423,
           headers,
