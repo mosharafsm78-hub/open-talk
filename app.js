@@ -291,6 +291,29 @@ async function findPartner(){
     toast('Complete your profile first — it takes less than a minute.');
     return;
   }
+
+  // Ask for the microphone while we still have the user's click gesture.
+  // iOS Safari can reject getUserMedia when it is first requested later from
+  // an asynchronous matchmaking callback. Keeping the stream alive also
+  // prevents the post-match screen from repeatedly asking for permission.
+  if(!localStream || !localStream.getAudioTracks().some(t=>t.readyState==='live')){
+    try{
+      localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+      $('#listen').textContent='Microphone ready. Finding your person…';
+    }catch(err){
+      const denied=err?.name==='NotAllowedError'||err?.name==='PermissionDeniedError';
+      $('#listen').textContent=denied
+        ? 'Microphone access is blocked for this site.'
+        : 'We could not start your microphone.';
+      $('#transcript').innerHTML=denied
+        ? '<div class="queue-status"><b>Allow microphone access to continue</b><small>In Safari, open this site’s website settings and set Microphone to Allow, then return and tap Find a real person again.</small></div>'
+        : '<div class="queue-status"><b>Microphone could not start</b><small>Please check your microphone and browser permissions, then try again.</small></div>';
+      $('#mic').disabled=false;
+      $('#mic').textContent='🎙 Allow microphone';
+      return;
+    }
+  }
+
   await refreshMatchPasses();
   const match=matchSelection();
   if(match.cost>Number(s.stats?.coins||0)){
@@ -451,14 +474,11 @@ async function startHumanCall(sessionId,partner){
   $('#listen').textContent='Connecting securely…';
   $('#transcript').textContent='Your voice will be sent directly to your matched partner. No AI is speaking here.';
 
-  try{
-    localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-  }catch(err){
-    $('#listen').textContent='Microphone permission is required to speak with your partner.';
-    $('#transcript').textContent='Allow microphone access in your browser, then press Start speaking.';
-    $('#mic').disabled=false;
-    $('#mic').textContent='🎙 Allow microphone';
-    $('#mic').onclick=async()=>startHumanCall(sessionId,partner);
+  // Microphone permission is requested from the original Find button.
+  // Reuse that live stream here instead of asking again after the match.
+  if(!localStream || !localStream.getAudioTracks().some(t=>t.readyState==='live')){
+    $('#listen').textContent='Microphone access is needed before connecting.';
+    $('#transcript').textContent='Return to the matching screen and tap Find a real person to enable your microphone.';
     return;
   }
 
