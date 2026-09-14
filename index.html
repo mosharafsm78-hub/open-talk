@@ -274,17 +274,26 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=20260914-9"></script>
 <script>
+/* Navigation must be available before app.js loads. The UI must remain usable
+   even if a non-navigation feature throws during startup. */
 window.openTalkNavigate=function(target){
   var view=document.getElementById(target);
   if(!view)return false;
-  document.querySelectorAll('.view').forEach(function(v){v.classList.toggle('active',v.id===target);});
-  document.querySelectorAll('[data-view]').forEach(function(b){b.classList.toggle('nav-active',b.getAttribute('data-view')===target);});
-  window.scrollTo(0,0);
+  document.querySelectorAll('.view').forEach(function(v){
+    v.classList.toggle('active',v.id===target);
+  });
+  document.querySelectorAll('[data-view]').forEach(function(b){
+    b.classList.toggle('nav-active',b.getAttribute('data-view')===target);
+  });
+  window.scrollTo({top:0,left:0,behavior:'auto'});
   return false;
 };
-document.getElementById('talkNowBottom')?.addEventListener('click',()=>document.getElementById('talkNow')?.click());
+window.addEventListener('error',function(e){
+  console.error('Open Talk startup error:',e.error||e.message);
+});
 </script>
+<script src="app.js?v=20260914-9"></script>
+
 </body>
 </html>
