@@ -120,8 +120,17 @@ function openAuthModal(mode='signin'){
   if(!modal)return;
   modal.classList.remove('hidden');
   document.body.classList.add('modal-open');
-  setAuthMode(mode);
-  setTimeout(()=>$(mode==='signup'?'#authName':'#authEmail')?.focus(),50);
+  const signedIn=!!currentUser;
+  $('#authUserPanel')?.classList.toggle('hidden',!signedIn);
+  $('#authForm')?.classList.toggle('hidden',signedIn);
+  $('#authTitle').textContent=signedIn?'Your Open Talk account':'';
+  $('#authSubtitle').textContent=signedIn?'You are signed in. Your profile, progress and conversations are linked to this account.':'';
+  $('#authUserEmail').textContent=currentUser?.email||'Authenticated account';
+  if(!signedIn){
+    $('#authForm')?.classList.remove('hidden');
+    setAuthMode(mode);
+    setTimeout(()=>$(mode==='signup'?'#authName':'#authEmail')?.focus(),50);
+  }
 }
 function closeAuthModal(){
   $('#authModal')?.classList.add('hidden');
@@ -236,7 +245,7 @@ async function handleSignOut(){
   toast('Signed out.');
 }
 function bindAuthUI(){
-  $('#authButton')?.addEventListener('click',()=>currentUser?openAuthModal('signin'):openAuthModal('signin'));
+  $('#authButton')?.addEventListener('click',()=>openAuthModal('signin'));
   $('#authClose')?.addEventListener('click',closeAuthModal);
   $('#signInTab')?.addEventListener('click',()=>setAuthMode('signin'));
   $('#signUpTab')?.addEventListener('click',()=>setAuthMode('signup'));
