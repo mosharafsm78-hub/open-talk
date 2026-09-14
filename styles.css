@@ -1568,3 +1568,11 @@ nav button{
 @media(max-width:430px){
   main{padding-top:74px}
 }
+
+
+.site-footer{border-top:1px solid var(--line);background:#fff}
+.footer-inner{max-width:1240px;margin:auto;padding:24px 28px 100px;display:flex;justify-content:space-between;gap:18px;color:var(--muted2);font-size:12px}
+.footer-links{display:flex;gap:18px}
+.footer-links a{color:var(--muted);text-decoration:none;font-weight:700}
+.footer-links a:hover{color:var(--purple)}
+@media(max-width:700px){.footer-inner{padding:20px 20px 92px;flex-direction:column}.footer-links{gap:14px}}
