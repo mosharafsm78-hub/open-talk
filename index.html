@@ -141,16 +141,19 @@
 <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="partner">
   <div class="modalCard">
     <button id="close" class="modal-close" aria-label="Close">×</button>
-    <span class="eyebrow centered">LIVE CONVERSATION</span>
-    <h2 id="partner">Your speaking partner is ready</h2>
-    <p class="modal-subtitle">Take a breath. There is no perfect answer.</p>
-    <div class="conversationOrb"><div class="pulse"></div><span>🎙</span></div>
-    <div class="timer" id="timer">00:00</div><div id="listen">Ready</div>
-    <div id="transcript" class="transcript">Press Start speaking and allow microphone access.</div>
-    <div class="actions"><button id="mic" class="primary big">🎙 Start speaking</button><button id="finish" class="secondary">Finish</button></div>
+    <span class="eyebrow centered">REAL PEOPLE • LIVE CONVERSATION</span>
+    <h2 id="partner">Finding a real speaking partner…</h2>
+    <p class="modal-subtitle" id="partnerMeta">Open Talk never replaces your partner with an AI. We connect you to another person.</p>
+    <div class="conversationOrb"><div class="pulse"></div><span>👥</span></div>
+    <div class="timer" id="timer">00:00</div><div id="listen">Connecting you to a real person…</div>
+    <div id="transcript" class="transcript">Your microphone stays off until another person is matched. Once connected, you'll speak directly through WebRTC.</div>
+    <audio id="remoteAudio" autoplay playsinline></audio>
+    <div class="actions"><button id="mic" class="primary big" disabled>🎙 Waiting for partner</button><button id="finish" class="secondary" disabled>Leave conversation</button></div>
     <div id="feedback" class="feedback hidden"></div>
+    <div id="safety" class="safety-note">🔒 You can leave at any time. Audio is peer-to-peer and is not recorded by this frontend.</div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
 document.getElementById('talkNowBottom')?.addEventListener('click',()=>document.getElementById('talkNow')?.click());
