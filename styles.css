@@ -1243,3 +1243,143 @@ html{scroll-padding-top:72px}body{padding-bottom:calc(var(--mobile-nav-height) +
   }
   main{padding-top:72px!important}
 }
+
+
+/* APP-FIRST SYSTEM — shared desktop + mobile behavior
+   Treat the web build as the responsive shell for the future native apps. */
+:root{
+  --app-header:76px;
+  --app-dock:64px;
+}
+.topbar{
+  position:fixed!important;
+  inset:0 0 auto 0!important;
+  height:var(--app-header)!important;
+  z-index:10001!important;
+}
+main{
+  padding-top:var(--app-header)!important;
+}
+.header-inner{
+  max-width:1280px;
+  padding-left:24px;
+  padding-right:24px;
+}
+nav{
+  gap:3px;
+}
+nav button{
+  min-height:42px;
+}
+.coin-wallet{
+  order:3;
+  margin-left:8px;
+}
+.avatar{
+  order:4;
+}
+.view{
+  max-width:1280px;
+}
+
+/* One visual language for currency: a small premium gold bar, not an emoji coin. */
+.coin-icon{
+  width:42px!important;
+  height:28px!important;
+  min-width:42px!important;
+  flex:0 0 42px!important;
+  border-radius:7px!important;
+  position:relative!important;
+  display:grid!important;
+  place-items:center!important;
+  background:
+    linear-gradient(145deg,#fff1a9 0%,#efc65d 27%,#b97a20 55%,#f5d578 78%,#c5892c 100%)!important;
+  border:1px solid rgba(128,79,14,.42)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.85),
+    inset 0 -4px 7px rgba(91,52,7,.18),
+    0 6px 15px rgba(143,91,19,.16)!important;
+}
+.coin-icon:before{
+  content:"OT"!important;
+  width:auto!important;
+  height:auto!important;
+  border:0!important;
+  color:#70470f!important;
+  font:900 8px 'Plus Jakarta Sans',sans-serif!important;
+  letter-spacing:.5px!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.45);
+}
+.coin-icon:after{
+  content:""!important;
+  position:absolute!important;
+  left:5px!important;
+  right:5px!important;
+  top:5px!important;
+  height:1px!important;
+  border:0!important;
+  background:rgba(255,255,255,.62)!important;
+}
+
+/* Desktop is an app shell too: calm spacing, no oversized website-only gaps. */
+@media(min-width:761px){
+  .view{padding-top:54px}
+  #home .hero{padding-top:28px}
+  .mobile-bottom-nav{display:none!important}
+  .coin-wallet .coin-icon{width:38px!important;height:24px!important;min-width:38px!important;flex-basis:38px!important}
+  .coin-wallet .coin-icon:before{font-size:7px!important}
+}
+
+/* Phone = native-app mindset: fixed header + fixed top tab dock + safe content area. */
+@media(max-width:760px){
+  :root{--app-header:68px;--app-dock:64px}
+  .topbar{
+    height:var(--app-header)!important;
+    position:fixed!important;
+    top:0!important;
+  }
+  main{
+    padding-top:calc(var(--app-header) + var(--app-dock) + 14px)!important;
+  }
+  .view{
+    padding-top:26px!important;
+    padding-bottom:48px!important;
+  }
+  .mobile-bottom-nav{
+    top:calc(var(--app-header) + 6px + env(safe-area-inset-top))!important;
+    bottom:auto!important;
+    height:var(--app-dock)!important;
+    min-height:var(--app-dock)!important;
+    z-index:10000!important;
+  }
+  .mobile-bottom-nav .mobile-nav-item{
+    min-height:52px!important;
+  }
+  /* Keep the home screen action singular: one clear route into live human matching. */
+  #home .hero-actions .text-button{display:none!important}
+  #home .closing-card{display:none}
+  #home .hero{padding-top:8px!important}
+  .page-intro{margin-bottom:22px}
+  .milestone-intro{padding-top:0}
+  .coin-icon{
+    width:36px!important;height:24px!important;min-width:36px!important;flex-basis:36px!important;
+    border-radius:6px!important;
+  }
+  .mobile-bottom-nav .coin-icon{
+    width:28px!important;height:18px!important;min-width:28px!important;flex-basis:28px!important;
+    border-radius:4px!important;
+  }
+  .mobile-bottom-nav .coin-icon:before{font-size:5px!important}
+  .mobile-bottom-nav .coin-icon:after{left:4px!important;right:4px!important;top:3px!important}
+}
+
+/* Compact phones: never let the fixed dock collide with content. */
+@media(max-width:420px){
+  main{padding-top:calc(var(--app-header) + var(--app-dock) + 12px)!important}
+  .mobile-bottom-nav{left:9px!important;right:9px!important}
+}
+
+/* Make all major destination pages feel like screens in the same app. */
+#home,#profile,#milestones,#coins,#achievements{
+  min-height:calc(100dvh - var(--app-header));
+}
