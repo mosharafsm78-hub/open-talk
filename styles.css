@@ -1068,3 +1068,24 @@ html{scroll-padding-top:72px}body{padding-bottom:calc(var(--mobile-nav-height) +
     border-radius:20px!important;
   }
 }
+
+/* HARD OVERRIDE: mobile nav is a top navigation dock, never bottom */
+@media (max-width:760px){
+  body{padding-bottom:0!important}
+  .mobile-bottom-nav{
+    display:grid!important;
+    position:fixed!important;
+    top:76px!important;
+    bottom:unset!important;
+    left:12px!important;
+    right:12px!important;
+    width:auto!important;
+    height:64px!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    z-index:9999!important;
+    transform:none!important;
+  }
+}
+@media (max-width:420px){
+  .mobile-bottom-nav{top:72px!important;left:9px!important;right:9px!important}
+}
