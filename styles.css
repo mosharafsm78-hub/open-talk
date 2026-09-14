@@ -28,13 +28,15 @@ button:disabled{cursor:wait;opacity:.68}
 h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif}
 p{color:var(--muted);line-height:1.7;margin:0}
 .topbar{
-  height:78px;position:sticky;top:0;z-index:30;
-  background:rgba(255,255,255,.84);backdrop-filter:blur(22px);
-  border-bottom:1px solid rgba(226,229,238,.9)
+  height:78px;position:sticky;top:0;z-index:100;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(22px);
+  border-bottom:1px solid rgba(226,229,238,.9);
+  pointer-events:auto
 }
 .header-inner{
   height:100%;max-width:1240px;margin:auto;padding:0 28px;
-  display:flex;align-items:center;gap:28px
+  display:flex;align-items:center;gap:28px;position:relative;z-index:101;
+  pointer-events:auto
 }
 .brand{
   border:0;background:transparent;padding:0;display:flex;align-items:center;gap:12px;
@@ -50,7 +52,7 @@ p{color:var(--muted);line-height:1.7;margin:0}
 nav{display:flex;align-items:center;gap:4px;margin-left:auto}
 nav button{
   border:0;background:transparent;color:#68748c;padding:10px 14px;border-radius:12px;
-  font-weight:800;transition:.2s
+  font-weight:800;transition:.2s;position:relative;z-index:102;pointer-events:auto
 }
 nav button:hover,nav button.nav-active{background:#efedff;color:var(--purple)}
 .avatar{
