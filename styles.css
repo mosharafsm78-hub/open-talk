@@ -2301,3 +2301,51 @@ body.modal-open{overflow:hidden!important;height:100%!important}
   .live-modal{padding-left:15px!important;padding-right:15px!important}
   .live-modal .match-controls{padding:14px!important}
 }
+
+
+/* Completed profile: show saved identity as read-only information. */
+.profile-summary{display:block}
+.profile-summary.hidden{display:none!important}
+#profileForm.hidden{display:none!important}
+.profile-summary-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:18px;
+}
+.profile-summary-grid>div{
+  padding:15px 16px;
+  border:1px solid #e8e9f0;
+  border-radius:15px;
+  background:#fbfbfd;
+}
+.profile-summary-grid small{
+  display:block;
+  margin-bottom:5px;
+  color:#8b93aa;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.09em;
+}
+.profile-summary-grid strong{
+  display:block;
+  color:#151b35;
+  font-size:16px;
+  line-height:1.2;
+}
+.profile-locked-note{
+  margin-top:14px;
+  padding:12px 14px;
+  border-radius:13px;
+  background:#effbf3;
+  color:#34734b;
+  font-size:11px;
+  font-weight:700;
+  line-height:1.4;
+}
+#saveProfile:disabled{opacity:.8;cursor:default}
+@media(max-width:600px){
+  .profile-summary-grid{grid-template-columns:1fr 1fr;gap:9px}
+  .profile-summary-grid>div{padding:13px}
+  .profile-summary-grid strong{font-size:14px}
+}
