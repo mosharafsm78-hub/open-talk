@@ -922,3 +922,84 @@ html{scroll-padding-top:72px}body{padding-bottom:calc(var(--mobile-nav-height) +
     right:8px;
   }
 }
+
+
+/* Coin economy hierarchy — earning is a first-class destination, spending stays secondary. */
+.single-dashboard{grid-template-columns:minmax(0,1fr);max-width:520px}
+.coin-earning{
+  margin-top:24px;
+  padding:22px;
+  border-radius:22px;
+}
+.coin-earning-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:22px;
+  margin-bottom:18px;
+}
+.coin-earning-head h2{margin:7px 0 7px}
+.coin-earning-head p{margin:0;max-width:680px}
+.coin-earning-tiers{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+.coin-tier{
+  border:1px solid rgba(110,98,245,.12);
+  background:rgba(248,248,255,.72);
+  border-radius:17px;
+  padding:15px;
+}
+.coin-tier-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding-bottom:11px;
+  margin-bottom:8px;
+  border-bottom:1px solid rgba(28,36,75,.07);
+}
+.coin-tier-top>div{display:flex;align-items:center;gap:9px}
+.coin-tier-top .tier-icon{font-size:20px}
+.coin-tier-top b{display:block;font-size:13px}
+.coin-tier-top small{display:block;color:#7b86a5;font-size:10px;margin-top:2px}
+.coin-tier-top em{
+  font-style:normal;
+  font-size:10px;
+  font-weight:800;
+  color:#6b5df4;
+  white-space:nowrap;
+}
+.coin-earning-item{
+  display:grid;
+  grid-template-columns:18px 1fr auto;
+  align-items:center;
+  gap:7px;
+  padding:8px 0;
+}
+.coin-earning-item+.coin-earning-item{border-top:1px solid rgba(28,36,75,.05)}
+.coin-earning-check{
+  font-size:12px;
+  color:#7b86a5;
+}
+.coin-earning-item:first-of-type .coin-earning-check{color:#6b5df4}
+.coin-earning-item b{display:block;font-size:11px}
+.coin-earning-item small{display:block;color:#8992ad;font-size:9px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.coin-earning-item strong{
+  font-size:10px;
+  color:#91651e;
+  background:#fff8e6;
+  border:1px solid #f0d38a;
+  border-radius:999px;
+  padding:4px 6px;
+}
+@media(max-width:760px){
+  .single-dashboard{max-width:none}
+  .coin-earning{margin-top:18px;padding:17px;border-radius:19px}
+  .coin-earning-head{display:block;margin-bottom:13px}
+  .coin-earning-head .text-button{margin-top:11px}
+  .coin-earning-tiers{grid-template-columns:1fr;gap:8px}
+  .coin-tier{padding:13px}
+  .coin-tier:nth-child(n+3){display:none}
+}
