@@ -161,8 +161,13 @@ async function api(path,method='GET',body=null){
 
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
   const target=b.dataset.view;
+  if(b.dataset.action==='talk'){
+    findPartner();
+    return;
+  }
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===target));
   document.querySelectorAll('nav button[data-view]').forEach(v=>v.classList.toggle('nav-active',v.dataset.view===target));
+  document.querySelectorAll('.mobile-nav-item[data-view]').forEach(v=>v.classList.toggle('nav-active',v.dataset.view===target && !v.dataset.action));
   scrollTo({top:0,behavior:'smooth'});
 });
 
