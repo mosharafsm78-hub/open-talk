@@ -484,3 +484,66 @@ nav button.nav-active{background:#efedff;color:var(--purple);font-weight:800}
 .coin-packs{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}.coin-packs div{min-width:92px;text-align:center;padding:12px 10px;border:1px solid #e4e2f7;background:#fff;border-radius:15px}.coin-packs b{display:block;font:800 23px 'Plus Jakarta Sans'}.coin-packs span{display:block;font-size:10px;color:#655bc9}.coin-packs small{font-size:8px;color:#939bad}
 @media(max-width:760px){.coin-use-grid{grid-template-columns:1fr}.coin-balance-card,.coin-business{align-items:flex-start;flex-direction:column}.coin-balance-note{margin-left:0}.coin-packs{justify-content:flex-start}}
 @media(max-width:480px){.coin-use{grid-template-columns:42px minmax(0,1fr);padding:16px}.coin-use>span{width:42px;height:42px}.coin-use>b{grid-column:2;justify-self:start}}
+
+
+/* ACHIEVEMENT SHOWCASE — premium, social, intentionally limited */
+.badge-showcase-card{
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  padding:24px 26px;margin:22px 0 12px;
+  background:linear-gradient(135deg,#fff,#f7f5ff);
+  border-color:#dedbff;
+}
+.badge-showcase-card h2{font-size:22px;margin:6px 0}
+.badge-showcase-card p{font-size:12px;max-width:700px;margin:0}
+.badge-showcase-card>strong{
+  flex:none;display:grid;place-items:center;width:62px;height:62px;border-radius:20px;
+  background:#efedff;color:#564bd0;font:800 18px 'Plus Jakarta Sans';
+}
+.badge-showcase{
+  min-height:86px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:12px 0 20px;
+}
+.showcase-badge,.remote-badge{
+  display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:999px;
+  background:#fff;border:1px solid #e3e1f5;box-shadow:0 7px 20px rgba(30,35,75,.06);
+  color:#28304a;font-size:11px;font-weight:800;
+}
+.showcase-badge b,.remote-badge b{font-size:16px}
+.showcase-empty,.remote-empty{font-size:11px;color:#8b94a8}
+.achievement-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;
+}
+.achievement-card{
+  appearance:none;text-align:left;border:1px solid var(--line);border-radius:20px;
+  padding:16px;background:rgba(255,255,255,.88);color:var(--ink);
+  display:grid;grid-template-columns:48px minmax(0,1fr) 24px;gap:12px;align-items:center;
+  min-height:92px;cursor:pointer;transition:.2s;box-shadow:0 9px 28px rgba(30,35,75,.04);
+}
+.achievement-card:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 18px 40px rgba(30,35,75,.10)}
+.achievement-card.earned{border-color:#ded9ff}
+.achievement-card.selected{background:linear-gradient(135deg,#f8f7ff,#fff);border-color:#8177f7;box-shadow:0 10px 32px rgba(98,87,245,.13)}
+.achievement-card.locked{cursor:not-allowed;opacity:.48}
+.achievement-icon{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:#f0eeff;font-size:22px}
+.achievement-card.locked .achievement-icon{filter:grayscale(1)}
+.achievement-copy{min-width:0}
+.achievement-copy>b{display:block;font-size:13px;margin-bottom:3px}
+.achievement-copy small{display:block;color:#78849c;font-size:10px;line-height:1.45}
+.achievement-copy em{display:block;margin-top:6px;font-size:8px;font-style:normal;font-weight:900;text-transform:uppercase;letter-spacing:.7px;color:#6257f5}
+.achievement-card.locked .achievement-copy em{color:#9aa2b2}
+.achievement-check{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#f0f1f5;color:#9ba2b2;font-size:12px;font-weight:900}
+.achievement-card.selected .achievement-check{background:#6257f5;color:#fff}
+.remote-badges{
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  margin:10px 0 0;padding:10px 12px;border-radius:14px;
+  background:#f8f7ff;border:1px solid #e7e4ff;
+}
+.remote-label{font-size:8px;font-weight:900;letter-spacing:.9px;color:#7167d7;margin-right:3px}
+.remote-badge{padding:6px 9px;font-size:9px;background:#fff}
+.remote-badge b{font-size:13px}
+@media(max-width:900px){.achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){
+  .badge-showcase-card{align-items:flex-start;flex-direction:column}
+  .badge-showcase-card>strong{width:54px;height:54px}
+  .achievement-grid{grid-template-columns:1fr}
+  .achievement-card{min-height:84px}
+}
