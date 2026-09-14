@@ -290,6 +290,7 @@ async function findPartner(){
     toast('Complete your profile first — it takes less than a minute.');
     return;
   }
+  await refreshMatchPasses();
   const match=matchSelection();
   if(match.cost>Number(s.stats?.coins||0)){
     toast('Not enough coins. Choose Open Match or earn more coins from Milestones.');
