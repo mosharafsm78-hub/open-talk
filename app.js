@@ -662,10 +662,13 @@ async function enableRemoteAudio(){
     }
     const audio=$('#remoteAudio');
     if(audio){
-      audio.muted=true;
-      audio.volume=0;
+      // The initial gesture unlocks playback, but the remote call must NOT
+      // remain muted/at volume 0. The previous implementation did exactly
+      // that, which could leave both people talking while hearing silence.
+      audio.muted=false;
+      audio.volume=1;
       audio.srcObject=remoteStream||audio.srcObject;
-      await audio.play().catch(()=>{});
+      await audio.play();
     }
     audioPlaybackReady=true;
     $('#mic').style.display='none';
@@ -712,7 +715,7 @@ function verifyAudioFlow(){
 }
 function maybeMarkRtcUsable(){
   if(finishing || !currentPartner || !pc)return;
-  if(pc.connectionState!=='connected' || !remoteTrackReady || !audioPlaybackReady || !audioFlowReady)return;
+  if(pc.connectionState!=='connected' || !remoteTrackReady || !audioPlaybackReady)return;
   clearTimeout(rtcConnectTimer);
   if(!callStartedAt) startCallClock();
   if(supabaseClient && currentPartner.call_id){
@@ -801,8 +804,7 @@ async function ensurePeer(){
           remoteAudioGain.connect(remoteAudioContext.destination);
         }
       }
-      audioPlaybackReady=true;
-      verifyAudioFlow();
+      if(remoteTrackReady && audioPlaybackReady) verifyAudioFlow();
     }catch(err){
       audioPlaybackReady=false;
       console.warn('Open Talk remote audio setup:',err);
@@ -904,8 +906,14 @@ async function resumeLiveConversation(){
     try{ if(navigator.audioSession) navigator.audioSession.type='play-and-record'; }catch{}
     const audio=$('#remoteAudio');
     if(audio?.srcObject){
-      await audio.play().then(()=>{audioPlaybackReady=true;}).catch(()=>{});
-      maybeMarkRtcUsable();
+      audio.muted=false;
+      audio.volume=1;
+      await audio.play().then(()=>{
+        audioPlaybackReady=true;
+      }).catch(()=>{
+        audioPlaybackReady=false;
+      });
+      if(audioPlaybackReady) maybeMarkRtcUsable();
     }
 
     const micEnded=!localStream || localStream.getAudioTracks().some(t=>t.readyState==='ended');
