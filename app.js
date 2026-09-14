@@ -40,11 +40,13 @@ function toast(message){
 }
 
 function render(){
-  const p=s.profile||{},t=s.today||{},a=s.stats||{};
-  a.coins=a.coins||0;
+  const p=s.profile||{},t=s.today||{};
+  s.stats=s.stats||{conversations:0,minutes:0,level:null,achievements:[],selectedBadges:[],streak:0,lastPracticeDate:null,coins:0,rewardedMilestones:[],coinSpend:0};
+  const a=s.stats;
+  a.coins=Number(a.coins||0);
   a.rewardedMilestones=a.rewardedMilestones||[];
   a.selectedBadges=a.selectedBadges||[];
-  a.selectedBadges=a.selectedBadges.filter(k=>getAchievement(k)?.unlocked).slice(0,3);
+  a.selectedBadges=a.selectedBadges.filter(k=>{try{return !!getAchievement(k)?.unlocked}catch{return false}}).slice(0,3);
   const todayKey=new Date().toISOString().slice(0,10);
   if(t.date!==todayKey){
     s.today={conversations:0,minutes:0,date:todayKey};
@@ -584,7 +586,9 @@ function renderMilestones(){
     return [c,conversationTargets[title]||1];
   };
 
-  $('#milestoneList').innerHTML=tiers.map(tier=>{
+  const list=$('#milestoneList');
+  if(!list)return;
+  list.innerHTML=tiers.map(tier=>{
     const items=m.filter(x=>x[6]===tier.key);
     return '<section class="milestone-tier milestone-tier-'+tier.key+'">'+
       '<div class="tier-heading"><div class="tier-icon">'+tier.icon+'</div><div><span>'+tier.label+'</span><small>'+tier.sub+'</small></div><b>'+items.filter(x=>x[3]({conversations:c,minutes:mins,streak})).length+'/'+items.length+'</b></div>'+
