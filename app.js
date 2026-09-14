@@ -79,33 +79,31 @@ function render(){
 
 async function bootstrapBackend(){
   try{
-    const stored=JSON.parse(localStorage.getItem('openTalkSession')||'null');
-    let payload=stored;
-    if(!payload?.session?.access_token){
-      const res=await fetch('/api/session',{headers:{accept:'application/json'}});
-      if(!res.ok) throw new Error('backend unavailable');
-      payload=await res.json();
-      localStorage.setItem('openTalkSession',JSON.stringify(payload));
-    }
-    if(!payload.supabase_url||!payload.supabase_key||!payload.session?.access_token)throw new Error('incomplete backend session');
     if(!window.supabase?.createClient)throw new Error('Supabase client unavailable');
-
-    supabaseClient=window.supabase.createClient(payload.supabase_url,payload.supabase_key);
-    const {data,error}=await supabaseClient.auth.setSession(payload.session);
-    if(error)throw error;
-    authSession=data.session;
-    currentUser=data.user;
-    backendReady=true;
-
-    const profileRes=await api('/api/profile','GET');
-    if(profileRes.ok){
-      const p=await profileRes.json();
-      if(p?.id){s.profile={...s.profile,...p};save();}
+    supabaseClient=window.supabase.createClient(
+      'https://pmyfswozvkdpqgnsiibf.supabase.co',
+      'sb_publishable_RrciEiRwRPkbU6yO6wt8Zg_BI0tSYEW'
+    );
+    const existing=(await supabaseClient.auth.getSession()).data.session;
+    if(existing?.access_token){
+      authSession=existing;
+      currentUser=existing.user;
+    }else{
+      const {data,error}=await supabaseClient.auth.signInAnonymously();
+      if(error)throw error;
+      authSession=data.session;
+      currentUser=data.user;
     }
+    backendReady=!!currentUser;
+    const {data:p,error:pe}=await supabaseClient.from('profiles')
+      .select('id,name,age,country,english_level,gender_preference')
+      .eq('id',currentUser.id).maybeSingle();
+    if(!pe&&p){s.profile={...s.profile,...p};save();}
     updateBackendStatus();
   }catch(e){
     backendReady=false;
     updateBackendStatus();
+    console.error('Open Talk backend:',e);
   }
 }
 
@@ -121,11 +119,28 @@ function updateBackendStatus(){
 
 async function api(path,method='GET',body=null){
   if(!authSession?.access_token)throw new Error('No live session');
-  return fetch(path,{
-    method,
-    headers:{authorization:`Bearer ${authSession.access_token}`,'content-type':'application/json'},
-    body:body?JSON.stringify(body):undefined
-  });
+  const edgeBase='https://pmyfswozvkdpqgnsiibf.supabase.co/functions/v1';
+  if(path==='/api/match'){
+    return fetch(edgeBase+'/match',{
+      method,
+      headers:{authorization:'Bearer '+authSession.access_token,apikey:'sb_publishable_RrciEiRwRPkbU6yO6wt8Zg_BI0tSYEW','content-type':'application/json'},
+      body:body?JSON.stringify(body):undefined
+    });
+  }
+  if(path==='/api/profile'){
+    if(method==='GET'){
+      const r=await supabaseClient.from('profiles').select('id,name,age,country,english_level,gender_preference').eq('id',currentUser.id).maybeSingle();
+      return new Response(JSON.stringify(r.data||{id:currentUser.id}),{status:r.error?500:200,headers:{'content-type':'application/json'}});
+    }
+    const profile={...body,id:currentUser.id,updated_at:new Date().toISOString()};
+    const r=await supabaseClient.from('profiles').upsert(profile).select('id,name,age,country,english_level,gender_preference').single();
+    return new Response(JSON.stringify(r.data||{error:r.error?.message}),{status:r.error?500:200,headers:{'content-type':'application/json'}});
+  }
+  if(path==='/api/complete-conversation'){
+    const r=await supabaseClient.from('calls').update({status:'completed',ended_at:new Date().toISOString(),duration_seconds:body?.duration_seconds||0}).eq('id',body?.call_id||currentPartner?.call_id);
+    return new Response(JSON.stringify({ok:!r.error}),{status:r.error?500:200,headers:{'content-type':'application/json'}});
+  }
+  throw new Error('Unknown API route');
 }
 
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
@@ -139,13 +154,13 @@ $('#profileForm').onsubmit=async e=>{
   e.preventDefault();
   const profile={
     name:$('#name').value.trim(),
-    age:$('#age').value,
+    age:Number($('#age').value),
     country:$('#country').value,
+    gender_preference:$('#gender').value==='Female'?'female':$('#gender').value==='Male'?'male':'any',
     gender:$('#gender').value
   };
   s.profile={...s.profile,...profile,savedAt:Date.now()};
   save();
-
   if(backendReady){
     try{
       const r=await api('/api/profile','POST',profile);
@@ -154,31 +169,27 @@ $('#profileForm').onsubmit=async e=>{
       s.profile={...s.profile,...data};
       save();
       toast('Profile saved. You can edit it again anytime.');
-    }catch(err){
-      toast(err.message);
-    }
-  }else{
-    toast('Profile saved locally. Live matching will use it once the backend is connected.');
-  }
+    }catch(err){toast(err.message);}
+  }else toast('Please wait a moment for Open Talk to connect.');
 };
 
 async function findPartner(){
   if(finishing)return;
   if(!backendReady){
-    toast('This GitHub Pages preview has no live backend. I will not fake an AI partner — real human matching needs the live backend.');
+    toast('Connecting to Open Talk… please try again in a moment.');
     return;
   }
-
   openConversationModal();
   stopMatchPolling();
-
+  currentPartner=null;
   const preference=$('#matchPreference').value;
-  $('#partner').textContent='Finding a real speaking partner…';
-  $('#partnerMeta').textContent='We are searching for another person, not an AI. Your microphone stays off while we search.';
-  $('#listen').textContent='Looking for someone compatible…';
-  $('#transcript').textContent='Waiting for another real person to join. You can leave at any time.';
+  $('#partner').textContent='Looking for someone to talk to…';
+  $('#partnerMeta').textContent='Open Talk is finding another real person for you. No AI will replace your partner.';
+  $('#listen').textContent='Searching the live waiting room…';
+  $('#transcript').innerHTML='<div class="queue-status"><span class="queue-spinner"></span><b>Waiting for a real person</b><small>Keep this window open. We will connect you automatically.</small></div>';
   $('#mic').disabled=true;
   $('#mic').textContent='🎙 Waiting for partner';
+  $('#finish').disabled=false;
 
   const attempt=async()=>{
     try{
@@ -186,21 +197,20 @@ async function findPartner(){
       const data=await r.json();
       if(!r.ok)throw new Error(data.error||'Matching failed');
       if(data.candidate){
-        currentPartner=data.candidate;
+        currentPartner={...data.candidate,call_id:data.call_id||data.session_id};
         stopMatchPolling();
         await startHumanCall(data.session_id,data.candidate);
       }else{
-        $('#listen').textContent='No one is available yet — still looking…';
+        $('#partner').textContent='Waiting for a speaking partner…';
+        $('#partnerMeta').textContent='You are in the live matching queue.';
+        $('#listen').textContent='Still searching — we will connect you as soon as someone is available.';
       }
     }catch(err){
       $('#listen').textContent=err.message||'Unable to reach the matching service.';
     }
   };
-
   await attempt();
-  if(!currentPartner){
-    matchPoll=setInterval(attempt,4000);
-  }
+  if(!currentPartner)matchPoll=setInterval(attempt,3000);
 }
 
 function stopMatchPolling(){
