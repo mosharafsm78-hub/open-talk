@@ -25,7 +25,7 @@
       <button data-view="profile">Profile</button>
     </nav>
     <button class="coin-wallet" data-view="coins" title="Open Talk coins"><span class="coin-icon" aria-hidden="true"></span><b id="coinBalance">0</b></button>
-    <button class="avatar" data-view="profile" aria-label="Open profile">M</button>
+    <button class="avatar" data-view="profile" aria-label="Open profile"><img id="headerAvatar" alt="" hidden><span id="headerAvatarFallback">M</span></button>
   </div>
 </header>
 
@@ -110,7 +110,12 @@
   <div class="page-intro"><span class="eyebrow">YOUR IDENTITY</span><h1>Your profile</h1><p>Tell Open Talk a little about yourself so every match and practice session can become more useful.</p></div>
   <div class="notice">✨ <b>Make matching smarter</b><span>A complete profile helps Open Talk find better conversations for your level, goals, and interests.</span></div>
   <div class="two">
-    <form id="profileForm" class="card"><span class="card-kicker">PROFILE DETAILS</span><div class="form-grid">
+    <form id="profileForm" class="card"><span class="card-kicker">PROFILE DETAILS</span>
+    <div class="profile-photo-row">
+      <div class="profile-photo-wrap"><img id="profilePhotoPreview" alt="Profile photo" hidden><span id="profilePhotoFallback">M</span></div>
+      <div class="profile-photo-copy"><b>Add a profile photo</b><small>Optional, but recommended. Your photo is shown to the real people you match with.</small><label class="photo-button">Choose photo<input id="profilePhoto" type="file" accept="image/jpeg,image/png,image/webp"></label><span id="profilePhotoName"></span></div>
+    </div>
+    <div class="form-grid">
       <label>Name<input id="name" required placeholder="Your name"></label>
       <label>Age<input id="age" type="number" min="13" max="100" required placeholder="Age"></label>
       <label>Country<select id="country" required><option value="">Choose</option><option>Bangladesh</option><option>India</option><option>Malaysia</option><option>United Kingdom</option><option>United States</option><option>Other</option></select></label>
@@ -186,13 +191,30 @@
 </section>
 </main>
 
+<div id="authGate" class="auth-gate hidden" aria-modal="true" role="dialog">
+  <div class="auth-card">
+    <div class="auth-brand"><span class="brand-mark"><span>OT</span></span><b>Open Talk</b></div>
+    <span class="eyebrow">REAL PEOPLE • REAL PRACTICE</span>
+    <h2 id="authTitle">Welcome to Open Talk</h2>
+    <p id="authSubtitle">Create an account to meet real speakers and keep your progress with you.</p>
+    <div class="auth-tabs"><button id="showLogin" class="active" type="button">Log in</button><button id="showSignup" type="button">Sign up</button></div>
+    <form id="authForm">
+      <label>Email<input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+      <label>Password<input id="authPassword" type="password" autocomplete="current-password" minlength="6" required placeholder="At least 6 characters"></label>
+      <button id="authSubmit" class="primary big" type="submit">Log in <b>→</b></button>
+    </form>
+    <small id="authMessage" class="auth-message"></small>
+    <p class="auth-note">Your profile details and photo stay attached to your account. You can sign out anytime.</p>
+  </div>
+</div>
+
 <!-- Mobile navigation: every core destination stays one thumb-tap away. -->
 <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
   <button data-view="home" class="mobile-nav-item nav-active"><span>⌂</span><small>Home</small></button>
   <button data-view="coins" class="mobile-nav-item"><span class="coin-icon" aria-hidden="true"></span><small>Coins</small></button>
   <button data-view="milestones" class="mobile-nav-item"><span>✦</span><small>Journey</small></button>
   <button data-view="achievements" class="mobile-nav-item"><span>🏆</span><small>Badges</small></button>
-  <button data-view="profile" class="mobile-nav-item"><span>●</span><small>Profile</small></button>
+  <button data-view="profile" class="mobile-nav-item"><span id="mobileAvatarNav">●</span><small>Profile</small></button>
 </nav>
 
 <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="partner">
@@ -207,7 +229,7 @@
 
     <div class="match-visual">
       <div class="match-orbit orbit-a"></div><div class="match-orbit orbit-b"></div>
-      <div class="conversationOrb"><div class="pulse"></div><span>👥</span></div>
+      <div class="conversationOrb"><div class="pulse"></div><img id="partnerAvatar" alt="Speaking partner" hidden><span id="partnerAvatarFallback">👥</span></div>
     </div>
 
     <div id="matchControls" class="match-controls">
