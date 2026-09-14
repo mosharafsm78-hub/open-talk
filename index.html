@@ -163,7 +163,22 @@
   </div>
 </section>
 
-<section id="achievements" class="view"><div class="page-intro"><span class="eyebrow">RECOGNITION</span><h1>Achievements</h1><p>Collect proof that you're showing up and getting better.</p></div><div id="achievementGrid" class="features achievement-grid"></div></section>
+<section id="achievements" class="view">
+  <div class="page-intro">
+    <span class="eyebrow">RECOGNITION</span><h1>Achievements</h1>
+    <p>Earn badges by genuinely showing up. Choose the three that best represent you — they appear automatically when you connect with another speaker.</p>
+  </div>
+  <div class="badge-showcase-card card">
+    <div>
+      <span class="card-kicker">YOUR PUBLIC SHOWCASE</span>
+      <h2>Three badges. Your story.</h2>
+      <p>Pick up to 3 earned achievements. Your matched partner will see them when the conversation connects.</p>
+    </div>
+    <strong id="badgeCount">0/3</strong>
+  </div>
+  <div id="badgeShowcase" class="badge-showcase" aria-live="polite"></div>
+  <div id="achievementGrid" class="achievement-grid"></div>
+</section>
 </main>
 
 <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="partner">
@@ -193,6 +208,7 @@
       <div class="queue-step" id="queueStep3"><span>3</span><div><b>Connect privately</b><small>Peer-to-peer audio begins only after you accept</small></div></div>
     </div>
 
+    <div id="remoteBadges" class="remote-badges"><span class="remote-empty">Your partner's showcase badges will appear here after they connect.</span></div>
     <div id="transcript" class="transcript">
       <div class="queue-status"><span class="queue-spinner"></span><b>You're in the live waiting room</b><small>We're not going to switch you to an AI. We wait for a real human.</small></div>
     </div>
