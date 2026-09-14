@@ -1494,3 +1494,17 @@ nav button{
   .match-control-grid{grid-template-columns:1fr}
   .match-controls{margin-top:10px}
 }
+
+
+.coin-rules{margin-top:18px;padding:24px}
+.coin-rules-head h2{margin:5px 0 6px;font-size:24px;color:#141a39}
+.coin-rules-head p{margin:0;color:#7b86a2;font-size:13px;line-height:1.55}
+.coin-rule-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
+.coin-rule-grid>div{padding:15px;border:1px solid #e7e9f1;border-radius:15px;background:#fbfbfe}
+.coin-rule-grid span{display:block;font-size:10px;font-weight:900;color:#6257f5;letter-spacing:.08em;margin-bottom:9px}
+.coin-rule-grid b{display:block;font-size:13px;color:#202642;margin-bottom:5px}
+.coin-rule-grid small{display:block;color:#8590aa;font-size:10px;line-height:1.5}
+.coin-example{display:flex;align-items:flex-start;gap:9px;margin-top:13px;padding:12px 14px;border-radius:13px;background:linear-gradient(90deg,#fff9e7,#fbf9ff);color:#7c6b3c;font-size:11px;line-height:1.5}
+.coin-example span{font-size:15px}.coin-example b{color:#4c4634}
+@media(max-width:800px){.coin-rule-grid{grid-template-columns:1fr 1fr}.coin-rules{padding:18px}}
+@media(max-width:480px){.coin-rule-grid{grid-template-columns:1fr}.coin-rules-head h2{font-size:20px}}
