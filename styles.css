@@ -1616,3 +1616,163 @@ nav button{
 .auth-photo .photo-button{margin-top:3px;padding:6px 9px;font-size:10px}
 .logout-button{margin-top:10px;font-size:11px}
 @media(max-width:480px){.auth-field-row{grid-template-columns:1fr 90px}.auth-card{padding:22px}.auth-card h2{font-size:26px}}
+
+
+/* FINAL LIVE MATCHING UI — clean, focused, responsive */
+.queue-steps{display:none!important}
+
+/* Keep the live matching surface visually separate from the app navigation. */
+.modal{z-index:200}
+.modalCard.live-modal{
+  width:min(720px,calc(100vw - 32px));
+  max-height:min(90dvh,820px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:30px;
+}
+.live-modal::-webkit-scrollbar{width:7px}
+.live-modal::-webkit-scrollbar-thumb{background:#dfe2ef;border-radius:99px}
+
+/* A compact, premium preference panel instead of a heavy workflow. */
+.match-controls{
+  display:block;
+  margin-top:14px;
+  padding:17px;
+  border:1px solid #e5e7f1;
+  border-radius:20px;
+  background:linear-gradient(180deg,#fff,#fafaff);
+}
+.match-controls-head{margin-bottom:14px}
+.match-control-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+.match-control-grid label{min-width:0}
+.match-control-grid select{
+  min-height:44px;
+  font-size:12px;
+  border-radius:12px;
+}
+.priority-toggle{
+  min-height:44px;
+  justify-content:center;
+}
+.priority-toggle small{font-size:9px}
+.match-smart-note{
+  margin-top:12px;
+  padding:10px 12px;
+  border-radius:13px;
+  font-size:10px;
+}
+.queue-live{
+  margin-top:14px;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  gap:12px;
+  padding:14px 16px;
+  border-radius:16px;
+  background:#f8f9fd;
+}
+.queue-live strong{font-size:16px}
+.transcript{
+  min-height:0;
+  margin:12px 0 0;
+  padding:0;
+  background:transparent;
+  border:0;
+}
+.queue-status{
+  min-height:58px;
+  padding:12px 14px;
+  border-radius:14px;
+  background:#f8f9fc;
+}
+.actions{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-top:14px;
+}
+.live-modal .actions .primary.big,
+.live-modal .actions .secondary{
+  min-height:48px;
+  border-radius:14px;
+}
+.live-modal .actions .primary.big{flex:1}
+.live-modal .actions .secondary{min-width:130px}
+.safety-note{
+  margin-top:11px;
+  text-align:center;
+  color:#8993a8;
+}
+
+/* The mobile nav never sits on top of a conversation modal. */
+@media(max-width:680px){
+  .modal{
+    z-index:200;
+    align-items:center;
+    padding:12px;
+  }
+  .modalCard.live-modal{
+    width:100%;
+    max-height:calc(100dvh - 24px);
+    padding:22px 16px calc(18px + env(safe-area-inset-bottom));
+    border-radius:26px;
+  }
+  .live-modal-head{align-items:flex-start}
+  .secure-chip{font-size:8px;white-space:nowrap}
+  .modalCard h2{font-size:25px;margin-top:12px}
+  .modal-subtitle{font-size:11px}
+  .match-visual{
+    height:145px;
+    margin:4px auto 0;
+  }
+  .conversationOrb{width:108px;height:108px}
+  .match-controls{padding:14px;border-radius:18px}
+  .match-controls-head{align-items:flex-start}
+  .match-control-grid{grid-template-columns:1fr 1fr;gap:9px}
+  .match-control-grid select{min-height:46px}
+  .priority-toggle{min-height:46px}
+  .queue-live{
+    grid-template-columns:auto minmax(0,1fr);
+    padding:13px 14px;
+  }
+  .queue-live strong{
+    grid-column:1/-1;
+    font-size:24px;
+    margin-top:1px;
+  }
+  .actions{
+    position:static!important;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    background:none!important;
+    padding:0!important;
+    gap:9px;
+  }
+  .live-modal .actions .primary.big,
+  .live-modal .actions .secondary{
+    width:100%;
+    min-width:0;
+    min-height:50px;
+  }
+  .safety-note{font-size:9px}
+}
+@media(max-width:430px){
+  .modal{padding:8px}
+  .modalCard.live-modal{
+    max-height:calc(100dvh - 16px);
+    padding:19px 13px calc(16px + env(safe-area-inset-bottom));
+    border-radius:24px;
+  }
+  .live-modal-head .eyebrow{font-size:8px}
+  .secure-chip{padding:6px 8px}
+  .modalCard h2{font-size:23px}
+  .match-visual{height:128px}
+  .conversationOrb{width:94px;height:94px}
+  .match-control-grid{grid-template-columns:1fr}
+  .match-controls-head small{font-size:9px}
+  .match-cost{min-width:70px}
+  .queue-live strong{font-size:22px}
+  .actions{grid-template-columns:1fr}
+}
