@@ -516,7 +516,7 @@ const MILESTONES=[
     ['🌙','Five Hour Speaker','Speak for 5 total hours.',mins>=300,4,'Real staying power','hard'],
     ['👑','Ten Hour Speaker','Speak for 10 total hours.',mins>=600,4,'Exceptional commitment','hard'],
     ['🔥','Thirty-Day Streak','Practice for 30 consecutive days.',streak>=30,4,'This is a real habit','hard'],
-    ['🌍','World Speaker','Complete 75 real conversations.',c>=75,4,'Keep meeting the world','hard'],
+    ['◎','Global Speaker','Complete 75 real conversations.',c>=75,4,'Keep meeting the world','hard'],
     ['🛡️','Two Hundred Conversations','Complete 200 real conversations.',c>=200,4,'You are part of the community','hard'],
     ['🚀','Twenty Hour Speaker','Speak for 20 total hours.',mins>=1200,4,'Mastery takes time','hard']
   ];;
@@ -539,7 +539,7 @@ function renderCoinEarningPreview(){
       const targets={'Two-Day Streak':2,'Seven-Day Streak':7,'Fourteen-Day Streak':14,'Thirty-Day Streak':30};
       return [streak,targets[title]||1];
     }
-    const targets={'First Words':1,'Two Talks':2,'Three Conversations':3,'Five Alive':5,'Ten Talks':10,'Twenty Strong':20,'Thirty Conversations':30,'Half Century':50,'Century Speaker':100,'World Speaker':75,'Two Hundred Conversations':200,'Conversation Builder':15,'Fluency Momentum':25};
+    const targets={'First Words':1,'Two Talks':2,'Three Conversations':3,'Five Alive':5,'Ten Talks':10,'Twenty Strong':20,'Thirty Conversations':30,'Half Century':50,'Century Speaker':100,'Global Speaker':75,'Two Hundred Conversations':200,'Conversation Builder':15,'Fluency Momentum':25};
     return [c,targets[title]||1];
   };
   host.innerHTML=tiers.map(tier=>{
@@ -580,7 +580,7 @@ function renderMilestones(){
       const targets={'Two-Day Streak':2,'Seven-Day Streak':7,'Fourteen-Day Streak':14,'Thirty-Day Streak':30};
       return [streak,targets[title]||1];
     }
-    const targets={'First Words':1,'Two Talks':2,'Three Conversations':3,'Five Alive':5,'Ten Talks':10,'Twenty Strong':20,'Thirty Conversations':30,'Half Century':50,'Century Speaker':100,'World Speaker':75,'Two Hundred Conversations':200,'Conversation Builder':15,'Fluency Momentum':25};
+    const targets={'First Words':1,'Two Talks':2,'Three Conversations':3,'Five Alive':5,'Ten Talks':10,'Twenty Strong':20,'Thirty Conversations':30,'Half Century':50,'Century Speaker':100,'Global Speaker':75,'Two Hundred Conversations':200,'Conversation Builder':15,'Fluency Momentum':25};
     return [c,targets[title]||1];
   };
 
@@ -637,7 +637,7 @@ const ACHIEVEMENTS=[
   ['fivehours','🌙','Five Hour Speaker','Speak for 5 hours.',s=>s.minutes>=300,'hard'],
   ['tenhours','👑','Ten Hour Speaker','Speak for 10 hours.',s=>s.minutes>=600,'hard'],
   ['streak30','🔥','Thirty-Day Speaker','Practice 30 days in a row.',s=>s.streak>=30,'hard'],
-  ['world','🌍','World Speaker','Complete 75 conversations.',s=>s.conversations>=75,'hard'],
+  ['world','◎','Global Speaker','Complete 75 conversations.',s=>s.conversations>=75,'hard'],
   ['twohundred','🛡️','Two Hundred Conversations','Complete 200 conversations.',s=>s.conversations>=200,'hard'],
   ['twentyhours','🚀','Twenty Hour Speaker','Speak for 20 hours.',s=>s.minutes>=1200,'hard'],
   ['streak60','👑','Sixty-Day Speaker','Practice 60 days in a row.',s=>s.streak>=60,'hard'],
