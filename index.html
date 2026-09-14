@@ -204,7 +204,7 @@
 
 <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="partner">
   <div class="modalCard live-modal">
-    <button id="close" class="modal-close" aria-label="Close">×</button>
+    <button id="close" class="modal-close" type="button" aria-label="Close" onclick="window.__openTalkClose && window.__openTalkClose(event)">×</button>
     <div class="live-modal-head">
       <span class="eyebrow centered">REAL PEOPLE • LIVE CONVERSATION</span>
       <span class="secure-chip">● HUMAN ONLY</span>
@@ -278,6 +278,16 @@
       return false;
     }
   },true);
+  window.__openTalkClose=function(e){
+    if(e){e.preventDefault();e.stopPropagation();}
+    var m=document.getElementById('modal');
+    if(m){m.classList.add('hidden');m.style.display='none';}
+    document.body.classList.remove('modal-open');
+    // Do not wait for Supabase/WebRTC cleanup to make the close button responsive.
+    try{
+      if(window.__openTalkCleanup) window.__openTalkCleanup();
+    }catch(err){console.warn('close cleanup',err);}
+  };
   window.__openTalkFallback=function(){
     var m=document.getElementById('modal');
     if(m){m.classList.remove('hidden');m.style.display='grid';}
