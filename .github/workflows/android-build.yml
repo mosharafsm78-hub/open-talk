@@ -29,6 +29,10 @@ jobs:
         working-directory: mobile
         run: npx cap add android
 
+      - name: Prepare web assets
+        working-directory: mobile
+        run: npm run prepare-web
+
       - name: Sync web app into Android
         working-directory: mobile
         run: npx cap sync android
