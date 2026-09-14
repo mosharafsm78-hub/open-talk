@@ -505,17 +505,26 @@ async function setupSignaling(sessionId,partner){
     try{
       if(msg.type==='hello'){
         remoteSelectedBadges=Array.isArray(msg.selectedBadges)?msg.selectedBadges.slice(0,3):[];
-        // Deterministic initiator: the lexicographically smaller user creates
-        // the offer. Retry-safe so a late subscriber cannot leave both clients
-        // stuck on "Connecting…".
-        if(currentUser.id<partner.id && (!pc || !pc.localDescription)) await createOffer();
+
+        // Broadcast is ephemeral. A late subscriber can miss the first offer,
+        // so every hello is also a handshake retry.
+        if(currentUser.id<partner.id){
+          await ensurePeer();
+          if(pc.localDescription?.type==='offer'){
+            await sendSignal({type:'offer',sdp:pc.localDescription});
+          }else if(pc.signalingState==='stable'){
+            await createOffer();
+          }
+        }
       }else if(msg.type==='offer'){
         await ensurePeer();
+        if(pc.signalingState==='have-local-offer'){
+          try{await pc.setLocalDescription({type:'rollback'});}catch{}
+        }
         await pc.setRemoteDescription(msg.sdp);
-        for(const ice of pendingIce){try{await pc.addIceCandidate(ice)}catch{}}
-        pendingIce=[];
         const answer=await pc.createAnswer();
         await pc.setLocalDescription(answer);
+        await waitForIceGathering(pc);
         await sendSignal({type:'answer',sdp:pc.localDescription});
       }else if(msg.type==='answer'){
         if(!pc) return;
@@ -528,6 +537,7 @@ async function setupSignaling(sessionId,partner){
         else{try{await pc.addIceCandidate(ice)}catch{}}
       }
     }catch(err){
+      console.error('Open Talk signaling:',err);
       $('#listen').textContent='The voice connection needs another attempt. Please leave and find a new partner.';
     }
   });
@@ -549,7 +559,22 @@ async function setupSignaling(sessionId,partner){
 
 async function sendSignal(message){
   if(!channel)return;
-  await channel.send({type:'broadcast',event:'signal',payload:{...message,from:currentUser.id,selectedBadges:s.stats.selectedBadges||[]}});
+  const payload={...message,from:currentUser.id,selectedBadges:s.stats.selectedBadges||[]};
+  const result=await channel.send({type:'broadcast',event:'signal',payload});
+  if(result==='error')throw new Error('Realtime signaling send failed');
+}
+
+function waitForIceGathering(peer,timeout=6000){
+  if(peer.iceGatheringState==='complete')return Promise.resolve();
+  return new Promise(resolve=>{
+    const done=()=>{
+      clearTimeout(timer);
+      peer.removeEventListener('icegatheringstatechange',done);
+      resolve();
+    };
+    const timer=setTimeout(done,timeout);
+    peer.addEventListener('icegatheringstatechange',done);
+  });
 }
 
 async function ensurePeer(){
@@ -570,15 +595,23 @@ async function ensurePeer(){
     iceCandidatePoolSize:10
   });
 
+  // Offer/answer SDP now carries the gathered ICE candidates. This avoids
+  // losing early candidates when the Supabase broadcast subscriber joins late.
   pc.onicecandidate=e=>{
-    if(e.candidate)sendSignal({type:'ice',candidate:e.candidate.toJSON?.()||e.candidate});
+    if(e.candidate && pc.iceGatheringState==='complete'){
+      sendSignal({type:'ice',candidate:e.candidate.toJSON?.()||e.candidate}).catch(()=>{});
+    }
+  };
+  pc.onicecandidateerror=e=>{
+    console.warn('Open Talk ICE candidate error:',e.errorCode,e.url,e.errorText);
   };
   pc.ontrack=e=>{
     const audio=$('#remoteAudio');
     if(audio.srcObject!==e.streams[0])audio.srcObject=e.streams[0];
     audio.play().catch(()=>{});
-    $('#listen').textContent='You’re live — speaking with a real person.';
+    $('#listen').textContent='Successfully connected — you’re live with a real person.';
     $('#partnerMeta').textContent=`${currentPartner?.name||'Your partner'} • LIVE HUMAN CONVERSATION`;
+    $('#transcript').innerHTML='<div class="queue-status success"><span>✓</span><b>Successfully connected</b><small>Your private peer-to-peer audio connection is live.</small></div>';
     $('#mic').disabled=true;
     $('#mic').textContent='🎙 Live';
     $('#mic').classList.add('is-live');
@@ -596,8 +629,9 @@ async function ensurePeer(){
           .eq('id',currentPartner.call_id).then(()=>{}).catch(()=>{});
       }
       startCallClock();
-      $('#listen').textContent='You’re live — speaking with a real person.';
+      $('#listen').textContent='Successfully connected — you’re live with a real person.';
       $('#partnerMeta').textContent=(currentPartner?.name||'Your partner')+' • LIVE HUMAN CONVERSATION';
+      $('#transcript').innerHTML='<div class="queue-status success"><span>✓</span><b>Successfully connected</b><small>Your private peer-to-peer audio connection is live.</small></div>';
       $('#mic').style.display='none';
       $('#mic').disabled=true;
       $('#mic').onclick=null;
@@ -607,9 +641,14 @@ async function ensurePeer(){
       if(!finishing && signalingSessionId)scheduleRtcRecovery();
     }else if(state==='disconnected'){
       $('#listen').textContent='Voice connection interrupted. Reconnecting…';
+      if(!finishing && signalingSessionId)scheduleRtcRecovery();
     }else if(state==='closed' && !finishing){
       $('#listen').textContent='Voice connection closed. Please find another person.';
     }
+  };
+  pc.oniceconnectionstatechange=()=>{
+    const ice=pc?.iceConnectionState;
+    if(ice==='failed' && !finishing && signalingSessionId)scheduleRtcRecovery();
   };
 
   if(localStream){
@@ -620,9 +659,13 @@ async function ensurePeer(){
 
 async function createOffer(){
   await ensurePeer();
-  if(pc.localDescription) return;
+  if(pc.localDescription?.type==='offer'){
+    await sendSignal({type:'offer',sdp:pc.localDescription});
+    return;
+  }
   const offer=await pc.createOffer({offerToReceiveAudio:true});
   await pc.setLocalDescription(offer);
+  await waitForIceGathering(pc);
   await sendSignal({type:'offer',sdp:pc.localDescription});
 }
 
