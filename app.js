@@ -184,6 +184,8 @@ $('#profileForm').onsubmit=async e=>{
     age:Number($('#age').value),
     country:$('#country').value,
     gender:$('#gender').value==='Female'?'female':$('#gender').value==='Male'?'male':$('#gender').value==='Other'?'other':'',
+    // profiles.english_level is required in Supabase; use the latest AI level or a safe initial level.
+    english_level:s.stats.level||s.profile.english_level||'A1',
     gender_preference:s.profile.gender_preference||'any'
   };
   s.profile={...s.profile,...profile,savedAt:Date.now()};
