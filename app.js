@@ -380,6 +380,11 @@ function stopCallClock(){
 
 async function finishConversation(){
   if(finishing)return;
+  if(!currentPartner && !callStartedAt){
+    await leaveConversation();
+    toast('You left the waiting room.');
+    return;
+  }
   finishing=true;
   stopMatchPolling();
   const seconds=callStartedAt?Math.max(1,Math.floor((Date.now()-callStartedAt)/1000)):0;
