@@ -293,20 +293,25 @@ async function findPartner(){
   await refreshMatchPasses();
   const match=matchSelection();
   if(match.cost>Number(s.stats?.coins||0)){
-    toast('Not enough coins. Choose Open Match or earn more coins from Milestones.');
-    openConversationModal();
-    updateMatchSelectionUI();
+    $('#modal')?.classList.add('hidden');
+    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='coins'));
+    document.querySelectorAll('nav button[data-view], .mobile-nav-item').forEach(v=>v.classList.toggle('nav-active',v.dataset.view==='coins'));
+    renderCoinEarningPreview();
+    toast('You need '+(match.cost-Number(s.stats?.coins||0))+' more coins to use that match.');
     return;
   }
-  openConversationModal();
+  setMatchPhase('searching');
   stopMatchPolling();
   currentPartner=null;
-  $('#partner').textContent='Looking for someone to talk to…';
+  $('#partner').textContent='Finding your person';
+  $('#partnerMeta').textContent=match.cost
+    ? 'Searching with your selected preference. Your coins are safe until a real person is found.'
+    : 'Looking across the live community for a real person.';
   $('#partnerMeta').textContent=match.cost
     ? (match.base?.hours===24?'Smart Match is ready for 24-hour access.':'Your preference is ready for 12-hour access.')+' No charge until a real person is found.'
     : 'Open Talk is finding another real person for you. No AI will replace your partner.';
-  $('#listen').textContent='Searching the live waiting room…';
-  $('#transcript').innerHTML='<div class="queue-status"><span class="queue-spinner"></span><b>Waiting for a real person</b><small>Keep this window open. Your coins are safe until a match is found.</small></div>';
+  $('#listen').textContent='Scanning the live community…';
+  $('#transcript').innerHTML='<div class="queue-status"><span class="queue-spinner"></span><b>Hold on — we’re finding someone</b><small>Your match will appear here as soon as a real person is available.</small></div>';
   $('#mic').disabled=true;
   $('#finish').disabled=false;
   updateMatchSelectionUI();
@@ -337,7 +342,8 @@ async function findPartner(){
         setQueueStage(2);
         currentPartner={...data.candidate,call_id:data.call_id||data.session_id};
         stopMatchPolling();
-        $('#partner').textContent='Your speaking partner is ready';
+        setMatchPhase('connected');
+        $('#partner').textContent='Someone is ready ✨';
         await refreshMatchPasses();
         $('#partnerMeta').textContent=(data.candidate.name||'Your speaking partner')+' • '+(data.candidate.country||'Global')+' • '+(data.candidate.level||'level not assessed');
         remoteSelectedBadges=[];
@@ -368,21 +374,54 @@ function stopMatchPolling(){
   if(matchPoll){clearInterval(matchPoll);matchPoll=null;}
 }
 
+function setMatchPhase(phase){
+  const modal=$('#modal');
+  const controls=$('#matchControls');
+  const visual=$('.match-visual');
+  const queue=$('.queue-live');
+  const steps=$('.queue-steps');
+  const actions=$('.live-modal .actions');
+  modal?.classList.toggle('searching',phase==='searching');
+  controls?.classList.toggle('hidden',phase==='searching'||phase==='connected');
+  visual?.classList.toggle('hidden',phase!=='searching');
+  queue?.classList.toggle('hidden',phase!=='searching'&&phase!=='connected');
+  steps?.classList.toggle('hidden',phase!=='connected');
+  if(actions){
+    actions.classList.toggle('search-actions',phase==='searching');
+  }
+  if(phase==='searching'){
+    $('#mic').disabled=true;
+    $('#mic').textContent='Searching…';
+    $('#finish').disabled=false;
+  }
+}
 function openConversationModal(){
   finishing=false;
+  currentPartner=null;
+  stopMatchPolling();
   $('#modal').classList.remove('hidden');
-  refreshMatchPasses().finally(updateMatchSelectionUI);
+  setMatchPhase('choose');
+  $('#matchControls')?.classList.remove('hidden');
+  $('.match-visual')?.classList.add('hidden');
+  $('.queue-live')?.classList.add('hidden');
+  $('.queue-steps')?.classList.add('hidden');
   $('#feedback').classList.add('hidden');
   $('#feedback').innerHTML='';
   $('#timer').textContent='00:00';
   $('#finish').disabled=true;
-  $('#mic').disabled=true;
+  $('#mic').disabled=false;
+  $('#mic').textContent='🎙 Find a real person';
   $('#reportPartner').disabled=true;
   $('#reportPanel')?.classList.add('hidden');
+  $('#partner').textContent='Choose your match';
+  $('#partnerMeta').textContent='Talk to anyone for free, or add a preference.';
+  $('#listen').textContent='Ready when you are';
+  refreshMatchPasses().finally(updateMatchSelectionUI);
 }
 
-$('#talkNow')?.addEventListener('click',findPartner);
-$('#findPartner')?.addEventListener('click',findPartner);
+$('#talkNow')?.addEventListener('click',openConversationModal);
+$('#findPartner')?.addEventListener('click',openConversationModal);
+$('#mic')?.addEventListener('click',findPartner);
 ['matchGender','matchCountry','matchLevel','matchPriority'].forEach(id=>$('#'+id)?.addEventListener('change',updateMatchSelectionUI));
 
 $('#close').onclick=leaveConversation;
