@@ -179,7 +179,20 @@ async function bootstrapBackend(){
     const {data:p,error:pe}=await supabaseClient.from('profiles')
       .select('id,name,age,country,gender,english_level,gender_preference,locked_until,avatar_url')
       .eq('id',currentUser.id).maybeSingle();
-    if(!pe&&p){s.profile={...s.profile,...p};save();}
+    if(!pe&&p){
+      s.profile={...s.profile,...p};
+      save();
+    } else if(pe?.code==='PGRST116'||!p){
+      const meta=currentUser.user_metadata||{};
+      const name=String(meta.full_name||'').trim();
+      const age=Number(meta.age||0);
+      if(name&&age){
+        const seed={id:currentUser.id,name,age,country:'',gender:'',english_level:'A1',gender_preference:'any',avatar_url:''};
+        await supabaseClient.from('profiles').upsert(seed);
+        s.profile={...s.profile,...seed};
+        save();
+      }
+    }
     renderProfilePhoto(s.profile.avatar_url||'');
     try{
       const rewards=await supabaseClient.from('user_milestone_rewards').select('milestone_key,coins').eq('user_id',currentUser.id);
