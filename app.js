@@ -1366,6 +1366,19 @@ function openReportPanel(){
   $('#reportPanel')?.classList.remove('hidden');
 }
 $('#reportPartner')?.addEventListener('click',openReportPanel);
+document.querySelectorAll('[data-copy-profile]').forEach(btn=>{
+  btn.addEventListener('click',async()=>{
+    const key=btn.dataset.copyProfile;
+    const value=key==='name'?s.profile?.name:key==='age'?s.profile?.age:key==='country'?s.profile?.country:key==='gender'?s.profile?.gender:'';
+    if(!value)return;
+    try{
+      await navigator.clipboard.writeText(String(value));
+      toast('Copied.');
+    }catch{
+      toast('Could not copy.');
+    }
+  });
+});
 $('#submitReport')?.addEventListener('click',submitPartnerReport);
 $('#cancelReport')?.addEventListener('click',()=>$('#reportPanel')?.classList.add('hidden'));
 
