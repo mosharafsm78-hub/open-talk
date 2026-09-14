@@ -162,12 +162,14 @@ async function api(path,method='GET',body=null){
   }
   if(path==='/api/profile'){
     if(method==='GET'){
-      const r=await supabaseClient.from('profiles').select('id,name,age,country,gender,english_level,gender_preference').eq('id',currentUser.id).maybeSingle();
+      const r=await supabaseClient.from('profiles').select('id,name,age,country,gender,english_level,gender_preference,locked_until').eq('id',currentUser.id).maybeSingle();
       return new Response(JSON.stringify(r.data||{id:currentUser.id}),{status:r.error?500:200,headers:{'content-type':'application/json'}});
     }
-    const profile={...body,id:currentUser.id,updated_at:new Date().toISOString()};
-    const r=await supabaseClient.from('profiles').upsert(profile).select('id,name,age,country,gender,english_level,gender_preference').single();
-    return new Response(JSON.stringify(r.data||{error:r.error?.message}),{status:r.error?500:200,headers:{'content-type':'application/json'}});
+    return fetch(edgeBase+'/profile',{
+      method:'POST',
+      headers:{authorization:'Bearer '+authSession.access_token,apikey:'sb_publishable_RrciEiRwRPkbU6yO6wt8Zg_BI0tSYEW','content-type':'application/json'},
+      body:JSON.stringify(body||{})
+    });
   }
   if(path==='/api/complete-conversation'){
     const r=await supabaseClient.from('calls').update({status:'completed',ended_at:new Date().toISOString(),duration_seconds:body?.duration_seconds||0}).eq('id',body?.call_id||currentPartner?.call_id);
