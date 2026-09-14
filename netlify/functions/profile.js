@@ -1,2 +1,50 @@
 const {createClient}=require("@supabase/supabase-js");
-exports.handler=async(event)=>{if(event.httpMethod==="OPTIONS")return{statusCode:204,headers:{"access-control-allow-origin":"*","access-control-allow-headers":"authorization,content-type","access-control-allow-methods":"GET,POST,OPTIONS"}};try{const token=(event.headers.authorization||"").replace("Bearer ","");if(!token)return{statusCode:401,body:JSON.stringify({error:"Unauthorized"})};const sb=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{global:{headers:{Authorization:"Bearer "+token}}});const {data:{user},error:ue}=await sb.auth.getUser(token);if(ue||!user)return{statusCode:401,body:JSON.stringify({error:"Invalid session"})};if(event.httpMethod==="GET"){const {data,error}=await sb.from("profiles").select("*").eq("id",user.id).single();return{statusCode:error?404:200,headers:{"content-type":"application/json","access-control-allow-origin":"*"},body:JSON.stringify(data||{id:user.id})}}if(event.httpMethod==="POST"){const b=JSON.parse(event.body||"{}");const allowed={name:String(b.name||"").trim(),age:Number(b.age),country:String(b.country||""),gender:String(b.gender||"Prefer not to say")};const {data:old}=await sb.from("profiles").select("locked_until").eq("id",user.id).maybeSingle();if(old?.locked_until&&new Date(old.locked_until)>new Date())return{statusCode:423,body:JSON.stringify({error:"Profile locked",locked_until:old.locked_until})};const locked=new Date(Date.now()+30*86400000).toISOString();const {data,error}=await sb.from("profiles").upsert({id:user.id,...allowed,locked_until:locked,updated_at:new Date().toISOString()}).select().single();if(error)throw error;return{statusCode:200,headers:{"content-type":"application/json","access-control-allow-origin":"*"},body:JSON.stringify(data)}}return{statusCode:405,body:"Method not allowed"}}catch(e){return{statusCode:500,body:JSON.stringify({error:e.message})}}};
+
+const headers={
+  "content-type":"application/json",
+  "access-control-allow-origin":"*",
+  "access-control-allow-headers":"authorization,content-type",
+  "access-control-allow-methods":"GET,POST,OPTIONS"
+};
+
+exports.handler=async(event)=>{
+  if(event.httpMethod==="OPTIONS") return {statusCode:204,headers};
+  try{
+    const token=(event.headers.authorization||"").replace("Bearer ","");
+    if(!token) return {statusCode:401,headers,body:JSON.stringify({error:"Unauthorized"})};
+
+    const sb=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{
+      global:{headers:{Authorization:"Bearer "+token}}
+    });
+    const {data:{user},error:ue}=await sb.auth.getUser(token);
+    if(ue||!user) return {statusCode:401,headers,body:JSON.stringify({error:"Invalid session"})};
+
+    if(event.httpMethod==="GET"){
+      const {data,error}=await sb.from("profiles").select("id,name,age,country,gender,level,created_at,updated_at").eq("id",user.id).maybeSingle();
+      return {statusCode:200,headers,body:JSON.stringify(data||{id:user.id})};
+    }
+
+    if(event.httpMethod==="POST"){
+      const b=JSON.parse(event.body||"{}");
+      const name=String(b.name||"").trim();
+      const age=Number(b.age);
+      const country=String(b.country||"").trim();
+      const gender=String(b.gender||"Prefer not to say");
+
+      if(!name||!Number.isInteger(age)||age<13||age>100||!country){
+        return {statusCode:400,headers,body:JSON.stringify({error:"Please complete the required profile fields."})};
+      }
+
+      const {data,error}=await sb.from("profiles").upsert({
+        id:user.id,name,age,country,gender,updated_at:new Date().toISOString()
+      }).select("id,name,age,country,gender,level,created_at,updated_at").single();
+
+      if(error) throw error;
+      return {statusCode:200,headers,body:JSON.stringify(data)};
+    }
+
+    return {statusCode:405,headers,body:JSON.stringify({error:"Method not allowed"})};
+  }catch(e){
+    return {statusCode:500,headers,body:JSON.stringify({error:e.message})};
+  }
+};
