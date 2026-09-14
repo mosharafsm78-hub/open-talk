@@ -444,6 +444,8 @@ async function startHumanCall(sessionId,partner){
     return;
   }
   $('#reportPartner').disabled=false;
+  $('#feedback')?.classList.add('hidden');
+  $('#feedback').innerHTML='';
   $('#partner').textContent=`${partner.name||'Your speaking partner'} is ready`;
   $('#partnerMeta').textContent=`${partner.country||'A nearby speaker'} • ${partner.level||'level not assessed'} • Real person`;
   $('#listen').textContent='Connecting securely…';
@@ -532,11 +534,20 @@ async function sendSignal(message){
 
 async function ensurePeer(){
   if(pc)return pc;
+  // STUN handles direct peers; TURN is the fallback for restrictive Wi-Fi,
+  // carrier NAT and phone-to-phone networks that cannot connect directly.
+  // Keep the relay configurable for production deployments.
+  const turn=window.OPEN_TALK_TURN||{
+    urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turn:openrelay.metered.ca:443?transport=tcp'],
+    username:'openrelayproject',
+    credential:'openrelayproject'
+  };
   pc=new RTCPeerConnection({
     iceServers:[
-      {urls:['stun:stun.cloudflare.com:3478']},
-      {urls:['stun:stun.l.google.com:19302']}
-    ]
+      {urls:['stun:stun.cloudflare.com:3478','stun:stun.l.google.com:19302']},
+      turn
+    ],
+    iceCandidatePoolSize:10
   });
 
   pc.onicecandidate=e=>{
@@ -556,10 +567,23 @@ async function ensurePeer(){
     renderRemoteBadges();
   };
   pc.onconnectionstatechange=()=>{
-    if(['failed','disconnected','closed'].includes(pc.connectionState)&&!finishing){
-      $('#listen').textContent='Connection interrupted. You can leave and find another person.';
+    const state=pc.connectionState;
+    if(state==='connected'){
+      startCallClock();
+      $('#listen').textContent='You’re live — speaking with a real person.';
+      $('#partnerMeta').textContent=(currentPartner?.name||'Your partner')+' • LIVE HUMAN CONVERSATION';
+      $('#mic').style.display='none';
+      $('#mic').disabled=true;
+      $('#mic').onclick=null;
+      $('#finish').disabled=false;
+    }else if(state==='failed'){
+      $('#listen').textContent='We couldn’t establish the voice connection. Retrying…';
+      if(!finishing && signalingSessionId)scheduleRtcRecovery();
+    }else if(state==='disconnected'){
+      $('#listen').textContent='Voice connection interrupted. Reconnecting…';
+    }else if(state==='closed' && !finishing){
+      $('#listen').textContent='Voice connection closed. Please find another person.';
     }
-    if(pc.connectionState==='connected')startCallClock();
   };
 
   if(localStream){
@@ -589,6 +613,24 @@ async function startCallTransport(sessionId,partner){
 }
 
 let reconnectingAfterBackground=false;
+let rtcRecoveryTimer=null;
+
+function scheduleRtcRecovery(){
+  if(rtcRecoveryTimer||finishing||!signalingSessionId||!currentPartner)return;
+  rtcRecoveryTimer=setTimeout(async()=>{
+    rtcRecoveryTimer=null;
+    if(finishing||!currentPartner||!signalingSessionId)return;
+    try{
+      if(pc)pc.close();
+      pc=null;
+      pendingIce=[];
+      await setupSignaling(signalingSessionId,currentPartner);
+    }catch(err){
+      console.warn('Open Talk WebRTC recovery:',err);
+      $('#listen').textContent='Still reconnecting…';
+    }
+  },1200);
+}
 
 async function resumeLiveConversation(){
   if(!currentPartner || finishing || $('#modal')?.classList.contains('hidden')) return;
