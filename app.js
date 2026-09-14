@@ -419,6 +419,7 @@ function openConversationModal(){
   $('#finish').disabled=true;
   $('#mic').disabled=false;
   $('#mic').textContent='🎙 Find a real person';
+  $('#mic').classList.remove('is-live');
   $('#reportPartner').disabled=true;
   $('#reportPanel')?.classList.add('hidden');
   $('#partner').textContent='Choose your match';
@@ -457,9 +458,11 @@ async function startHumanCall(sessionId,partner){
     return;
   }
 
-  $('#mic').disabled=false;
-  $('#mic').textContent='🎙 Start speaking';
-  $('#mic').onclick=()=>startCallTransport(sessionId,partner);
+  // The microphone is already live and WebRTC is negotiating.
+  $('#mic').disabled=true;
+  $('#mic').textContent='🎙 Live';
+  $('#mic').classList.add('is-live');
+  $('#mic').onclick=null;
   await setupSignaling(sessionId,partner);
 }
 
@@ -532,8 +535,12 @@ async function ensurePeer(){
     const audio=$('#remoteAudio');
     if(audio.srcObject!==e.streams[0])audio.srcObject=e.streams[0];
     audio.play().catch(()=>{});
-    $('#listen').textContent='Connected — you are speaking with a real person.';
+    $('#listen').textContent='You’re live — speaking with a real person.';
     $('#partnerMeta').textContent=`${currentPartner?.name||'Your partner'} • LIVE HUMAN CONVERSATION`;
+    $('#mic').disabled=true;
+    $('#mic').textContent='🎙 Live';
+    $('#mic').classList.add('is-live');
+    $('#mic').onclick=null;
     renderRemoteBadges();
   };
   pc.onconnectionstatechange=()=>{
@@ -567,6 +574,44 @@ async function startCallTransport(sessionId,partner){
   $('#listen').textContent='Microphone ready. Waiting for the secure audio connection…';
   await sendSignal({type:'hello'});
 }
+
+let reconnectingAfterBackground=false;
+
+async function resumeLiveConversation(){
+  if(!currentPartner || finishing || $('#modal')?.classList.contains('hidden')) return;
+  try{
+    const audio=$('#remoteAudio');
+    if(audio?.srcObject) await audio.play().catch(()=>{});
+
+    const micEnded=!localStream || localStream.getAudioTracks().some(t=>t.readyState==='ended');
+    if(micEnded && navigator.mediaDevices?.getUserMedia){
+      localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    }
+
+    if(pc && ['failed','disconnected','closed'].includes(pc.connectionState)){
+      if(reconnectingAfterBackground) return;
+      reconnectingAfterBackground=true;
+      try{
+        pc.close();
+        pc=null;
+        pendingIce=[];
+        await setupSignaling(currentPartner.call_id,currentPartner);
+      }finally{
+        reconnectingAfterBackground=false;
+      }
+    }else if(!pc && currentPartner.call_id){
+      await setupSignaling(currentPartner.call_id,currentPartner);
+    }
+  }catch(err){
+    console.warn('Open Talk resume:',err);
+    $('#listen').textContent='Reconnecting your live conversation…';
+  }
+}
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible') resumeLiveConversation();
+});
+window.addEventListener('pageshow',()=>resumeLiveConversation());
 
 function startCallClock(){
   if(callTimer)return;
