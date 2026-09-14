@@ -28,6 +28,9 @@ let rtcOfferInFlight=false;
 let audioFlowReady=false;
 let audioFlowTimer=null;
 let activeMatchPasses=[];
+let remoteAudioContext=null;
+let remoteAudioSource=null;
+let remoteAudioGain=null;
 
 function save(){
   localStorage.setItem(K,JSON.stringify(s));
@@ -440,7 +443,11 @@ function setMatchPhase(phase){
 function openConversationModal(){
   finishing=false;
   currentPartner=null;
-  remoteStream=null;
+  remoteStream=new MediaStream();
+  remoteTrackReady=false;
+  remoteAudioContext=null;
+  remoteAudioSource=null;
+  remoteAudioGain=null;
   remoteTrackReady=false;
   audioPlaybackReady=false;
   rtcConnected=false;
@@ -611,26 +618,59 @@ function waitForIceGathering(peer,timeout=6000){
   });
 }
 
-function primeRemoteAudioPlayback(){
-  const audio=$('#remoteAudio');
-  if(!audio)return;
-  audio.autoplay=true;
-  audio.playsInline=true;
-  audio.muted=false;
-  audio.volume=1;
+async function primeRemoteAudioPlayback(){
+  // iOS Safari is much more reliable when the audio output is unlocked from
+  // the same user gesture that starts the microphone. Keep ONE MediaStream
+  // alive for the entire call instead of replacing audio.srcObject when the
+  // remote track arrives.
   try{
-    if(!audio.srcObject) audio.srcObject=new MediaStream();
-    audio.play().catch(()=>{});
-  }catch{}
+    const Ctx=window.AudioContext||window.webkitAudioContext;
+    if(Ctx){
+      if(!remoteAudioContext) remoteAudioContext=new Ctx();
+      if(remoteAudioContext.state==='suspended') await remoteAudioContext.resume();
+      if(remoteStream && !remoteAudioSource){
+        remoteAudioSource=remoteAudioContext.createMediaStreamSource(remoteStream);
+        remoteAudioGain=remoteAudioContext.createGain();
+        remoteAudioGain.gain.value=1;
+        remoteAudioSource.connect(remoteAudioGain);
+        remoteAudioGain.connect(remoteAudioContext.destination);
+      }
+    }
+  }catch(err){console.warn('Open Talk audio unlock:',err);}
+  const audio=$('#remoteAudio');
+  if(audio){
+    audio.autoplay=true;
+    audio.playsInline=true;
+    audio.muted=true;
+    audio.volume=0;
+    try{
+      if(!audio.srcObject) audio.srcObject=remoteStream||new MediaStream();
+      await audio.play().catch(()=>{});
+    }catch{}
+  }
 }
 
 async function enableRemoteAudio(){
-  const audio=$('#remoteAudio');
-  if(!audio)return;
   try{
-    audio.muted=false;
-    audio.volume=1;
-    if(audio.srcObject) await audio.play();
+    const Ctx=window.AudioContext||window.webkitAudioContext;
+    if(Ctx){
+      if(!remoteAudioContext) remoteAudioContext=new Ctx();
+      await remoteAudioContext.resume();
+      if(remoteStream && !remoteAudioSource){
+        remoteAudioSource=remoteAudioContext.createMediaStreamSource(remoteStream);
+        remoteAudioGain=remoteAudioContext.createGain();
+        remoteAudioGain.gain.value=1;
+        remoteAudioSource.connect(remoteAudioGain);
+        remoteAudioGain.connect(remoteAudioContext.destination);
+      }
+    }
+    const audio=$('#remoteAudio');
+    if(audio){
+      audio.muted=true;
+      audio.volume=0;
+      audio.srcObject=remoteStream||audio.srcObject;
+      await audio.play().catch(()=>{});
+    }
     audioPlaybackReady=true;
     $('#mic').style.display='none';
     $('#mic').disabled=true;
@@ -734,30 +774,48 @@ async function ensurePeer(){
     // Do not call this a successful call just because ontrack fired.
     // Mobile Safari may deliver the track before ICE/DTLS is usable, and
     // remote speaker autoplay can still be blocked.
-    const audio=$('#remoteAudio');
-    audio.autoplay=true;
-    audio.playsInline=true;
-    audio.muted=false;
-    audio.volume=1;
+    // Always append the negotiated track to the persistent remote stream.
+    // Replacing srcObject with event.streams[0] on iOS can lose the playback
+    // unlock established by the user's Find button.
     if(!remoteStream) remoteStream=new MediaStream();
     if(e.track && !remoteStream.getTracks().some(t=>t.id===e.track.id)){
       remoteStream.addTrack(e.track);
     }
-    audio.srcObject=e.streams?.[0] || remoteStream;
+    const audio=$('#remoteAudio');
+    if(audio){
+      audio.autoplay=true;
+      audio.playsInline=true;
+      audio.muted=true;
+      audio.volume=0;
+      audio.srcObject=remoteStream;
+    }
     remoteTrackReady=!!e.track;
     renderRemoteBadges();
-    audio.play().then(()=>{
+
+    try{
+      const Ctx=window.AudioContext||window.webkitAudioContext;
+      if(Ctx){
+        if(!remoteAudioContext) remoteAudioContext=new Ctx();
+        if(remoteAudioContext.state==='suspended') await remoteAudioContext.resume();
+        if(!remoteAudioSource){
+          remoteAudioSource=remoteAudioContext.createMediaStreamSource(remoteStream);
+          remoteAudioGain=remoteAudioContext.createGain();
+          remoteAudioGain.gain.value=1;
+          remoteAudioSource.connect(remoteAudioGain);
+          remoteAudioGain.connect(remoteAudioContext.destination);
+        }
+      }
       audioPlaybackReady=true;
       verifyAudioFlow();
-    }).catch(err=>{
+    }catch(err){
       audioPlaybackReady=false;
-      console.warn('Open Talk remote audio autoplay:',err);
+      console.warn('Open Talk remote audio setup:',err);
       $('#listen').textContent='Your partner is connected. Tap Enable speaker to hear them.';
       $('#mic').style.display='';
       $('#mic').disabled=false;
       $('#mic').textContent='🔊 Enable speaker';
       $('#mic').onclick=enableRemoteAudio;
-    });
+    }
   };
   pc.onconnectionstatechange=()=>{
     const state=pc.connectionState;
@@ -989,7 +1047,16 @@ async function teardownCall(){
   if(channel&&supabaseClient){try{await supabaseClient.removeChannel(channel)}catch{} channel=null;}
   signalingSessionId=null;
   $('#remoteAudio').srcObject=null;
+  try{
+    if(remoteAudioSource) remoteAudioSource.disconnect();
+    if(remoteAudioGain) remoteAudioGain.disconnect();
+    if(remoteAudioContext && remoteAudioContext.state!=='closed') remoteAudioContext.close();
+  }catch{}
+  remoteAudioSource=null;
+  remoteAudioGain=null;
+  remoteAudioContext=null;
   remoteStream=null;
+  pendingIce=[];
   remoteTrackReady=false;
   audioPlaybackReady=false;
   rtcConnected=false;
