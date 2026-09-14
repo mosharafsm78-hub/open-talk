@@ -26,6 +26,50 @@ function save(){
   render();
 }
 
+function setAuthGate(show){
+  const gate=$('#authGate');
+  if(!gate)return;
+  gate.classList.toggle('hidden',!show);
+  document.body.classList.toggle('auth-required',show);
+}
+
+function setAuthMode(mode){
+  const signup=mode==='signup';
+  $('#showLogin')?.classList.toggle('active',!signup);
+  $('#showSignup')?.classList.toggle('active',signup);
+  if($('#authTitle'))$('#authTitle').textContent=signup?'Create your Open Talk account':'Welcome back';
+  if($('#authSubtitle'))$('#authSubtitle').textContent=signup
+    ?'Sign up once, then build your profile and meet real speakers.'
+    :'Log in to continue your conversations and keep your progress.';
+  if($('#authSubmit'))$('#authSubmit').innerHTML=(signup?'Create account':'Log in')+' <b>→</b>';
+  if($('#authPassword'))$('#authPassword').setAttribute('autocomplete',signup?'new-password':'current-password');
+  if($('#authMessage'))$('#authMessage').textContent='';
+}
+
+function renderProfilePhoto(url){
+  const header=$('#headerAvatar'), fallback=$('#headerAvatarFallback');
+  const preview=$('#profilePhotoPreview'), previewFallback=$('#profilePhotoFallback');
+  const has=!!url;
+  if(header){header.src=url||'';header.hidden=!has;}
+  if(fallback)fallback.hidden=has;
+  if(preview){preview.src=url||'';preview.hidden=!has;}
+  if(previewFallback)previewFallback.hidden=has;
+  if($('#mobileAvatarNav'))$('#mobileAvatarNav').innerHTML=has
+    ?'<img class="mobile-avatar-img" src="'+url.replace(/"/g,'&quot;')+'" alt="">':'●';
+}
+
+async function uploadProfilePhoto(file){
+  if(!file||!currentUser) return null;
+  if(file.size>5*1024*1024) throw new Error('Please choose a photo under 5 MB.');
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error('Please choose a JPG, PNG or WebP image.');
+  const ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg';
+  const path=currentUser.id+'/profile.'+ext;
+  const {error}=await supabaseClient.storage.from('profile-avatars').upload(path,file,{upsert:true,contentType:file.type,cacheControl:'3600'});
+  if(error)throw error;
+  const {data}=supabaseClient.storage.from('profile-avatars').getPublicUrl(path);
+  return data.publicUrl+'?v='+Date.now();
+}
+
 function toast(message){
   let t=document.getElementById('toast');
   if(!t){
@@ -110,36 +154,39 @@ async function bootstrapBackend(){
       'sb_publishable_RrciEiRwRPkbU6yO6wt8Zg_BI0tSYEW'
     );
     const existing=(await supabaseClient.auth.getSession()).data.session;
-    if(existing?.access_token){
-      authSession=existing;
-      currentUser=existing.user;
-    }else{
-      const {data,error}=await supabaseClient.auth.signInAnonymously();
-      if(error)throw error;
-      authSession=data.session;
-      currentUser=data.user;
+    if(!existing?.access_token){
+      backendReady=false;
+      setAuthGate(true);
+      setAuthMode('login');
+      updateBackendStatus();
+      return;
     }
-    backendReady=!!currentUser;
+    authSession=existing;
+    currentUser=existing.user;
+    backendReady=true;
+    setAuthGate(false);
+
     const {data:p,error:pe}=await supabaseClient.from('profiles')
-      .select('id,name,age,country,gender,english_level,gender_preference,locked_until')
+      .select('id,name,age,country,gender,english_level,gender_preference,locked_until,avatar_url')
       .eq('id',currentUser.id).maybeSingle();
     if(!pe&&p){s.profile={...s.profile,...p};save();}
+    renderProfilePhoto(s.profile.avatar_url||'');
     try{
       const rewards=await supabaseClient.from('user_milestone_rewards').select('milestone_key,coins').eq('user_id',currentUser.id);
       const balance=await supabaseClient.rpc('available_coins',{p_user_id:currentUser.id});
-      if(!rewards.error) s.stats.rewardedMilestones=(rewards.data||[]).map(x=>x.milestone_key);
-      if(!balance.error && Number.isFinite(Number(balance.data))) s.stats.coins=Number(balance.data);
+      if(!rewards.error)s.stats.rewardedMilestones=(rewards.data||[]).map(x=>x.milestone_key);
+      if(!balance.error && Number.isFinite(Number(balance.data)))s.stats.coins=Number(balance.data);
       else s.stats.coins=(rewards.data||[]).reduce((sum,x)=>sum+Number(x.coins||0),0);
       save();
     }catch{}
     updateBackendStatus();
   }catch(e){
     backendReady=false;
+    setAuthGate(true);
     updateBackendStatus();
     console.error('Open Talk backend:',e);
   }
 }
-
 function updateBackendStatus(){
   const button=$('#findPartner');
   if(!button)return;
@@ -162,7 +209,7 @@ async function api(path,method='GET',body=null){
   }
   if(path==='/api/profile'){
     if(method==='GET'){
-      const r=await supabaseClient.from('profiles').select('id,name,age,country,gender,english_level,gender_preference,locked_until').eq('id',currentUser.id).maybeSingle();
+      const r=await supabaseClient.from('profiles').select('id,name,age,country,gender,english_level,gender_preference,locked_until,avatar_url').eq('id',currentUser.id).maybeSingle();
       return new Response(JSON.stringify(r.data||{id:currentUser.id}),{status:r.error?500:200,headers:{'content-type':'application/json'}});
     }
     if(method==='POST'){
@@ -192,7 +239,7 @@ async function api(path,method='GET',body=null){
       const lockedUntil=new Date(Date.now()+30*24*60*60*1000).toISOString();
       const r=await supabaseClient.from('profiles')
         .upsert({...payload,locked_until:lockedUntil,updated_at:new Date().toISOString()})
-        .select('id,name,age,country,gender,english_level,gender_preference,locked_until,created_at,updated_at')
+        .select('id,name,age,country,gender,english_level,gender_preference,locked_until,avatar_url,created_at,updated_at')
         .single();
       return new Response(JSON.stringify(r.data||{error:r.error?.message||'Profile could not be saved'}),{
         status:r.error?500:200,
@@ -225,6 +272,15 @@ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
   scrollTo({top:0,behavior:'smooth'});
 });
 
+$('#profilePhoto')?.addEventListener('change',e=>{
+  const file=e.target.files?.[0];
+  if(!file)return;
+  if(file.size>5*1024*1024)return toast('Please choose a photo under 5 MB.');
+  const url=URL.createObjectURL(file);
+  renderProfilePhoto(url);
+  if($('#profilePhotoName'))$('#profilePhotoName').textContent=file.name;
+});
+
 $('#profileForm').onsubmit=async e=>{
   e.preventDefault();
   const profile={
@@ -234,7 +290,8 @@ $('#profileForm').onsubmit=async e=>{
     gender:$('#gender').value==='Female'?'female':$('#gender').value==='Male'?'male':$('#gender').value==='Other'?'other':'',
     // profiles.english_level is required in Supabase; use the latest AI level or a safe initial level.
     english_level:s.stats.level||s.profile.english_level||'A1',
-    gender_preference:s.profile.gender_preference||'any'
+    gender_preference:s.profile.gender_preference||'any',
+    avatar_url:s.profile.avatar_url||''
   };
   const lockedUntil=s.profile.locked_until?new Date(s.profile.locked_until):null;
   if(lockedUntil&&lockedUntil>new Date()){
@@ -391,6 +448,9 @@ async function findPartner(){
       if(data.candidate){
         setQueueStage(2);
         currentPartner={...data.candidate,call_id:data.call_id||data.session_id};
+        const pa=$('#partnerAvatar'), pf=$('#partnerAvatarFallback');
+        if(pa && data.candidate.avatar_url){pa.src=data.candidate.avatar_url;pa.hidden=false;if(pf)pf.hidden=true;}
+        else if(pa){pa.hidden=true;if(pf)pf.hidden=false;}
         stopMatchPolling();
         $('#partner').textContent='Your speaking partner is ready';
         await refreshMatchPasses();
@@ -874,6 +934,38 @@ function renderAchievements(){
 
 
 
+
+$('#showLogin')?.addEventListener('click',()=>setAuthMode('login'));
+$('#showSignup')?.addEventListener('click',()=>setAuthMode('signup'));
+$('#authForm')?.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const email=$('#authEmail').value.trim();
+  const password=$('#authPassword').value;
+  const signup=$('#showSignup')?.classList.contains('active');
+  const submit=$('#authSubmit');
+  if(submit)submit.disabled=true;
+  if($('#authMessage'))$('#authMessage').textContent=signup?'Creating your account…':'Signing you in…';
+  try{
+    let result;
+    if(signup) result=await supabaseClient.auth.signUp({email,password});
+    else result=await supabaseClient.auth.signInWithPassword({email,password});
+    if(result.error)throw result.error;
+    if(signup && !result.data.session){
+      $('#authMessage').textContent='Account created. Check your email to confirm, then log in.';
+      return;
+    }
+    authSession=result.data.session;
+    currentUser=result.data.user;
+    backendReady=!!currentUser;
+    setAuthGate(false);
+    await bootstrapBackend();
+    toast(signup?'Welcome to Open Talk.':'Welcome back.');
+  }catch(err){
+    $('#authMessage').textContent=err?.message||'We could not complete that. Please try again.';
+  }finally{
+    if(submit)submit.disabled=false;
+  }
+});
 
 render();
 bootstrapBackend();
