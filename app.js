@@ -569,8 +569,8 @@ function renderMilestones(){
     {key:'hard',label:'Hard milestones',sub:'Serious commitment · 4 coins each',icon:'🏆'}
   ];
   const unlocked=m.filter(x=>x[3]({conversations:c,minutes:mins,streak})).length;
-  $('#coinBalance').textContent=coins;
-  $('#milestoneCoins').textContent=coins;
+  if($('#coinBalance')) $('#coinBalance').textContent=coins;
+  if($('#milestoneCoins')) $('#milestoneCoins').textContent=coins;
   $('#milestoneUnlocked').textContent=unlocked;
   $('#milestoneRemaining').textContent=m.length-unlocked;
   $('#milestoneEarned').textContent=coins;
