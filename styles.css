@@ -1568,3 +1568,39 @@ nav button{
 @media(max-width:430px){
   main{padding-top:74px}
 }
+
+
+/* AUTH + PROFILE PHOTO — clean, app-first onboarding */
+.auth-gate{position:fixed;inset:0;z-index:50000;display:grid;place-items:center;padding:24px;background:rgba(16,20,45,.72);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.auth-gate.hidden{display:none}
+.auth-card{width:min(430px,100%);padding:30px;border:1px solid rgba(255,255,255,.8);border-radius:28px;background:rgba(255,255,255,.97);box-shadow:0 30px 90px rgba(8,12,40,.28)}
+.auth-brand{display:flex;align-items:center;gap:10px;margin-bottom:28px;font-size:18px;color:#141a39}
+.auth-brand .brand-mark{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#715cff,#9b72ff);color:#fff;font-weight:900}
+.auth-card h2{margin:9px 0 7px;font-size:32px;letter-spacing:-.04em;color:#111733}
+.auth-card>p{margin:0;color:#7c87a4;line-height:1.55;font-size:13px}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;padding:4px;margin:22px 0 18px;border-radius:14px;background:#f1f2f8}
+.auth-tabs button{border:0;background:transparent;border-radius:10px;padding:11px;font:800 12px inherit;color:#7d87a2;cursor:pointer}
+.auth-tabs button.active{background:#fff;color:#6257f5;box-shadow:0 4px 12px rgba(30,34,70,.08)}
+#authForm{display:grid;gap:12px}
+#authForm label,.profile-photo-copy label{font-size:11px;font-weight:800;color:#59627c}
+#authForm input{display:block;width:100%;margin-top:6px;box-sizing:border-box;border:1px solid #dfe3ee;border-radius:12px;padding:12px 13px;background:#fff;color:#18203e;outline:none}
+#authForm input:focus{border-color:#8278f7;box-shadow:0 0 0 3px rgba(98,87,245,.09)}
+#authSubmit{width:100%;margin-top:4px}
+.auth-message{display:block;min-height:17px;margin-top:10px;color:#6257f5;font-size:11px;line-height:1.4}
+.auth-note{font-size:10px!important;color:#9aa3b8!important;margin-top:14px!important;text-align:center}
+.auth-required main,.auth-required .topbar,.auth-required .mobile-bottom-nav{visibility:hidden}
+.avatar{overflow:hidden;display:grid;place-items:center}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.profile-photo-row{display:flex;align-items:center;gap:16px;padding:15px;margin:12px 0 18px;border:1px solid #e5e7ef;border-radius:18px;background:linear-gradient(135deg,#fbfbff,#fff)}
+.profile-photo-wrap{width:72px;height:72px;flex:0 0 72px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:linear-gradient(145deg,#7a63f6,#9a74ff);color:#fff;font-size:24px;font-weight:900;box-shadow:0 8px 22px rgba(98,87,245,.18)}
+.profile-photo-wrap img{width:100%;height:100%;object-fit:cover}
+.profile-photo-copy{min-width:0;display:flex;flex-direction:column;gap:4px}
+.profile-photo-copy b{font-size:13px;color:#18203e}
+.profile-photo-copy small{font-size:10px;color:#8791aa;line-height:1.45}
+.photo-button{display:inline-flex!important;align-items:center;width:max-content;margin-top:5px;padding:8px 11px;border-radius:10px;background:#f1efff;color:#6257f5!important;cursor:pointer}
+.photo-button input{display:none}
+#profilePhotoName{font-size:9px;color:#8c95ab;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.conversationOrb{overflow:hidden}
+.conversationOrb img{width:100%;height:100%;object-fit:cover;border-radius:50%;position:relative;z-index:2}
+.mobile-avatar-img{width:22px;height:22px;border-radius:50%;object-fit:cover;display:block}
+@media(max-width:760px){.auth-card{padding:24px;border-radius:24px}.auth-card h2{font-size:28px}.profile-photo-row{padding:13px}.profile-photo-wrap{width:62px;height:62px;flex-basis:62px}}
