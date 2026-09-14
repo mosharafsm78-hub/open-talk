@@ -279,7 +279,7 @@
     }
   },true);
   window.__openTalkClose=function(e){
-    if(e){e.preventDefault();e.stopPropagation();}
+    if(e){e.preventDefault();e.stopImmediatePropagation();}
     var m=document.getElementById('modal');
     if(m){m.classList.add('hidden');m.style.display='none';}
     document.body.classList.remove('modal-open');
