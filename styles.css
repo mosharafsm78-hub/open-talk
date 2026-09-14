@@ -446,3 +446,25 @@ nav button.nav-active{background:#efedff;color:var(--purple);font-weight:800}
 .safety-note{font-size:10px;line-height:1.55}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes orbitPulse{50%{transform:scale(1.08);opacity:.45}}
 @media(max-width:560px){.modalCard.live-modal{padding:22px;border-radius:24px}.queue-steps{grid-template-columns:1fr}.queue-step{padding:9px}.match-visual{height:140px}.modalCard h2{font-size:26px}}
+
+/* REWARDS + MILESTONE SYSTEM */
+.coin-wallet{display:flex;align-items:center;gap:6px;padding:9px 12px;border:1px solid #ece9ff;background:linear-gradient(135deg,#fff,#f7f5ff);border-radius:999px;margin-left:8px;box-shadow:0 8px 25px rgba(98,87,245,.08)}
+.coin-wallet span{font-size:17px}.coin-wallet b{font-size:13px;color:#4d43c5}.coin-wallet small{font-size:9px;color:#9299aa;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
+.milestone-intro{display:flex;justify-content:space-between;align-items:flex-end;gap:25px}
+.coin-hero{min-width:220px;padding:16px 18px!important;display:flex;align-items:center;gap:11px;background:linear-gradient(135deg,#fff,#f7f4ff)!important}
+.coin-hero>span{font-size:27px}.coin-hero small{display:block;font-size:8px;letter-spacing:1px;color:#8b91a5;font-weight:900}.coin-hero strong{font:800 25px 'Plus Jakarta Sans';display:block;line-height:1.1}.coin-hero>b{margin-left:auto;font-size:9px;color:var(--purple)}
+.milestone-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0 18px}
+.milestone-summary>div{padding:16px 18px;border:1px solid var(--line);background:rgba(255,255,255,.72);border-radius:17px;box-shadow:0 10px 28px rgba(30,35,75,.04)}
+.milestone-summary b{display:block;font:800 24px 'Plus Jakarta Sans';letter-spacing:-1px}.milestone-summary span{font-size:10px;color:#8a93a7;font-weight:700}
+.milestone-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.milestone-card{padding:17px!important;display:grid;grid-template-columns:46px minmax(0,1fr) 25px;gap:12px;align-items:start;transition:.22s;overflow:hidden;position:relative}
+.milestone-card:hover{transform:translateY(-3px);box-shadow:0 20px 50px rgba(30,35,75,.10)}
+.milestone-card.is-unlocked{border-color:#d9d4ff;background:linear-gradient(135deg,#fff,#faf9ff)}
+.milestone-icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:#f0eeff;font-size:21px}
+.is-locked .milestone-icon{filter:grayscale(.7);opacity:.7;background:#f3f4f7}
+.milestone-title{display:flex;justify-content:space-between;gap:8px;align-items:center}.milestone-title h3{font-size:14px;margin:0}.milestone-body p{font-size:11px;line-height:1.5;margin:4px 0 10px}.milestone-body small{font-size:9px;color:#9299aa;font-weight:700}
+.reward-pill{white-space:nowrap;background:#fff6d9;border:1px solid #f1d98a;color:#80631c;padding:5px 7px;border-radius:999px;font-size:8px;font-weight:900}
+.milestone-bar{height:5px;background:#eceef4;border-radius:99px;overflow:hidden;margin-bottom:6px}.milestone-bar span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#6658f5,#a17cff)}
+.milestone-state{font-size:14px;color:#a0a7b7}.is-unlocked .milestone-state{color:#31aa68}
+@media(max-width:760px){.milestone-intro{display:block}.coin-hero{margin-top:18px}.milestone-list{grid-template-columns:1fr}.milestone-summary{grid-template-columns:1fr 1fr}.coin-wallet{display:none}}
+@media(max-width:480px){.milestone-summary{grid-template-columns:1fr}.milestone-title{align-items:flex-start;flex-direction:column}.milestone-card{grid-template-columns:42px minmax(0,1fr) 20px}.milestone-icon{width:42px;height:42px}}
