@@ -736,6 +736,14 @@ async function ensurePeer(){
       $('#listen').textContent='Voice connection closed. Please find another person.';
     }
   };
+  clearTimeout(rtcConnectTimer);
+  rtcConnectTimer=setTimeout(()=>{
+    if(pc && pc.connectionState!=='connected' && !finishing && signalingSessionId){
+      $('#listen').textContent='Still connecting — retrying the private voice link…';
+      scheduleRtcRecovery();
+    }
+  },12000);
+
   pc.oniceconnectionstatechange=()=>{
     const ice=pc?.iceConnectionState;
     if(ice==='failed' && !finishing && signalingSessionId)scheduleRtcRecovery();
