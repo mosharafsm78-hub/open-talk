@@ -1383,3 +1383,66 @@ nav button{
 #home,#profile,#milestones,#coins,#achievements{
   min-height:calc(100dvh - var(--app-header));
 }
+
+/* FINAL COIN ART — round polished gold token, never a bar */
+.coin-icon{
+  position:relative!important;
+  width:44px!important;
+  height:44px!important;
+  min-width:44px!important;
+  flex:0 0 44px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  font-size:0!important;
+  background:
+    radial-gradient(circle at 31% 24%,rgba(255,255,255,.98) 0 4%,rgba(255,255,255,.45) 5%,transparent 10%),
+    radial-gradient(circle at 50% 44%,#fff0a3 0%,#f6d66d 22%,#e5b63f 49%,#c98d22 72%,#a86c12 100%)!important;
+  border:1px solid rgba(130,78,10,.55)!important;
+  box-shadow:
+    inset 0 2px 2px rgba(255,255,255,.9),
+    inset 0 -3px 5px rgba(103,59,5,.28),
+    inset 0 0 0 2px rgba(255,226,132,.7),
+    0 5px 13px rgba(135,85,13,.22)!important;
+}
+.coin-icon:before{
+  content:"OT"!important;
+  position:absolute!important;
+  inset:5px!important;
+  width:auto!important;
+  height:auto!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  border:1px solid rgba(116,70,9,.35)!important;
+  background:linear-gradient(145deg,rgba(255,238,158,.24),rgba(142,87,12,.12))!important;
+  color:#71480d!important;
+  font:900 11px 'Plus Jakarta Sans',sans-serif!important;
+  letter-spacing:-.6px!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.55)!important;
+}
+.coin-icon:after{
+  content:""!important;
+  position:absolute!important;
+  inset:3px!important;
+  border-radius:50%!important;
+  border:1px solid rgba(255,255,255,.42)!important;
+  pointer-events:none!important;
+  box-shadow:0 0 0 1px rgba(137,84,12,.08)!important;
+}
+.coin-wallet>span.coin-icon{
+  width:36px!important;height:36px!important;min-width:36px!important;flex-basis:36px!important;
+}
+.coin-wallet>span.coin-icon:before{inset:4px!important;font-size:9px!important}
+.coin-balance-icon.coin-icon{
+  width:58px!important;height:58px!important;min-width:58px!important;
+}
+.coin-balance-icon.coin-icon:before{inset:7px!important;font-size:13px!important}
+.coin-hero .coin-icon{
+  width:52px!important;height:52px!important;min-width:52px!important;
+}
+.coin-hero .coin-icon:before{inset:6px!important;font-size:11px!important}
+.mobile-bottom-nav .coin-icon{
+  width:28px!important;height:28px!important;min-width:28px!important;flex-basis:28px!important;
+}
+.mobile-bottom-nav .coin-icon:before{inset:4px!important;font-size:7px!important}
