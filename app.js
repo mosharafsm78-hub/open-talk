@@ -494,30 +494,30 @@ async function teardownCall(){
 function milestoneKey(title){return title.toLowerCase().replace(/[^a-z0-9]+/g,'');}
 
 const MILESTONES=[
-    ['🌱','First Words','Complete your first real human conversation.',c>=1,1,'Take the first step','easy'],
-    ['💬','Two Talks','Complete 2 real conversations.',c>=2,1,'Keep going','easy'],
-    ['⏱️','Warm Up','Speak for 10 total minutes.',mins>=10,1,'Get your voice moving','easy'],
-    ['🌱','Two-Day Streak','Practice on 2 consecutive days.',streak>=2,1,'Come back tomorrow','easy'],
-    ['✨','Three Conversations','Complete 3 real conversations.',c>=3,1,'Build the habit','easy'],
-    ['⚡','Five Alive','Complete 5 real conversations.',c>=5,1,'You are showing up','easy'],
-    ['🔥','30 Minute Club','Speak for 30 total minutes.',mins>=30,1,'Real practice adds up','easy'],
-    ['🚀','Ten Talks','Complete 10 real conversations.',c>=10,2,'Become a regular','medium'],
-    ['🌟','Twenty Strong','Complete 20 real conversations.',c>=20,2,'Consistency compounds','medium'],
-    ['🎧','One Hour In','Speak for 60 total minutes.',mins>=60,2,'Your fluency is growing','medium'],
-    ['📅','Seven-Day Streak','Practice for 7 consecutive days.',streak>=7,2,'A week of courage','medium'],
-    ['🏅','Thirty Conversations','Complete 30 real conversations.',c>=30,2,'You are building fluency','medium'],
-    ['🗣️','Three Hour Speaker','Speak for 3 total hours.',mins>=180,2,'Keep the conversation going','medium'],
-    ['🌈','Fourteen-Day Streak','Practice for 14 consecutive days.',streak>=14,2,'Two weeks of momentum','medium'],
-    ['🎙️','Conversation Builder','Complete 15 real conversations.',c>=15,2,'Keep the flow going','medium'],
-    ['💫','Fluency Momentum','Complete 25 real conversations.',c>=25,2,'Confidence grows through repetition','medium'],
-    ['🏆','Half Century','Complete 50 real conversations.',c>=50,4,'A serious speaker','hard'],
-    ['💎','Century Speaker','Complete 100 real conversations.',c>=100,4,'Legendary commitment','hard'],
-    ['🌙','Five Hour Speaker','Speak for 5 total hours.',mins>=300,4,'Real staying power','hard'],
-    ['👑','Ten Hour Speaker','Speak for 10 total hours.',mins>=600,4,'Exceptional commitment','hard'],
-    ['🔥','Thirty-Day Streak','Practice for 30 consecutive days.',streak>=30,4,'This is a real habit','hard'],
-    ['◎','Global Speaker','Complete 75 real conversations.',c>=75,4,'Keep meeting the world','hard'],
-    ['🛡️','Two Hundred Conversations','Complete 200 real conversations.',c>=200,4,'You are part of the community','hard'],
-    ['🚀','Twenty Hour Speaker','Speak for 20 total hours.',mins>=1200,4,'Mastery takes time','hard']
+    ['🌱','First Words','Complete your first real human conversation.',a=>a.conversations>=1,1,'Take the first step','easy'],
+    ['💬','Two Talks','Complete 2 real conversations.',a=>a.conversations>=2,1,'Keep going','easy'],
+    ['⏱️','Warm Up','Speak for 10 total minutes.',a=>a.minutes>=10,1,'Get your voice moving','easy'],
+    ['🌱','Two-Day Streak','Practice on 2 consecutive days.',a=>a.streak>=2,1,'Come back tomorrow','easy'],
+    ['✨','Three Conversations','Complete 3 real conversations.',a=>a.conversations>=3,1,'Build the habit','easy'],
+    ['⚡','Five Alive','Complete 5 real conversations.',a=>a.conversations>=5,1,'You are showing up','easy'],
+    ['🔥','30 Minute Club','Speak for 30 total minutes.',a=>a.minutes>=30,1,'Real practice adds up','easy'],
+    ['🚀','Ten Talks','Complete 10 real conversations.',a=>a.conversations>=10,2,'Become a regular','medium'],
+    ['🌟','Twenty Strong','Complete 20 real conversations.',a=>a.conversations>=20,2,'Consistency compounds','medium'],
+    ['🎧','One Hour In','Speak for 60 total minutes.',a=>a.minutes>=60,2,'Your fluency is growing','medium'],
+    ['📅','Seven-Day Streak','Practice for 7 consecutive days.',a=>a.streak>=7,2,'A week of courage','medium'],
+    ['🏅','Thirty Conversations','Complete 30 real conversations.',a=>a.conversations>=30,2,'You are building fluency','medium'],
+    ['🗣️','Three Hour Speaker','Speak for 3 total hours.',a=>a.minutes>=180,2,'Keep the conversation going','medium'],
+    ['🌈','Fourteen-Day Streak','Practice for 14 consecutive days.',a=>a.streak>=14,2,'Two weeks of momentum','medium'],
+    ['🎙️','Conversation Builder','Complete 15 real conversations.',a=>a.conversations>=15,2,'Keep the flow going','medium'],
+    ['💫','Fluency Momentum','Complete 25 real conversations.',a=>a.conversations>=25,2,'Confidence grows through repetition','medium'],
+    ['🏆','Half Century','Complete 50 real conversations.',a=>a.conversations>=50,4,'A serious speaker','hard'],
+    ['💎','Century Speaker','Complete 100 real conversations.',a=>a.conversations>=100,4,'Legendary commitment','hard'],
+    ['🌙','Five Hour Speaker','Speak for 5 total hours.',a=>a.minutes>=300,4,'Real staying power','hard'],
+    ['👑','Ten Hour Speaker','Speak for 10 total hours.',a=>a.minutes>=600,4,'Exceptional commitment','hard'],
+    ['🔥','Thirty-Day Streak','Practice for 30 consecutive days.',a=>a.streak>=30,4,'This is a real habit','hard'],
+    ['◎','Global Speaker','Complete 75 real conversations.',a=>a.conversations>=75,4,'Keep meeting the world','hard'],
+    ['🛡️','Two Hundred Conversations','Complete 200 real conversations.',a=>a.conversations>=200,4,'You are part of the community','hard'],
+    ['🚀','Twenty Hour Speaker','Speak for 20 total hours.',a=>a.minutes>=1200,4,'Mastery takes time','hard']
   ];;
 
 
@@ -543,10 +543,10 @@ function renderCoinEarningPreview(){
   };
   host.innerHTML=tiers.map(tier=>{
     const items=MILESTONES.filter(x=>x[6]===tier.key);
-    const earned=items.filter(x=>x[3]).length;
+    const earned=items.filter(x=>x[3]({conversations:c,minutes:mins,streak})).length;
     const examples=items.slice(0,3).map(x=>{
       const [cur,target]=valueFor(x[1]);
-      const done=x[3];
+      const done=x[3]({conversations:c,minutes:mins,streak});
       return '<div class="coin-earning-item"><span class="coin-earning-check">'+(done?'✓':'○')+'</span><div><b>'+x[1]+'</b><small>'+x[2]+'</small></div><strong>+'+x[4]+'</strong></div>';
     }).join('');
     return '<article class="coin-tier '+tier.key+'"><div class="coin-tier-top"><div><span class="tier-icon">'+tier.icon+'</span><div><b>'+tier.label+'</b><small>'+tier.sub+' · '+tier.reward+'</small></div></div><em>'+earned+'/'+items.length+'</em></div>'+examples+'</article>';
@@ -563,7 +563,7 @@ function renderMilestones(){
     {key:'medium',label:'Medium milestones',sub:'Consistency · 2 coins each',icon:'⚡'},
     {key:'hard',label:'Hard milestones',sub:'Serious commitment · 4 coins each',icon:'🏆'}
   ];
-  const unlocked=m.filter(x=>x[3]).length;
+  const unlocked=m.filter(x=>x[3]({conversations:c,minutes:mins,streak})).length;
   $('#coinBalance').textContent=coins;
   $('#milestoneCoins').textContent=coins;
   $('#milestoneUnlocked').textContent=unlocked;
@@ -586,17 +586,17 @@ function renderMilestones(){
   $('#milestoneList').innerHTML=tiers.map(tier=>{
     const items=m.filter(x=>x[6]===tier.key);
     return '<section class="milestone-tier milestone-tier-'+tier.key+'">'+
-      '<div class="tier-heading"><div class="tier-icon">'+tier.icon+'</div><div><span>'+tier.label+'</span><small>'+tier.sub+'</small></div><b>'+items.filter(x=>x[3]).length+'/'+items.length+'</b></div>'+
+      '<div class="tier-heading"><div class="tier-icon">'+tier.icon+'</div><div><span>'+tier.label+'</span><small>'+tier.sub+'</small></div><b>'+items.filter(x=>x[3]({conversations:c,minutes:mins,streak})).length+'/'+items.length+'</b></div>'+
       '<div class="tier-grid">'+items.map(x=>{
         const key=milestoneKey(x[1]),claimed=rewarded.has(key);
         const [current,target]=currentFor(x[1]);
-        const pct=x[3]?100:Math.min(99,Math.round((current/target)*100));
-        return '<article class="milestone-card card '+(x[3]?'is-unlocked':'is-locked')+' milestone-tier-card">'+
+        const done=x[3]({conversations:c,minutes:mins,streak}); const pct=done?100:Math.min(99,Math.round((current/target)*100));
+        return '<article class="milestone-card card '+(done?'is-unlocked':'is-locked')+' milestone-tier-card">'+
           '<div class="milestone-icon">'+x[0]+'</div>'+
           '<div class="milestone-body"><div class="milestone-title"><h3>'+x[1]+'</h3><span class="reward-pill">+ '+x[4]+' coins</span></div>'+
           '<p>'+x[2]+'</p><div class="milestone-bar"><span style="width:'+pct+'%"></span></div>'+
-          '<small>'+ (x[3]?(claimed?'Reward credited':'Milestone complete'):'Locked · '+x[5]) +'</small></div>'+
-          '<div class="milestone-state">'+(x[3]?'✓':'🔒')+'</div>'+
+          '<small>'+ (done?(claimed?'Reward credited':'Milestone complete'):'Locked · '+x[5]) +'</small></div>'+
+          '<div class="milestone-state">'+(done?'✓':'🔒')+'</div>'+
         '</article>';
       }).join('')+'</div></section>';
   }).join('');
