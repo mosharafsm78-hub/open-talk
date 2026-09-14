@@ -651,7 +651,7 @@ function waitForIceGathering(peer,timeout=6000){
   });
 }
 
-async function primeRemoteAudioPlayback(){
+async async function primeRemoteAudioPlayback(){
   // iOS Safari is much more reliable when the audio output is unlocked from
   // the same user gesture that starts the microphone. Keep ONE MediaStream
   // alive for the entire call instead of replacing audio.srcObject when the
