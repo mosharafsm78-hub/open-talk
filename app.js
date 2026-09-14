@@ -63,10 +63,19 @@ function render(){
   if(t.date!==todayKey){
     s.today={conversations:0,minutes:0,date:todayKey};
   }
+  const profileComplete=!!(p.name&&p.age&&p.country&&p.gender);
   if($('#name'))$('#name').value=p.name||'';
   if($('#age'))$('#age').value=p.age||'';
   if($('#country'))$('#country').value=p.country||'';
   if($('#gender'))$('#gender').value=p.gender||'Prefer not to say';
+  $('#profileForm')?.classList.toggle('hidden',profileComplete);
+  $('#profileSummary')?.classList.toggle('hidden',!profileComplete);
+  if(profileComplete){
+    $('#profileSummaryName').textContent=p.name;
+    $('#profileSummaryAge').textContent=String(p.age);
+    $('#profileSummaryCountry').textContent=p.country;
+    $('#profileSummaryGender').textContent=p.gender==='female'?'Female':p.gender==='male'?'Male':p.gender==='other'?'Other':p.gender;
+  }
 
   const l=a.level||'Not assessed yet';
   if($('#levelValue'))$('#levelValue').textContent=l;
@@ -200,6 +209,8 @@ $('#profileForm').onsubmit=async e=>{
     english_level:s.stats.level||s.profile.english_level||'A1',
     gender_preference:s.profile.gender_preference||'any'
   };
+  const saveButton=$('#saveProfile');
+  if(saveButton){saveButton.disabled=true;saveButton.textContent='Profile saved ✓';}
   s.profile={...s.profile,...profile,savedAt:Date.now()};
   save();
   if(backendReady){
@@ -209,7 +220,7 @@ $('#profileForm').onsubmit=async e=>{
       if(!r.ok)throw new Error(data.error||'Profile could not be saved');
       s.profile={...s.profile,...data};
       save();
-      toast('Profile saved. You can edit it again anytime.');
+      toast('Profile completed successfully.');
     }catch(err){toast(err.message);}
   }else toast('Please wait a moment for Open Talk to connect.');
 };
@@ -651,7 +662,7 @@ function waitForIceGathering(peer,timeout=6000){
   });
 }
 
-async async function primeRemoteAudioPlayback(){
+async function primeRemoteAudioPlayback(){
   // iOS Safari is much more reliable when the audio output is unlocked from
   // the same user gesture that starts the microphone. Keep ONE MediaStream
   // alive for the entire call instead of replacing audio.srcObject when the
