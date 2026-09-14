@@ -400,6 +400,7 @@ function openConversationModal(){
   currentPartner=null;
   stopMatchPolling();
   $('#modal').classList.remove('hidden');
+  document.body.classList.add('modal-open');
   setMatchPhase('choose');
   $('#matchControls')?.classList.remove('hidden');
   $('.match-visual')?.classList.add('hidden');
@@ -636,6 +637,7 @@ async function finishConversation(){
 }
 
 async function leaveConversation(){
+  document.body.classList.remove('modal-open');
   if(!$('#modal').classList.contains('hidden'))await teardownCall();
   $('#modal').classList.add('hidden');
   currentPartner=null;
