@@ -23,7 +23,7 @@
       <button data-view="milestones">Rewards</button>
       <button data-view="achievements">Achievements</button><button data-view="coins">Coins</button>
     </nav>
-    <button class="coin-wallet" data-view="coins" title="Open Talk coins"><span>🪙</span><b id="coinBalance">0</b><small>coins</small></button>
+    <button class="coin-wallet" data-view="coins" title="Open Talk coins"><span class="gold-bar"></span><b id="coinBalance">0</b><small>coins</small></button>
     <button class="avatar" data-view="profile" aria-label="Open profile">M</button>
   </div>
 </header>
@@ -123,7 +123,7 @@
 <section id="milestones" class="view">
   <div class="page-intro milestone-intro">
     <div><span class="eyebrow">YOUR REWARDS</span><h1>Rewards</h1><p>Small wins become speaking confidence. Complete challenges, earn coins, and keep moving forward.</p></div>
-    <div class="coin-hero card"><span>🪙</span><div><small>YOUR COINS</small><strong id="milestoneCoins">0</strong></div><b>Keep earning →</b></div>
+    <div class="coin-hero card"><span class="gold-bar"></span><div><small>YOUR COINS</small><strong id="milestoneCoins">0</strong></div><b>Keep earning →</b></div>
   </div>
   <div class="journey-banner card"><span>✦</span><div><b>Every meaningful step earns a little back.</b><p>Finish a challenge once and the coins are yours. Your rewards never disappear.</p></div></div>
   <div class="milestone-summary">
@@ -136,7 +136,7 @@
 
 <section id="coins" class="view">
   <div class="page-intro coin-page-intro"><span class="eyebrow">OPEN TALK ECONOMY</span><h1>Coins that mean something.</h1><p>Earn a small number of coins by actually showing up. Spend them only when you want extra control over how you meet people.</p></div>
-  <div class="coin-balance-card card"><div class="coin-balance-icon">🪙</div><div><span class="card-kicker">YOUR BALANCE</span><strong id="shopCoins">0</strong><p>Earned through real participation. No pay-to-win speaking level.</p></div><div class="coin-balance-note">Slow earn. Useful spend.</div></div>
+  <div class="coin-balance-card card"><div class="coin-balance-icon gold-bar"></div><div><span class="card-kicker">YOUR BALANCE</span><strong id="shopCoins">0</strong><p>Earned through real participation. No pay-to-win speaking level.</p></div><div class="coin-balance-note">Slow earn. Useful spend.</div></div>
   <div class="coin-earning card">
     <div class="coin-earning-head">
       <div><span class="eyebrow">EARN COINS</span><h2>Earn coins through real progress.</h2><p>Real conversations unlock small rewards. The harder the milestone, the more meaningful the reward.</p></div>
@@ -146,10 +146,10 @@
   </div>
   <div class="section-heading compact"><div><span class="eyebrow">OPTIONAL UNLOCKS</span><h2>Use coins to personalize your conversations.</h2></div></div>
   <div class="coin-use-grid">
-    <article class="coin-use card"><span>♀♂</span><div><h3>Choose who you meet</h3><p>Request a preferred gender for your next human conversation.</p></div><b>8 🪙</b></article>
-    <article class="coin-use card"><span>⚡</span><div><h3>Priority matching</h3><p>Move your request ahead when the live queue is busy.</p></div><b>5 🪙</b></article>
-    <article class="coin-use card"><span>🎯</span><div><h3>Target a speaking level</h3><p>Request a similar-level partner or a stronger speaker.</p></div><b>4 🪙</b></article>
-    <article class="coin-use card"><span>◎</span><div><h3>Explore a country</h3><p>When available, request a partner from a selected country.</p></div><b>10 🪙</b></article>
+    <article class="coin-use card"><span>♀♂</span><div><h3>Choose who you meet</h3><p>Request a preferred gender for your next human conversation.</p></div><b>8 coins</b></article>
+    <article class="coin-use card"><span>⚡</span><div><h3>Priority matching</h3><p>Move your request ahead when the live queue is busy.</p></div><b>5 coins</b></article>
+    <article class="coin-use card"><span>🎯</span><div><h3>Target a speaking level</h3><p>Request a similar-level partner or a stronger speaker.</p></div><b>4 coins</b></article>
+    <article class="coin-use card"><span>◎</span><div><h3>Explore a country</h3><p>When available, request a partner from a selected country.</p></div><b>10 coins</b></article>
   </div>
   <div class="coin-business card"><div><span class="eyebrow">COIN STORE</span><h2>More coins, when you want more control.</h2><p>Coins are designed as optional in-app purchases for the Android version. Core human conversations stay free.</p></div>
     <div class="coin-packs"><div><b>50</b><span>🪙 coins</span><small>Starter</small></div><div><b>120</b><span>🪙 coins</span><small>Popular</small></div><div><b>300</b><span>🪙 coins</span><small>Best value</small></div></div>
@@ -178,7 +178,7 @@
 <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
   <button data-view="home" class="mobile-nav-item nav-active"><span>⌂</span><small>Home</small></button>
   <button data-view="home" data-action="talk" class="mobile-nav-item"><span>🎙</span><small>Talk</small></button>
-  <button data-view="coins" class="mobile-nav-item"><span>🪙</span><small>Coins</small></button>
+  <button data-view="coins" class="mobile-nav-item"><span class="gold-bar"></span><small>Coins</small></button>
   <button data-view="milestones" class="mobile-nav-item"><span>✦</span><small>Journey</small></button>
   <button data-view="achievements" class="mobile-nav-item"><span>🏆</span><small>Badges</small></button>
   <button data-view="profile" class="mobile-nav-item"><span>●</span><small>Profile</small></button>
