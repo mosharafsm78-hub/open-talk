@@ -1314,5 +1314,50 @@ $('#reportPartner')?.addEventListener('click',openReportPanel);
 $('#submitReport')?.addEventListener('click',submitPartnerReport);
 $('#cancelReport')?.addEventListener('click',()=>$('#reportPanel')?.classList.add('hidden'));
 
+
+// FINAL UI CLICK SAFETY: keep navigation independent from backend/WebRTC state.
+// A navigation click must ALWAYS work, even if the live backend is still
+// bootstrapping or a previous async call failed.
+document.addEventListener('click',(event)=>{
+  const el=event.target?.closest?.('[data-view],#talkNow,#talkNowBottom');
+  if(!el)return;
+
+  if(el.id==='talkNowBottom' || el.id==='talkNow'){
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openConversationModal();
+    return;
+  }
+
+  const target=el.dataset.view;
+  if(!target || el.dataset.action==='talk')return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+
+  document.querySelectorAll('.view').forEach(v=>{
+    v.classList.toggle('active',v.id===target);
+  });
+  document.querySelectorAll('nav button[data-view]').forEach(v=>{
+    v.classList.toggle('nav-active',v.dataset.view===target);
+  });
+  document.querySelectorAll('.mobile-nav-item[data-view]').forEach(v=>{
+    v.classList.toggle('nav-active',v.dataset.view===target);
+  });
+
+  if(target==='milestones')renderMilestones();
+  if(target==='achievements')renderAchievements();
+  if(target==='coins')renderCoinEarningPreview();
+  window.scrollTo({top:0,behavior:'smooth'});
+},true);
+
+// Surface unexpected frontend failures instead of leaving buttons silently dead.
+window.addEventListener('error',(event)=>{
+  console.error('Open Talk frontend error:',event.error||event.message);
+});
+window.addEventListener('unhandledrejection',(event)=>{
+  console.error('Open Talk unhandled promise:',event.reason);
+});
+
 render();
 bootstrapBackend();
