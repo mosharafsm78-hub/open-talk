@@ -12,6 +12,7 @@ let currentUser=null;
 let currentPartner=null;
 let matchPoll=null;
 let channel=null;
+let signalingSessionId=null;
 let pc=null;
 let localStream=null;
 let pendingIce=[];
@@ -420,6 +421,7 @@ function openConversationModal(){
   $('#mic').disabled=false;
   $('#mic').textContent='🎙 Find a real person';
   $('#mic').classList.remove('is-live');
+  $('#mic').style.display='';
   $('#reportPartner').disabled=true;
   $('#reportPanel')?.classList.add('hidden');
   $('#partner').textContent='Choose your match';
@@ -460,7 +462,7 @@ async function startHumanCall(sessionId,partner){
 
   // The microphone is already live and WebRTC is negotiating.
   $('#mic').disabled=true;
-  $('#mic').textContent='🎙 Live';
+  $('#mic').textContent='🎙 Connecting…';
   $('#mic').classList.add('is-live');
   $('#mic').onclick=null;
   await setupSignaling(sessionId,partner);
@@ -470,6 +472,7 @@ async function setupSignaling(sessionId,partner){
   if(channel){
     try{await supabaseClient.removeChannel(channel)}catch{}
   }
+  signalingSessionId=sessionId;
   channel=supabaseClient.channel('open-talk:'+sessionId,{
     config:{broadcast:{ack:true}}
   });
@@ -541,6 +544,7 @@ async function ensurePeer(){
     $('#mic').textContent='🎙 Live';
     $('#mic').classList.add('is-live');
     $('#mic').onclick=null;
+    $('#mic').style.display='none';
     renderRemoteBadges();
   };
   pc.onconnectionstatechange=()=>{
@@ -586,6 +590,11 @@ async function resumeLiveConversation(){
     const micEnded=!localStream || localStream.getAudioTracks().some(t=>t.readyState==='ended');
     if(micEnded && navigator.mediaDevices?.getUserMedia){
       localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+      if(pc){
+        const track=localStream.getAudioTracks()[0];
+        const sender=pc.getSenders().find(s=>s.track?.kind==='audio');
+        if(sender && track) await sender.replaceTrack(track);
+      }
     }
 
     if(pc && ['failed','disconnected','closed'].includes(pc.connectionState)){
@@ -595,12 +604,12 @@ async function resumeLiveConversation(){
         pc.close();
         pc=null;
         pendingIce=[];
-        await setupSignaling(currentPartner.call_id,currentPartner);
+        await setupSignaling(signalingSessionId,currentPartner);
       }finally{
         reconnectingAfterBackground=false;
       }
-    }else if(!pc && currentPartner.call_id){
-      await setupSignaling(currentPartner.call_id,currentPartner);
+    }else if(!pc && signalingSessionId){
+      await setupSignaling(signalingSessionId,currentPartner);
     }
   }catch(err){
     console.warn('Open Talk resume:',err);
@@ -702,6 +711,7 @@ async function teardownCall(){
   if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
   if(pc){pc.close();pc=null;}
   if(channel&&supabaseClient){try{await supabaseClient.removeChannel(channel)}catch{} channel=null;}
+  signalingSessionId=null;
   $('#remoteAudio').srcObject=null;
   callStartedAt=0;
 }
