@@ -1,1 +1,18 @@
-{"name":"open-talk-mobile","private":true,"version":"1.0.0","scripts":{"sync":"npx cap sync","android":"npx cap open android","build":"echo Build the web root with your configured host, then run cap sync"},"dependencies":{"@capacitor/android":"^7.4.3","@capacitor/core":"^7.4.3"},"devDependencies":{"@capacitor/cli":"^7.4.3"}}
+{
+  "name": "open-talk-mobile",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "sync": "npx cap sync",
+    "android": "npx cap add android && npx cap sync android",
+    "build": "echo Build the web root with your configured host, then run cap sync",
+    "android:build": "cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3"
+  }
+}
