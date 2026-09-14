@@ -479,6 +479,24 @@ function openConversationModal(){
   refreshMatchPasses().finally(updateMatchSelectionUI);
 }
 
+function navigateToView(viewId){
+  const target=document.getElementById(viewId);
+  if(!target)return false;
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===viewId));
+  document.querySelectorAll('[data-view]').forEach(v=>v.classList.toggle('nav-active',v.dataset.view===viewId));
+  window.scrollTo(0,0);
+  return true;
+}
+document.querySelectorAll('[data-view]').forEach(el=>{
+  el.addEventListener('click',(event)=>{
+    const view=el.dataset.view;
+    if(!view)return;
+    event.preventDefault();
+    event.stopPropagation();
+    navigateToView(view);
+  });
+});
+
 function safeBind(id, handler){
   const el=document.getElementById(id);
   if(!el)return;
