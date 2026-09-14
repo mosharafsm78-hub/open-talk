@@ -1,1 +1,306 @@
-const K='openTalkV1';let s=JSON.parse(localStorage.getItem(K)||'null')||{profile:{},stats:{conversations:0,minutes:0,level:null,achievements:[]},today:{conversations:0,minutes:0}};const $=x=>document.querySelector(x);function save(){localStorage.setItem(K,JSON.stringify(s));render()}function render(){let p=s.profile,t=s.today,a=s.stats;$('#name').value=p.name||'';$('#age').value=p.age||'';$('#country').value=p.country||'';$('#gender').value=p.gender||'Prefer not to say';let l=a.level||'Not assessed yet';$('#levelValue').textContent=l;$('#homeLevel').textContent=l;$('#homeMinutes').textContent=a.minutes;$('#statConvos').textContent=a.conversations;$('#statMinutes').textContent=a.minutes;$('#statStreak').textContent=a.streak||0;$('#statAch').textContent=a.achievements.length;$('#goalCount').textContent=`${t.conversations}/4`;$('#goalProgress').style.width=Math.min(100,t.conversations/4*100)+'%';let n={A1:12,A2:28,B1:45,B2:62,C1:82,C2:100};$('#levelBar').style.width=(n[l]||0)+'%';let lock=p.savedAt&&Date.now()-p.savedAt<30*86400000;$('#profileLock').textContent=lock?'Profile locked for 30 days after your last save.':'Ready to save. Saving starts a 30-day lock.';renderMilestones();renderAchievements()}document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===b.dataset.view));scrollTo(0,0)});$('#profileForm').onsubmit=e=>{e.preventDefault();if(s.profile.savedAt&&Date.now()-s.profile.savedAt<30*86400000)return alert('Profile is locked for 30 days.');s.profile={name:$('#name').value.trim(),age:$('#age').value,country:$('#country').value,gender:$('#gender').value,savedAt:Date.now()};save();alert('Profile saved and locked for 30 days.')};let rec=null,run=false,sec=0,int=null;function open(){ $('#modal').classList.remove('hidden');sec=0;run=false;$('#timer').textContent='00:00';$('#listen').textContent='Ready';$('#partner').textContent='Your speaking partner is ready';$('#transcript').textContent='Press Start speaking and allow microphone access.';$('#feedback').classList.add('hidden');$('#feedback').innerHTML='';$('#mic').disabled=false;$('#mic').textContent='🎙 Start speaking';$('#finish').disabled=true;clearInterval(int)}$('#talkNow').onclick=open;$('#findPartner').onclick=()=>{let b=$('#findPartner');b.disabled=true;b.innerHTML='<span class="loading-spinner"></span>Finding partner...';setTimeout(()=>{b.disabled=false;b.textContent='Find partner';open()},900)};$('#close').onclick=()=>{$('#modal').classList.add('hidden');run=false;if(rec)rec.stop();clearInterval(int)};$('#mic').onclick=()=>{if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window))return $('#listen').textContent='Speech recognition unavailable in this browser.';let R=window.SpeechRecognition||window.webkitSpeechRecognition;rec=new R();rec.continuous=true;rec.interimResults=true;rec.lang='en-US';rec.onstart=()=>{run=true;$('#listen').textContent='Listening…';$('#mic').textContent='🔴 Listening';$('#finish').disabled=false;clearInterval(int);int=setInterval(()=>{sec++;$('#timer').textContent=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')},1000)};rec.onresult=e=>{let x='';for(let i=e.resultIndex;i<e.results.length;i++)x+=e.results[i][0].transcript+' ';$('#transcript').textContent=x.trim()};rec.onerror=e=>$('#listen').textContent='Microphone: '+e.error;rec.onend=()=>{if(run)try{rec.start()}catch{}};rec.start()};$('#finish').onclick=()=>{if(sec===0)return;run=false;if(rec)rec.stop();clearInterval(int);$('#mic').disabled=true;$('#finish').disabled=true;let mins=Math.max(1,Math.round(sec/60));s.stats.conversations++;s.stats.minutes+=mins;s.today.conversations++;s.today.minutes+=mins;let lv=['A1','A2','B1','B2','C1','C2'];s.stats.level=s.stats.level||lv[Math.min(5,Math.floor(s.stats.conversations/2)+1)];if(s.stats.conversations>=1)s.stats.achievements=[...new Set([...s.stats.achievements,'first'])];if(s.stats.conversations>=4)s.stats.achievements=[...new Set([...s.stats.achievements,'four'])];if(s.stats.minutes>=30)s.stats.achievements=[...new Set([...s.stats.achievements,'thirty'])];save();$('#feedback').classList.remove('hidden');$('#feedback').innerHTML='<b>🤖 AI review</b><ul><li>Give longer answers to build fluency.</li><li>Reduce repeated filler words.</li><li>Ask a follow-up question next time.</li></ul><small>This frontend is ready for a production realtime AI analysis backend.</small>'};function renderMilestones(){let a=s.stats,m=[['🌱','First conversation','Complete your first conversation.',a.conversations>=1],['⚡','Conversation sprint','Complete 4 conversations.',a.conversations>=4],['⏱','30 minute club','Speak for 30 minutes.',a.minutes>=30],['🚀','10 conversations','Become a regular speaker.',a.conversations>=10]];$('#milestoneList').innerHTML=m.map(x=>`<div class="card"><b>${x[0]} ${x[1]} ${x[3]?'✓':''}</b><p>${x[2]}</p></div>`).join('')}function renderAchievements(){let a=s.stats.achievements,x=[['first','🎙','First Words'],['four','⚡','Conversation Sprint'],['thirty','⏱','30 Minute Club'],['streak','🔥','On Fire'],['level','🧠','Level Up']];$('#achievementGrid').innerHTML=x.map(q=>`<article style="opacity:${a.includes(q[0])?1:.45}"><b style="font-size:32px">${q[1]}</b><h3>${q[2]}</h3><p>${a.includes(q[0])?'Unlocked':'Locked'}</p></article>`).join('')}render();
+const K='openTalkV1';
+let s=JSON.parse(localStorage.getItem(K)||'null')||{profile:{},stats:{conversations:0,minutes:0,level:null,achievements:[]},today:{conversations:0,minutes:0}};
+const $=x=>document.querySelector(x);
+
+function save(){
+  localStorage.setItem(K,JSON.stringify(s));
+  render();
+}
+
+function render(){
+  let p=s.profile,t=s.today,a=s.stats;
+  $('#name').value=p.name||'';
+  $('#age').value=p.age||'';
+  $('#country').value=p.country||'';
+  $('#gender').value=p.gender||'Prefer not to say';
+  let l=a.level||'Not assessed yet';
+  $('#levelValue').textContent=l;
+  $('#homeLevel').textContent=l;
+  $('#homeMinutes').textContent=a.minutes;
+  $('#statConvos').textContent=a.conversations;
+  $('#statMinutes').textContent=a.minutes;
+  $('#statStreak').textContent=a.streak||0;
+  $('#statAch').textContent=a.achievements.length;
+  $('#goalCount').textContent=`${t.conversations}/4`;
+  $('#goalProgress').style.width=Math.min(100,t.conversations/4*100)+'%';
+  let n={A1:12,A2:28,B1:45,B2:62,C1:82,C2:100};
+  $('#levelBar').style.width=(n[l]||0)+'%';
+  let lock=p.savedAt&&Date.now()-p.savedAt<30*86400000;
+  $('#profileLock').textContent=lock?'Profile locked for 30 days after your last save.':'Ready to save. Saving starts a 30-day lock.';
+  renderMilestones();
+  renderAchievements();
+}
+
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===b.dataset.view));
+  scrollTo(0,0);
+});
+
+$('#profileForm').onsubmit=e=>{
+  e.preventDefault();
+  if(s.profile.savedAt&&Date.now()-s.profile.savedAt<30*86400000)return alert('Profile is locked for 30 days.');
+  s.profile={name:$('#name').value.trim(),age:$('#age').value,country:$('#country').value,gender:$('#gender').value,savedAt:Date.now()};
+  save();
+  alert('Profile saved and locked for 30 days.');
+};
+
+let rec=null;
+let run=false;
+let sec=0;
+let startAt=0;
+let timerId=null;
+let finishing=false;
+let recognitionStarting=false;
+
+function formatTime(total){
+  return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
+}
+
+function updateTimer(){
+  if(!run||!startAt)return;
+  sec=Math.max(0,Math.floor((Date.now()-startAt)/1000));
+  $('#timer').textContent=formatTime(sec);
+}
+
+function startTimer(){
+  clearInterval(timerId);
+  startAt=Date.now();
+  sec=0;
+  $('#timer').textContent='00:00';
+  updateTimer();
+  timerId=setInterval(updateTimer,250);
+}
+
+function stopTimer(){
+  updateTimer();
+  clearInterval(timerId);
+  timerId=null;
+}
+
+function resetConversationUi(){
+  $('#timer').textContent='00:00';
+  $('#listen').textContent='Ready';
+  $('#partner').textContent='Your speaking partner is ready';
+  $('#transcript').textContent='Press Start speaking and allow microphone access.';
+  $('#feedback').classList.add('hidden');
+  $('#feedback').innerHTML='';
+  $('#mic').disabled=false;
+  $('#mic').textContent='🎙 Start speaking';
+  $('#finish').disabled=true;
+}
+
+function open(){
+  if(run)return;
+  finishing=false;
+  recognitionStarting=false;
+  sec=0;
+  startAt=0;
+  run=false;
+  if(rec){try{rec.onend=null;rec.stop()}catch{} rec=null;}
+  clearInterval(timerId);
+  resetConversationUi();
+  $('#modal').classList.remove('hidden');
+}
+
+$('#talkNow').onclick=open;
+
+$('#findPartner').onclick=()=>{
+  let b=$('#findPartner');
+  b.disabled=true;
+  b.innerHTML='<span class="loading-spinner"></span>Finding partner...';
+  setTimeout(()=>{
+    b.disabled=false;
+    b.textContent='Find partner';
+    open();
+  },900);
+};
+
+$('#close').onclick=()=>{
+  finishing=true;
+  run=false;
+  recognitionStarting=false;
+  stopTimer();
+  if(rec){try{rec.onend=null;rec.stop()}catch{} rec=null;}
+  $('#modal').classList.add('hidden');
+};
+
+function setupRecognition(){
+  if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window)){
+    $('#listen').textContent='Speech recognition unavailable in this browser.';
+    return null;
+  }
+
+  let R=window.SpeechRecognition||window.webkitSpeechRecognition;
+  let r=new R();
+  r.continuous=true;
+  r.interimResults=true;
+  r.lang='en-US';
+
+  r.onstart=()=>{
+    if(finishing||!run)return;
+    recognitionStarting=false;
+    $('#listen').textContent='Listening…';
+    $('#mic').textContent='🔴 Listening';
+    $('#finish').disabled=false;
+  };
+
+  r.onresult=e=>{
+    if(finishing||!run)return;
+    let x='';
+    for(let i=e.resultIndex;i<e.results.length;i++)x+=e.results[i][0].transcript+' ';
+    let text=x.trim();
+    if(text)$('#transcript').textContent=text;
+    $('#listen').textContent='Listening…';
+  };
+
+  r.onerror=e=>{
+    if(finishing||!run)return;
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+      recognitionStarting=false;
+      run=false;
+      stopTimer();
+      $('#listen').textContent='Microphone permission denied.';
+      $('#mic').textContent='🎙 Start speaking';
+      $('#finish').disabled=false;
+      return;
+    }
+    if(e.error!=='no-speech'&&e.error!=='aborted'){
+      $('#listen').textContent='Listening…';
+    }
+  };
+
+  r.onend=()=>{
+    if(finishing||!run)return;
+    // Chrome can end continuous recognition after silence. Keep the
+    // conversation active and restart recognition without touching timing.
+    recognitionStarting=false;
+    $('#listen').textContent='Listening…';
+    $('#mic').textContent='🔴 Listening';
+    setTimeout(()=>{
+      if(!finishing&&run&&rec===r){
+        try{
+          recognitionStarting=true;
+          r.start();
+        }catch{
+          recognitionStarting=false;
+          // If start races with a browser restart, leave the active
+          // conversation/timer untouched and let the next event recover.
+        }
+      }
+    },100);
+  };
+
+  return r;
+}
+
+$('#mic').onclick=()=>{
+  if(run||recognitionStarting)return;
+  if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window)){
+    $('#listen').textContent='Speech recognition unavailable in this browser.';
+    return;
+  }
+
+  finishing=false;
+  run=true;
+  recognitionStarting=true;
+  $('#listen').textContent='Starting microphone…';
+  $('#mic').disabled=true;
+  $('#mic').textContent='🔴 Starting…';
+  $('#finish').disabled=false;
+
+  // Start timing from the user's click, not from SpeechRecognition.onstart.
+  // Permission prompts and browser speech events must never freeze the timer.
+  startTimer();
+
+  rec=setupRecognition();
+  if(!rec){
+    run=false;
+    recognitionStarting=false;
+    stopTimer();
+    $('#mic').disabled=false;
+    $('#mic').textContent='🎙 Start speaking';
+    $('#finish').disabled=true;
+    return;
+  }
+
+  try{
+    rec.start();
+    setTimeout(()=>{
+      if(run&&!finishing){
+        recognitionStarting=false;
+        $('#mic').disabled=false;
+        $('#mic').textContent='🔴 Listening';
+        $('#listen').textContent='Listening…';
+      }
+    },300);
+  }catch{
+    recognitionStarting=false;
+    run=false;
+    stopTimer();
+    $('#mic').disabled=false;
+    $('#mic').textContent='🎙 Start speaking';
+    $('#finish').disabled=true;
+    $('#listen').textContent='Could not start the microphone. Please try again.';
+  }
+};
+
+$('#finish').onclick=()=>{
+  if(finishing)return;
+
+  // Capture elapsed time before changing run state so Finish works even
+  // when the user ends immediately after starting.
+  updateTimer();
+  finishing=true;
+  run=false;
+  recognitionStarting=false;
+
+  if(rec){try{rec.onend=null;rec.stop()}catch{} rec=null;}
+  stopTimer();
+
+  $('#mic').disabled=true;
+  $('#finish').disabled=true;
+  $('#listen').textContent='Finishing…';
+
+  let mins=Math.max(1,Math.round(sec/60));
+  s.stats.conversations++;
+  s.stats.minutes+=mins;
+  s.today.conversations++;
+  s.today.minutes+=mins;
+
+  let lv=['A1','A2','B1','B2','C1','C2'];
+  s.stats.level=s.stats.level||lv[Math.min(5,Math.floor(s.stats.conversations/2)+1)];
+  if(s.stats.conversations>=1)s.stats.achievements=[...new Set([...s.stats.achievements,'first'])];
+  if(s.stats.conversations>=4)s.stats.achievements=[...new Set([...s.stats.achievements,'four'])];
+  if(s.stats.minutes>=30)s.stats.achievements=[...new Set([...s.stats.achievements,'thirty'])];
+
+  save();
+
+  $('#feedback').classList.remove('hidden');
+  $('#feedback').innerHTML='<b>🤖 AI review</b><ul><li>Give longer answers to build fluency.</li><li>Reduce repeated filler words.</li><li>Ask a follow-up question next time.</li></ul><small>This frontend is ready for a production realtime AI analysis backend.</small>';
+  $('#mic').textContent='🎙 Start speaking';
+  $('#finish').disabled=true;
+  $('#listen').textContent='Completed';
+};
+
+function renderMilestones(){
+  let a=s.stats,m=[
+    ['🌱','First conversation','Complete your first conversation.',a.conversations>=1],
+    ['⚡','Conversation sprint','Complete 4 conversations.',a.conversations>=4],
+    ['⏱','30 minute club','Speak for 30 minutes.',a.minutes>=30],
+    ['🚀','10 conversations','Become a regular speaker.',a.conversations>=10]
+  ];
+  $('#milestoneList').innerHTML=m.map(x=>`<div class="card"><b>${x[0]} ${x[1]} ${x[3]?'✓':''}</b><p>${x[2]}</p></div>`).join('');
+}
+
+function renderAchievements(){
+  let a=s.stats.achievements,x=[
+    ['first','🎙','First Words'],
+    ['four','⚡','Conversation Sprint'],
+    ['thirty','⏱','30 Minute Club'],
+    ['streak','🔥','On Fire'],
+    ['level','🧠','Level Up']
+  ];
+  $('#achievementGrid').innerHTML=x.map(q=>`<article style="opacity:${a.includes(q[0])?1:.45}"><b style="font-size:32px">${q[1]}</b><h3>${q[2]}</h3><p>${a.includes(q[0])?'Unlocked':'Locked'}</p></article>`).join('');
+}
+
+render();
