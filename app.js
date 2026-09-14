@@ -112,6 +112,141 @@ function render(){
   if($('#shopCoins'))$('#shopCoins').textContent=a.coins||0;
 }
 
+let authMode='signin';
+
+function openAuthModal(mode='signin'){
+  authMode=mode;
+  const modal=$('#authModal');
+  if(!modal)return;
+  modal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  setAuthMode(mode);
+  setTimeout(()=>$(mode==='signup'?'#authName':'#authEmail')?.focus(),50);
+}
+function closeAuthModal(){
+  $('#authModal')?.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+function setAuthMode(mode){
+  authMode=mode==='signup'?'signup':'signin';
+  const signup=authMode==='signup';
+  $('#signInTab')?.classList.toggle('active',!signup);
+  $('#signUpTab')?.classList.toggle('active',signup);
+  $('#signupFields')?.classList.toggle('hidden',!signup);
+  $('#authTitle').textContent=signup?'Create your Open Talk account':'Welcome back';
+  $('#authSubtitle').textContent=signup
+    ?'Create an account to keep your profile, progress and conversations safe across devices.'
+    :'Sign in to keep your profile, progress and conversations connected.';
+  $('#authSubmit').innerHTML=signup?'Create account <b>→</b>':'Sign in <b>→</b>';
+  $('#authPassword').setAttribute('autocomplete',signup?'new-password':'current-password');
+  $('#authMessage').textContent='';
+}
+function updateAuthUI(){
+  const button=$('#authButton');
+  const avatar=$('.avatar');
+  const email=currentUser?.email||'';
+  if(button){
+    button.textContent=currentUser ? (email?email.split('@')[0]:'Account') : 'Sign in / Sign up';
+    button.title=currentUser?'Open account':'Sign in or create an account';
+  }
+  if(avatar){
+    avatar.textContent=currentUser?.user_metadata?.name?.charAt(0)?.toUpperCase() || s.profile?.name?.charAt(0)?.toUpperCase() || 'M';
+  }
+}
+async function loadAuthenticatedProfile(){
+  if(!supabaseClient||!currentUser)return;
+  try{
+    const {data,error}=await supabaseClient.from('profiles')
+      .select('id,name,age,country,gender,english_level,gender_preference')
+      .eq('id',currentUser.id).maybeSingle();
+    if(error)throw error;
+    if(data){
+      s.profile={...s.profile,...data};
+      save();
+    }
+  }catch(err){console.warn('Open Talk profile load:',err);}
+}
+async function handleAuthSubmit(event){
+  event.preventDefault();
+  if(!supabaseClient){
+    $('#authMessage').textContent='Authentication is still loading. Please try again.';
+    return;
+  }
+  const email=$('#authEmail').value.trim().toLowerCase();
+  const password=$('#authPassword').value;
+  const message=$('#authMessage');
+  const submit=$('#authSubmit');
+  submit.disabled=true;
+  message.textContent='Please wait…';
+  try{
+    if(authMode==='signup'){
+      const name=$('#authName').value.trim();
+      const age=Number($('#authAge').value);
+      if(!name||!age||age<13||age>100)throw new Error('Please enter your name and a valid age (13–100).');
+      const {data,error}=await supabaseClient.auth.signUp({
+        email,password,
+        options:{data:{name,age}}
+      });
+      if(error)throw error;
+      if(data.session?.user){
+        authSession=data.session;
+        currentUser=data.session.user;
+        backendReady=true;
+        s.profile={...s.profile,name,age};
+        save();
+        try{
+          await supabaseClient.from('profiles').upsert({
+            id:currentUser.id,name,age,
+            country:s.profile.country||'',
+            gender:s.profile.gender||'',
+            english_level:s.stats.level||'A1',
+            gender_preference:s.profile.gender_preference||'any',
+            updated_at:new Date().toISOString()
+          });
+        }catch{}
+        updateAuthUI(); updateBackendStatus();
+        closeAuthModal();
+        toast('Account created successfully.');
+      }else{
+        message.textContent='Account created. Check your email to confirm your account, then sign in.';
+      }
+    }else{
+      const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+      if(error)throw error;
+      authSession=data.session;
+      currentUser=data.user;
+      backendReady=!!currentUser;
+      await loadAuthenticatedProfile();
+      updateAuthUI(); updateBackendStatus();
+      closeAuthModal();
+      toast('Signed in successfully.');
+    }
+  }catch(err){
+    message.textContent=err?.message||'Authentication failed. Please try again.';
+  }finally{
+    submit.disabled=false;
+  }
+}
+async function handleSignOut(){
+  try{
+    await supabaseClient?.auth.signOut();
+  }catch(err){console.warn('Open Talk sign out:',err);}
+  authSession=null; currentUser=null; backendReady=false;
+  updateAuthUI(); updateBackendStatus();
+  toast('Signed out.');
+}
+function bindAuthUI(){
+  $('#authButton')?.addEventListener('click',()=>currentUser?openAuthModal('signin'):openAuthModal('signin'));
+  $('#authClose')?.addEventListener('click',closeAuthModal);
+  $('#signInTab')?.addEventListener('click',()=>setAuthMode('signin'));
+  $('#signUpTab')?.addEventListener('click',()=>setAuthMode('signup'));
+  $('#authForm')?.addEventListener('submit',handleAuthSubmit);
+  $('#signOutButton')?.addEventListener('click',handleSignOut);
+  $('#authModal')?.addEventListener('click',e=>{if(e.target.id==='authModal')closeAuthModal();});
+  updateAuthUI();
+}
+bindAuthUI();
+
 async function bootstrapBackend(){
   try{
     if(!window.supabase?.createClient)throw new Error('Supabase client unavailable');
@@ -124,12 +259,11 @@ async function bootstrapBackend(){
       authSession=existing;
       currentUser=existing.user;
     }else{
-      const {data,error}=await supabaseClient.auth.signInAnonymously();
-      if(error)throw error;
-      authSession=data.session;
-      currentUser=data.user;
+      authSession=null;
+      currentUser=null;
     }
     backendReady=!!currentUser;
+    updateAuthUI();
     const {data:p,error:pe}=await supabaseClient.from('profiles')
       .select('id,name,age,country,gender,english_level,gender_preference')
       .eq('id',currentUser.id).maybeSingle();
@@ -150,9 +284,23 @@ async function bootstrapBackend(){
       else s.stats.coins=(rewards.data||[]).reduce((sum,x)=>sum+Number(x.coins||0),0);
       save();
     }catch{}
+    supabaseClient.auth.onAuthStateChange((event,session)=>{
+      authSession=session||null;
+      currentUser=session?.user||null;
+      backendReady=!!currentUser;
+      updateAuthUI();
+      updateBackendStatus();
+      if(currentUser && event!=='SIGNED_OUT'){
+        loadAuthenticatedProfile().catch(err=>console.warn('Open Talk auth profile:',err));
+      }
+    });
+    updateAuthUI();
     updateBackendStatus();
   }catch(e){
     backendReady=false;
+    authSession=null;
+    currentUser=null;
+    updateAuthUI();
     updateBackendStatus();
     console.error('Open Talk backend:',e);
   }
@@ -315,6 +463,11 @@ function updateMatchSelectionUI(){
 
 async function findPartner(){
   if(finishing)return;
+  if(!currentUser){
+    openAuthModal('signin');
+    toast('Sign in or create an account before starting a real conversation.');
+    return;
+  }
   if(!backendReady){ toast('Connecting to Open Talk… please try again in a moment.'); return; }
   const p=s.profile||{};
   if(!p.name||!p.age||!p.country||!p.gender){
@@ -463,6 +616,10 @@ function setMatchPhase(phase){
   }
 }
 function openConversationModal(){
+  if(!currentUser){
+    openAuthModal('signin');
+    return;
+  }
   finishing=false;
   currentPartner=null;
   remoteStream=new MediaStream();
