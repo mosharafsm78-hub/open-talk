@@ -20,7 +20,7 @@ exports.handler=async(event)=>{
     if(ue||!user) return {statusCode:401,headers,body:JSON.stringify({error:"Invalid session"})};
 
     if(event.httpMethod==="GET"){
-      const {data,error}=await sb.from("profiles").select("id,name,age,country,gender,level,created_at,updated_at").eq("id",user.id).maybeSingle();
+      const {data,error}=await sb.from("profiles").select("id,name,age,country,gender,level,locked_until,created_at,updated_at").eq("id",user.id).maybeSingle();
       return {statusCode:200,headers,body:JSON.stringify(data||{id:user.id})};
     }
 
@@ -31,13 +31,34 @@ exports.handler=async(event)=>{
       const country=String(b.country||"").trim();
       const gender=String(b.gender||"Prefer not to say");
 
-      if(!name||!Number.isInteger(age)||age<13||age>100||!country){
+      if(!name||!Number.isInteger(age)||age<13||age>100||!country||!gender){
         return {statusCode:400,headers,body:JSON.stringify({error:"Please complete the required profile fields."})};
       }
 
+      const {data:existing,error:existingError}=await sb.from("profiles")
+        .select("id,locked_until")
+        .eq("id",user.id).maybeSingle();
+      if(existingError) throw existingError;
+
+      const now=new Date();
+      if(existing?.locked_until && new Date(existing.locked_until)>now){
+        const unlockAt=new Date(existing.locked_until);
+        return {
+          statusCode:423,
+          headers,
+          body:JSON.stringify({
+            error:"Your profile is locked for 30 days after saving.",
+            locked_until:unlockAt.toISOString()
+          })
+        };
+      }
+
+      const lockedUntil=new Date(now.getTime()+30*24*60*60*1000).toISOString();
       const {data,error}=await sb.from("profiles").upsert({
-        id:user.id,name,age,country,gender,updated_at:new Date().toISOString()
-      }).select("id,name,age,country,gender,level,created_at,updated_at").single();
+        id:user.id,name,age,country,gender,
+        updated_at:now.toISOString(),
+        locked_until:lockedUntil
+      }).select("id,name,age,country,gender,level,locked_until,created_at,updated_at").single();
 
       if(error) throw error;
       return {statusCode:200,headers,body:JSON.stringify(data)};
