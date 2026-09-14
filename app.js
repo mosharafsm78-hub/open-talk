@@ -479,10 +479,25 @@ function openConversationModal(){
   refreshMatchPasses().finally(updateMatchSelectionUI);
 }
 
-$('#talkNow')?.addEventListener('click',openConversationModal);
-$('#findPartner')?.addEventListener('click',openConversationModal);
-$('#mic')?.addEventListener('click',findPartner);
-['matchGender','matchCountry','matchLevel','matchPriority'].forEach(id=>$('#'+id)?.addEventListener('change',updateMatchSelectionUI));
+function safeBind(id, handler){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('click',async (event)=>{
+    event.preventDefault();
+    try{ await handler(event); }
+    catch(err){
+      console.error('Open Talk click failed:',id,err);
+      toast('Something went wrong. Please try again.');
+    }
+  });
+}
+safeBind('talkNow',()=>openConversationModal());
+safeBind('findPartner',()=>openConversationModal());
+safeBind('mic',()=>findPartner());
+['matchGender','matchCountry','matchLevel','matchPriority'].forEach(id=>{
+  const el=document.getElementById(id);
+  el?.addEventListener('change',()=>updateMatchSelectionUI());
+});
 
 $('#close').onclick=leaveConversation;
 $('#finish').onclick=finishConversation;
