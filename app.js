@@ -496,96 +496,98 @@ function milestoneKey(title){return title.toLowerCase().replace(/[^a-z0-9]+/g,''
 function renderMilestones(){
   const a=s.stats||{},coins=Number(a.coins||0);
   const c=Number(a.conversations||0),mins=Number(a.minutes||0),streak=Number(a.streak||0);
-  const m=[
-    ['🌱','First Words','Complete your first real human conversation.',c>=1,1,'Take the first step'],
-    ['💬','Two Talks','Complete 2 real conversations.',c>=2,1,'Keep going'],
-    ['✨','Three Conversations','Complete 3 real conversations.',c>=3,1,'Build the habit'],
-    ['⚡','Five Alive','Complete 5 real conversations.',c>=5,1,'You are showing up'],
-    ['🚀','Ten Talks','Complete 10 real conversations.',c>=10,2,'Become a regular'],
-    ['🌟','Twenty Strong','Complete 20 real conversations.',c>=20,2,'Consistency compounds'],
-    ['🏅','Thirty Conversations','Complete 30 real conversations.',c>=30,3,'You are building fluency'],
-    ['🏆','Half Century','Complete 50 real conversations.',c>=50,3,'A serious speaker'],
-    ['💎','Century Speaker','Complete 100 real conversations.',c>=100,4,'Legendary commitment'],
-    ['⏱️','Warm Up','Speak for 10 total minutes.',mins>=10,1,'Get your voice moving'],
-    ['🔥','30 Minute Club','Speak for 30 total minutes.',mins>=30,1,'Real practice adds up'],
-    ['🎧','One Hour In','Speak for 60 total minutes.',mins>=60,2,'Your fluency is growing'],
-    ['🗣️','Three Hour Speaker','Speak for 3 total hours.',mins>=180,2,'Keep the conversation going'],
-    ['🌙','Five Hour Speaker','Speak for 5 total hours.',mins>=300,3,'Momentum is becoming a habit'],
-    ['👑','Ten Hour Speaker','Speak for 10 total hours.',mins>=600,4,'You have real staying power'],
-    ['🌱','Two-Day Streak','Practice on 2 consecutive days.',streak>=2,1,'Come back tomorrow'],
-    ['🔥','Three-Day Streak','Practice on 3 consecutive days.',streak>=3,1,'Make showing up automatic'],
-    ['📅','Seven-Day Streak','Practice for 7 consecutive days.',streak>=7,2,'A week of courage'],
-    ['🌈','Fourteen-Day Streak','Practice for 14 consecutive days.',streak>=14,2,'Two weeks of momentum'],
-    ['👑','Thirty-Day Streak','Practice for 30 consecutive days.',streak>=30,3,'This is your new habit'],
-    ['🤝','Good Listener','Complete 5 conversations.',c>=5,1,'Listening is half of fluency'],
-    ['🎙️','Conversation Builder','Complete 15 conversations.',c>=15,2,'Keep the flow going'],
-    ['💫','Fluency Momentum','Complete 25 conversations.',c>=25,2,'Confidence grows through repetition'],
-    ['🌍','World Speaker','Complete 75 conversations.',c>=75,3,'Keep meeting the world']
+  const rewarded=new Set(a.rewardedMilestones||[]);
+  const tiers=[
+    {key:'easy',label:'Easy wins',sub:'Start small · 1 coin each',icon:'🌱'},
+    {key:'medium',label:'Medium milestones',sub:'Consistency · 2 coins each',icon:'⚡'},
+    {key:'hard',label:'Hard milestones',sub:'Serious commitment · 4 coins each',icon:'🏆'}
   ];
-  const rewarded=new Set(a.rewardedMilestones||[]),unlocked=m.filter(x=>x[3]).length;
-  $('#coinBalance').textContent=coins;$('#milestoneCoins').textContent=coins;
-  $('#milestoneUnlocked').textContent=unlocked;$('#milestoneRemaining').textContent=m.length-unlocked;
+  const unlocked=m.filter(x=>x[3]).length;
+  $('#coinBalance').textContent=coins;
+  $('#milestoneCoins').textContent=coins;
+  $('#milestoneUnlocked').textContent=unlocked;
+  $('#milestoneRemaining').textContent=m.length-unlocked;
   $('#milestoneEarned').textContent=coins;
-  $('#milestoneList').innerHTML=m.map(x=>{
-    const key=milestoneKey(x[1]),claimed=rewarded.has(key),title=x[1];
-    let target=1,current=c;
-    if(title.includes('Minute')||title.includes('Hour')||title.includes('Speaker')){
-      const targets={'Warm Up':10,'30 Minute Club':30,'One Hour In':60,'Three Hour Speaker':180,'Five Hour Speaker':300,'Ten Hour Speaker':600};
-      target=targets[title]||1;current=mins;
-    }else if(title.includes('Streak')){
-      const targets={'Two-Day Streak':2,'Three-Day Streak':3,'Seven-Day Streak':7,'Fourteen-Day Streak':14,'Thirty-Day Streak':30};
-      target=targets[title]||1;current=streak;
-    }else{
-      const targets={'First Words':1,'Two Talks':2,'Three Conversations':3,'Five Alive':5,'Ten Talks':10,'Twenty Strong':20,'Thirty Conversations':30,'Half Century':50,'Century Speaker':100,'Good Listener':5,'Conversation Builder':15,'Fluency Momentum':25,'World Speaker':75};
-      target=targets[title]||1;
+
+  const currentFor=(title)=>{
+    if(/Minute|Hour|Speaker/.test(title)){
+      const targets={'Warm Up':10,'30 Minute Club':30,'One Hour In':60,'Three Hour Speaker':180,'Five Hour Speaker':300,'Ten Hour Speaker':600,'Twenty Hour Speaker':1200};
+      return [mins,targets[title]||1];
     }
-    const pct=x[3]?100:Math.min(99,Math.round((current/target)*100));
-    return `<article class="milestone-card card ${x[3]?'is-unlocked':'is-locked'}">
-      <div class="milestone-icon">${x[0]}</div>
-      <div class="milestone-body"><div class="milestone-title"><h3>${title}</h3><span class="reward-pill">🪙 +${x[4]}</span></div>
-      <p>${x[2]}</p><div class="milestone-bar"><span style="width:${pct}%"></span></div>
-      <small>${x[3]?(claimed?'Reward credited':'Milestone complete'):'Locked · '+x[5]}</small></div>
-      <div class="milestone-state">${x[3]?'✓':'🔒'}</div>
-    </article>`;
+    if(/Streak/.test(title)){
+      const targets={'Two-Day Streak':2,'Seven-Day Streak':7,'Fourteen-Day Streak':14,'Thirty-Day Streak':30};
+      return [streak,targets[title]||1];
+    }
+    const targets={'First Words':1,'Two Talks':2,'Three Conversations':3,'Five Alive':5,'Ten Talks':10,'Twenty Strong':20,'Thirty Conversations':30,'Half Century':50,'Century Speaker':100,'World Speaker':75,'Two Hundred Conversations':200,'Conversation Builder':15,'Fluency Momentum':25};
+    return [c,targets[title]||1];
+  };
+
+  $('#milestoneList').innerHTML=tiers.map(tier=>{
+    const items=m.filter(x=>x[6]===tier.key);
+    return '<section class="milestone-tier milestone-tier-'+tier.key+'">'+
+      '<div class="tier-heading"><div class="tier-icon">'+tier.icon+'</div><div><span>'+tier.label+'</span><small>'+tier.sub+'</small></div><b>'+items.filter(x=>x[3]).length+'/'+items.length+'</b></div>'+
+      '<div class="tier-grid">'+items.map(x=>{
+        const key=milestoneKey(x[1]),claimed=rewarded.has(key);
+        const [current,target]=currentFor(x[1]);
+        const pct=x[3]?100:Math.min(99,Math.round((current/target)*100));
+        return '<article class="milestone-card card '+(x[3]?'is-unlocked':'is-locked')+' milestone-tier-card">'+
+          '<div class="milestone-icon">'+x[0]+'</div>'+
+          '<div class="milestone-body"><div class="milestone-title"><h3>'+x[1]+'</h3><span class="reward-pill">🪙 +'+x[4]+'</span></div>'+
+          '<p>'+x[2]+'</p><div class="milestone-bar"><span style="width:'+pct+'%"></span></div>'+
+          '<small>'+ (x[3]?(claimed?'Reward credited':'Milestone complete'):'Locked · '+x[5]) +'</small></div>'+
+          '<div class="milestone-state">'+(x[3]?'✓':'🔒')+'</div>'+
+        '</article>';
+      }).join('')+'</div></section>';
   }).join('');
 }
 
+
 const ACHIEVEMENTS=[
-  ['first','🎙️','First Words','Complete your first human conversation.',s=>s.conversations>=1],
-  ['three','💬','Getting Comfortable','Complete 3 conversations.',s=>s.conversations>=3],
-  ['five','🔥','On Fire','Complete 5 conversations.',s=>s.conversations>=5],
-  ['ten','⚡','Conversation Sprint','Complete 10 conversations.',s=>s.conversations>=10],
-  ['twenty','🌟','Twenty Strong','Complete 20 conversations.',s=>s.conversations>=20],
-  ['fifty','🏆','Half Century','Complete 50 conversations.',s=>s.conversations>=50],
-  ['hundred','💎','Century Speaker','Complete 100 conversations.',s=>s.conversations>=100],
-  ['tenmin','⏱️','Warm Up','Speak for 10 minutes.',s=>s.minutes>=10],
-  ['thirtymin','⏳','30 Minute Club','Speak for 30 minutes.',s=>s.minutes>=30],
-  ['sixtymin','🎧','One Hour In','Speak for 60 minutes.',s=>s.minutes>=60],
-  ['threehours','🗣️','Three Hour Speaker','Speak for 3 hours.',s=>s.minutes>=180],
-  ['tenhours','👑','Ten Hour Speaker','Speak for 10 hours.',s=>s.minutes>=600],
-  ['streak2','🌱','Day Two','Practice 2 days in a row.',s=>s.streak>=2],
-  ['streak3','🔥','Three-Day Fire','Practice 3 days in a row.',s=>s.streak>=3],
-  ['streak7','📅','Week Warrior','Practice 7 days in a row.',s=>s.streak>=7],
-  ['streak14','🌈','Fortnight Flow','Practice 14 days in a row.',s=>s.streak>=14],
-  ['streak30','👑','Thirty-Day Speaker','Practice 30 days in a row.',s=>s.streak>=30],
-  ['listener','🤝','Good Listener','Complete 5 conversations.',s=>s.conversations>=5],
-  ['builder','🎙️','Conversation Builder','Complete 15 conversations.',s=>s.conversations>=15],
-  ['momentum','💫','Fluency Momentum','Complete 25 conversations.',s=>s.conversations>=25],
-  ['world','🌍','World Speaker','Complete 75 conversations.',s=>s.conversations>=75],
-  ['fortyfive','🧠','Deep Practice','Speak for 45 minutes.',s=>s.minutes>=45],
-  ['ninety','🚀','Ninety Minutes','Speak for 90 minutes.',s=>s.minutes>=90],
-  ['fivehours','🌙','Five Hour Speaker','Speak for 5 hours.',s=>s.minutes>=300],
-  ['early','🌅','Showed Up','Complete 1 conversation today.',s=>s.today>=1],
-  ['daily2','☀️','Double Down','Complete 2 conversations today.',s=>s.today>=2],
-  ['daily4','🎯','Goal Getter','Complete 4 conversations today.',s=>s.today>=4],
-  ['level','🧠','Level Up','Receive a speaking level.',s=>!!s.level],
-  ['consistent','💫','Consistency Wins','Practice on 5 separate days.',s=>s.streak>=5]
+  // EASY — badges that make the first weeks feel rewarding.
+  ['first','🎙️','First Words','Complete your first human conversation.',s=>s.conversations>=1,'easy'],
+  ['three','💬','Getting Comfortable','Complete 3 conversations.',s=>s.conversations>=3,'easy'],
+  ['five','🔥','On Fire','Complete 5 conversations.',s=>s.conversations>=5,'easy'],
+  ['tenmin','⏱️','Warm Up','Speak for 10 minutes.',s=>s.minutes>=10,'easy'],
+  ['thirtymin','⏳','30 Minute Club','Speak for 30 minutes.',s=>s.minutes>=30,'easy'],
+  ['streak2','🌱','Day Two','Practice 2 days in a row.',s=>s.streak>=2,'easy'],
+  ['streak3','🔥','Three-Day Fire','Practice 3 days in a row.',s=>s.streak>=3,'easy'],
+  ['early','🌅','Showed Up','Complete 1 conversation today.',s=>s.today>=1,'easy'],
+  ['daily2','☀️','Double Down','Complete 2 conversations today.',s=>s.today>=2,'easy'],
+  ['level','🧠','Level Up','Receive a speaking level.',s=>!!s.level,'easy'],
+
+  // MEDIUM — consistency starts to matter.
+  ['ten','⚡','Conversation Sprint','Complete 10 conversations.',s=>s.conversations>=10,'medium'],
+  ['twenty','🌟','Twenty Strong','Complete 20 conversations.',s=>s.conversations>=20,'medium'],
+  ['sixtymin','🎧','One Hour In','Speak for 60 minutes.',s=>s.minutes>=60,'medium'],
+  ['threehours','🗣️','Three Hour Speaker','Speak for 3 hours.',s=>s.minutes>=180,'medium'],
+  ['streak7','📅','Week Warrior','Practice 7 days in a row.',s=>s.streak>=7,'medium'],
+  ['streak14','🌈','Fortnight Flow','Practice 14 days in a row.',s=>s.streak>=14,'medium'],
+  ['listener','🤝','Good Listener','Complete 5 conversations.',s=>s.conversations>=5,'medium'],
+  ['builder','🎙️','Conversation Builder','Complete 15 conversations.',s=>s.conversations>=15,'medium'],
+  ['momentum','💫','Fluency Momentum','Complete 25 conversations.',s=>s.conversations>=25,'medium'],
+  ['daily4','🎯','Goal Getter','Complete 4 conversations today.',s=>s.today>=4,'medium'],
+  ['fortyfive','🧠','Deep Practice','Speak for 45 minutes.',s=>s.minutes>=45,'medium'],
+  ['ninety','🚀','Ninety Minutes','Speak for 90 minutes.',s=>s.minutes>=90,'medium'],
+
+  // HARD — prestigious badges for people who genuinely stick around.
+  ['fifty','🏆','Half Century','Complete 50 conversations.',s=>s.conversations>=50,'hard'],
+  ['hundred','💎','Century Speaker','Complete 100 conversations.',s=>s.conversations>=100,'hard'],
+  ['fivehours','🌙','Five Hour Speaker','Speak for 5 hours.',s=>s.minutes>=300,'hard'],
+  ['tenhours','👑','Ten Hour Speaker','Speak for 10 hours.',s=>s.minutes>=600,'hard'],
+  ['streak30','🔥','Thirty-Day Speaker','Practice 30 days in a row.',s=>s.streak>=30,'hard'],
+  ['world','🌍','World Speaker','Complete 75 conversations.',s=>s.conversations>=75,'hard'],
+  ['twohundred','🛡️','Two Hundred Conversations','Complete 200 conversations.',s=>s.conversations>=200,'hard'],
+  ['twentyhours','🚀','Twenty Hour Speaker','Speak for 20 hours.',s=>s.minutes>=1200,'hard'],
+  ['streak60','👑','Sixty-Day Speaker','Practice 60 days in a row.',s=>s.streak>=60,'hard'],
+  ['twofifty','💠','Quarter Thousand','Complete 250 conversations.',s=>s.conversations>=250,'hard'],
+  ['consistent','💫','Consistency Wins','Practice on 5 separate days.',s=>s.streak>=5,'medium']
 ];
+
 function getAchievement(key){
   const item=ACHIEVEMENTS.find(x=>x[0]===key);
   if(!item)return null;
   const a=s.stats||{};
-  return {key:item[0],icon:item[1],title:item[2],desc:item[3],unlocked:!!item[4]({...a,today:Number(s.today?.conversations||0)})};
+  return {key:item[0],icon:item[1],title:item[2],desc:item[3],unlocked:!!item[4]({...a,today:Number(s.today?.conversations||0)}),tier:item[5]||'easy'};
 }
 function toggleBadge(key){
   const badge=getAchievement(key);
@@ -611,17 +613,30 @@ function renderRemoteBadges(){
 function renderAchievements(){
   const host=$('#achievementGrid'); if(!host)return;
   const selected=new Set(s.stats.selectedBadges||[]);
-  host.innerHTML=ACHIEVEMENTS.map(q=>{
-    const a=getAchievement(q[0]), isSelected=selected.has(q[0]);
-    return '<button type="button" class="achievement-card '+(a.unlocked?'earned':'locked')+(isSelected?' selected':'')+'" data-achievement="'+a.key+'" '+(a.unlocked?'':'disabled')+'>'+
-      '<span class="achievement-icon">'+a.icon+'</span><span class="achievement-copy"><b>'+a.title+'</b><small>'+a.desc+'</small><em>'+ (a.unlocked?(isSelected?'✓ Showcased':'Earned · tap to showcase'):'Locked') +'</em></span>'+
-      '<span class="achievement-check">'+(isSelected?'✓':a.unlocked?'＋':'🔒')+'</span></button>';
+  const tiers=[
+    {key:'easy',label:'Easy',sub:'Early wins · build your identity',icon:'🌱'},
+    {key:'medium',label:'Medium',sub:'Consistency · badges worth keeping',icon:'⚡'},
+    {key:'hard',label:'Hard',sub:'Prestige · genuinely difficult',icon:'🏆'}
+  ];
+  host.innerHTML=tiers.map(tier=>{
+    const items=ACHIEVEMENTS.filter(q=>q[5]===tier.key);
+    const earned=items.filter(q=>getAchievement(q[0])?.unlocked).length;
+    return '<section class="achievement-tier achievement-tier-'+tier.key+'">'+
+      '<div class="achievement-tier-heading"><div class="tier-icon">'+tier.icon+'</div><div><span>'+tier.label+' achievements</span><small>'+tier.sub+'</small></div><b>'+earned+'/'+items.length+'</b></div>'+
+      '<div class="achievement-grid-inner">'+items.map(q=>{
+        const a=getAchievement(q[0]),isSelected=selected.has(q[0]);
+        return '<button type="button" class="achievement-card '+(a.unlocked?'earned':'locked')+(isSelected?' selected':'')+'" data-achievement="'+a.key+'" '+(a.unlocked?'':'disabled')+'>'+
+          '<span class="achievement-icon">'+a.icon+'</span><span class="achievement-copy"><b>'+a.title+'</b><small>'+a.desc+'</small><em>'+(a.unlocked?(isSelected?'✓ Showcased':'Earned · tap to showcase'):'Locked')+'</em></span>'+
+          '<span class="achievement-check">'+(isSelected?'✓':a.unlocked?'＋':'🔒')+'</span></button>';
+      }).join('')+'</div></section>';
   }).join('');
   host.querySelectorAll('[data-achievement]').forEach(btn=>btn.onclick=()=>toggleBadge(btn.dataset.achievement));
   const count=(s.stats.selectedBadges||[]).length;
   if($('#badgeCount'))$('#badgeCount').textContent=count+'/3';
   renderBadgeShowcase();
 }
+
+
 
 
 render();
