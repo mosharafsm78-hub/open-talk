@@ -154,15 +154,21 @@ async function bootstrapBackend(){
       'sb_publishable_RrciEiRwRPkbU6yO6wt8Zg_BI0tSYEW'
     );
     const existing=(await supabaseClient.auth.getSession()).data.session;
-    if(!existing?.access_token){
+    // Do not silently create anonymous accounts. Open Talk now requires a real account.
+    if(existing?.user?.is_anonymous){
+      await supabaseClient.auth.signOut();
+      authSession=null; currentUser=null;
+    }
+    const session=(await supabaseClient.auth.getSession()).data.session;
+    if(!session?.access_token){
       backendReady=false;
       setAuthGate(true);
       setAuthMode('login');
       updateBackendStatus();
       return;
     }
-    authSession=existing;
-    currentUser=existing.user;
+    authSession=session;
+    currentUser=session.user;
     backendReady=true;
     setAuthGate(false);
 
