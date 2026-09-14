@@ -698,6 +698,9 @@ async function ensurePeer(){
   remoteTrackReady=false;
   audioPlaybackReady=false;
   rtcConnected=false;
+  audioFlowReady=false;
+  clearTimeout(audioFlowTimer);
+  audioFlowTimer=null;
   // STUN handles direct peers; TURN is the fallback for restrictive Wi-Fi,
   // carrier NAT and phone-to-phone networks that cannot connect directly.
   // Keep the relay configurable for production deployments.
