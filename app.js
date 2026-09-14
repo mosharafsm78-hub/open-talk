@@ -694,7 +694,7 @@ async function primeRemoteAudioPlayback(){
     audio.autoplay=true;
     audio.playsInline=true;
     audio.muted=false;
-    audio.volume=1;
+    audio.volume=Number(document.getElementById('speakerVolume')?.value||100)/100;
     try{
       if(!audio.srcObject) audio.srcObject=remoteStream||new MediaStream();
       await audio.play().then(()=>{audioPlaybackReady=true;}).catch(()=>{});
@@ -722,7 +722,7 @@ async function enableRemoteAudio(){
       // remain muted/at volume 0. The previous implementation did exactly
       // that, which could leave both people talking while hearing silence.
       audio.muted=false;
-      audio.volume=1;
+      audio.volume=Number(document.getElementById('speakerVolume')?.value||100)/100;
       audio.srcObject=remoteStream||audio.srcObject;
       await audio.play();
     }
@@ -769,6 +769,56 @@ function verifyAudioFlow(){
   };
   check();
 }
+function ensureLiveAudioControls(){
+  const actions=document.querySelector('.live-modal .actions');
+  if(!actions)return;
+  let panel=document.getElementById('liveAudioControls');
+  if(!panel){
+    panel=document.createElement('div');
+    panel.id='liveAudioControls';
+    panel.style.cssText='display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 4px;padding:12px 14px;border:1px solid #dfe3f2;border-radius:18px;background:rgba(248,249,253,.96);';
+    panel.innerHTML='<button id="toggleMic" type="button" style="border:0;border-radius:12px;padding:10px 14px;font-weight:800;background:#6257f5;color:#fff;cursor:pointer;">🎙 Microphone on</button><label style="display:flex;align-items:center;gap:8px;flex:1;min-width:190px;color:#1a2340;font-weight:700;font-size:14px;"><span>🔊 Speaker</span><input id="speakerVolume" type="range" min="0" max="100" value="100" step="1" style="flex:1;accent-color:#6257f5;"><b id="speakerVolumeValue" style="min-width:38px;text-align:right;">100%</b></label>';
+    actions.parentNode.insertBefore(panel,actions);
+    document.getElementById('toggleMic').addEventListener('click',toggleLocalMicrophone);
+    document.getElementById('speakerVolume').addEventListener('input',e=>setRemoteSpeakerVolume(Number(e.target.value)/100));
+  }
+  const track=localStream?.getAudioTracks?.()[0];
+  const micOn=!!track?.enabled;
+  const micButton=document.getElementById('toggleMic');
+  if(micButton){
+    micButton.textContent=micOn?'🎙 Microphone on':'🔇 Microphone muted';
+    micButton.style.background=micOn?'#6257f5':'#9aa2b8';
+  }
+  panel.style.display='flex';
+}
+function toggleLocalMicrophone(){
+  const tracks=localStream?.getAudioTracks?.()||[];
+  if(!tracks.length){toast('Microphone is not available.');return;}
+  const next=!tracks[0].enabled;
+  tracks.forEach(t=>t.enabled=next);
+  const button=document.getElementById('toggleMic');
+  if(button){
+    button.textContent=next?'🎙 Microphone on':'🔇 Microphone muted';
+    button.style.background=next?'#6257f5':'#9aa2b8';
+  }
+  $('#listen').textContent=next?'Your microphone is live. You can speak now.':'Your microphone is muted. Tap Microphone to speak again.';
+}
+function setRemoteSpeakerVolume(level){
+  const value=Math.max(0,Math.min(1,Number(level)||0));
+  if(remoteAudioGain)remoteAudioGain.gain.value=value;
+  const audio=$('#remoteAudio');
+  if(audio){
+    audio.muted=false;
+    audio.volume=value;
+  }
+  const label=document.getElementById('speakerVolumeValue');
+  if(label)label.textContent=Math.round(value*100)+'%';
+}
+function hideLiveAudioControls(){
+  const panel=document.getElementById('liveAudioControls');
+  if(panel)panel.style.display='none';
+}
+
 function maybeMarkRtcUsable(){
   if(finishing || !currentPartner || !pc)return;
   if(pc.connectionState!=='connected' || !remoteTrackReady || !audioPlaybackReady)return;
@@ -785,6 +835,7 @@ function maybeMarkRtcUsable(){
   $('#mic').disabled=true;
   $('#mic').onclick=null;
   $('#finish').disabled=false;
+  ensureLiveAudioControls();
 }
 
 async function ensurePeer(){
@@ -1112,6 +1163,7 @@ async function leaveConversation(){
 }
 
 async function teardownCall(){
+  hideLiveAudioControls();
   stopMatchPolling();
   stopSignalPolling();
   stopCallClock();
