@@ -483,7 +483,10 @@ async function setupSignaling(sessionId,partner){
     try{
       if(msg.type==='hello'){
         remoteSelectedBadges=Array.isArray(msg.selectedBadges)?msg.selectedBadges.slice(0,3):[];
-        if(currentUser.id<partner.id) await createOffer();
+        // Deterministic initiator: the lexicographically smaller user creates
+        // the offer. Retry-safe so a late subscriber cannot leave both clients
+        // stuck on "Connecting…".
+        if(currentUser.id<partner.id && (!pc || !pc.localDescription)) await createOffer();
       }else if(msg.type==='offer'){
         await ensurePeer();
         await pc.setRemoteDescription(msg.sdp);
@@ -514,7 +517,12 @@ async function setupSignaling(sessionId,partner){
     });
   });
 
+  // Realtime broadcasts are ephemeral. Announce readiness more than once
+  // so a phone that subscribed a moment later still receives the handshake.
   await sendSignal({type:'hello'});
+  [450,1100,1900].forEach(delay=>setTimeout(()=>{
+    if(channel && !finishing) sendSignal({type:'hello'}).catch(()=>{});
+  },delay));
 }
 
 async function sendSignal(message){
@@ -562,6 +570,7 @@ async function ensurePeer(){
 
 async function createOffer(){
   await ensurePeer();
+  if(pc.localDescription) return;
   const offer=await pc.createOffer({offerToReceiveAudio:true});
   await pc.setLocalDescription(offer);
   await sendSignal({type:'offer',sdp:pc.localDescription});
