@@ -27,6 +27,20 @@ exports.handler=async(e)=>{
     if(ue||!user) return json(401,{error:"Invalid session"});
 
     const b=JSON.parse(e.body||"{}");
+
+    const adminKey=process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if(!adminKey) return json(500,{error:"Matching service is missing its server key."});
+    const db=createClient(process.env.SUPABASE_URL,adminKey);
+
+    if(b.action==="leave"){
+      await db.from("waiting_users").delete().eq("user_id",user.id);
+      await db.from("calls")
+        .update({status:"cancelled",ended_at:new Date().toISOString()})
+        .in("status",["matched","active"])
+        .or("caller_id.eq."+user.id+",receiver_id.eq."+user.id);
+      return json(200,{ok:true});
+    }
+
     const requestedGender=b.gender_preference||"any";
     const requestedCountry=b.target_country||"";
     const requestedLevel=b.target_level||"";
