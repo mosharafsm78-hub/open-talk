@@ -628,13 +628,9 @@ async function primeRemoteAudioPlayback(){
     if(Ctx){
       if(!remoteAudioContext) remoteAudioContext=new Ctx();
       if(remoteAudioContext.state==='suspended') await remoteAudioContext.resume();
-      if(remoteStream && !remoteAudioSource){
-        remoteAudioSource=remoteAudioContext.createMediaStreamSource(remoteStream);
-        remoteAudioGain=remoteAudioContext.createGain();
-        remoteAudioGain.gain.value=1;
-        remoteAudioSource.connect(remoteAudioGain);
-        remoteAudioGain.connect(remoteAudioContext.destination);
-      }
+      // Do not create a MediaStreamAudioSourceNode yet: on iOS the remote
+      // stream is still empty at this point. The source is created after the
+      // actual remote audio track arrives.
     }
   }catch(err){console.warn('Open Talk audio unlock:',err);}
   const audio=$('#remoteAudio');
