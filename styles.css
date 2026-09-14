@@ -468,3 +468,19 @@ nav button.nav-active{background:#efedff;color:var(--purple);font-weight:800}
 .milestone-state{font-size:14px;color:#a0a7b7}.is-unlocked .milestone-state{color:#31aa68}
 @media(max-width:760px){.milestone-intro{display:block}.coin-hero{margin-top:18px}.milestone-list{grid-template-columns:1fr}.milestone-summary{grid-template-columns:1fr 1fr}.coin-wallet{display:none}}
 @media(max-width:480px){.milestone-summary{grid-template-columns:1fr}.milestone-title{align-items:flex-start;flex-direction:column}.milestone-card{grid-template-columns:42px minmax(0,1fr) 20px}.milestone-icon{width:42px;height:42px}}
+
+/* COIN ECONOMY */
+.coin-wallet{cursor:pointer;font:inherit;color:inherit}
+.coin-page-intro{max-width:850px}
+.coin-balance-card{display:flex;align-items:center;gap:18px;padding:22px 24px;margin-bottom:26px;background:linear-gradient(135deg,#151b3b,#292e68);color:#fff;border-color:#3c4381}
+.coin-balance-icon{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:rgba(255,255,255,.10);font-size:28px}
+.coin-balance-card .card-kicker{color:#bcb7ff}.coin-balance-card strong{display:block;font:800 34px 'Plus Jakarta Sans';line-height:1;margin:4px 0}.coin-balance-card p{margin:0;color:#b8c0da;font-size:11px}.coin-balance-note{margin-left:auto;font-size:10px;font-weight:800;color:#c9c5ff;border:1px solid rgba(255,255,255,.15);padding:9px 11px;border-radius:999px}
+.coin-use-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.coin-use{padding:20px;display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:14px;align-items:center}
+.coin-use>span{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:#f0eeff;color:#5b50d7;font-weight:900;font-size:17px}
+.coin-use h3{font-size:15px;margin:0 0 4px}.coin-use p{font-size:11px;line-height:1.55;margin:0}.coin-use>b{font-size:11px;color:#75621c;background:#fff6d9;border:1px solid #f0d88a;border-radius:999px;padding:6px 8px;white-space:nowrap}
+.coin-business{margin-top:28px;padding:24px;display:flex;align-items:center;justify-content:space-between;gap:25px;background:linear-gradient(135deg,#f7f5ff,#fff)}
+.coin-business h2{font-size:23px;margin:6px 0}.coin-business p{max-width:650px;font-size:12px}
+.coin-packs{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}.coin-packs div{min-width:92px;text-align:center;padding:12px 10px;border:1px solid #e4e2f7;background:#fff;border-radius:15px}.coin-packs b{display:block;font:800 23px 'Plus Jakarta Sans'}.coin-packs span{display:block;font-size:10px;color:#655bc9}.coin-packs small{font-size:8px;color:#939bad}
+@media(max-width:760px){.coin-use-grid{grid-template-columns:1fr}.coin-balance-card,.coin-business{align-items:flex-start;flex-direction:column}.coin-balance-note{margin-left:0}.coin-packs{justify-content:flex-start}}
+@media(max-width:480px){.coin-use{grid-template-columns:42px minmax(0,1fr);padding:16px}.coin-use>span{width:42px;height:42px}.coin-use>b{grid-column:2;justify-self:start}}
