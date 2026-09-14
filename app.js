@@ -9,6 +9,8 @@ function save(){
 
 function render(){
   let p=s.profile,t=s.today,a=s.stats;
+  if(!a.achievements)a.achievements=[];
+  if(!t.date)t.date=new Date().toISOString().slice(0,10);
   $('#name').value=p.name||'';
   $('#age').value=p.age||'';
   $('#country').value=p.country||'';
@@ -17,6 +19,11 @@ function render(){
   $('#levelValue').textContent=l;
   $('#homeLevel').textContent=l;
   $('#homeMinutes').textContent=a.minutes;
+  $('#homeConvos').textContent=a.conversations;
+  $('#homeMinutes2').textContent=a.minutes;
+  $('#homeLevel2').textContent=a.level||'—';
+  $('#homeAch').textContent=a.achievements.length;
+  $('#statStreakHome').textContent=a.streak||0;
   $('#statConvos').textContent=a.conversations;
   $('#statMinutes').textContent=a.minutes;
   $('#statStreak').textContent=a.streak||0;
@@ -271,11 +278,19 @@ $('#finish').onclick=()=>{
   s.today.conversations++;
   s.today.minutes+=mins;
 
+  const todayKey=new Date().toISOString().slice(0,10);
+  const yesterdayKey=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  if(a.lastPracticeDate!==todayKey){
+    a.streak=a.lastPracticeDate===yesterdayKey?(a.streak||0)+1:1;
+    a.lastPracticeDate=todayKey;
+  }
+
   let lv=['A1','A2','B1','B2','C1','C2'];
   s.stats.level=s.stats.level||lv[Math.min(5,Math.floor(s.stats.conversations/2)+1)];
   if(s.stats.conversations>=1)s.stats.achievements=[...new Set([...s.stats.achievements,'first'])];
   if(s.stats.conversations>=4)s.stats.achievements=[...new Set([...s.stats.achievements,'four'])];
   if(s.stats.minutes>=30)s.stats.achievements=[...new Set([...s.stats.achievements,'thirty'])];
+  if((s.stats.streak||0)>=7)s.stats.achievements=[...new Set([...s.stats.achievements,'streak'])];
 
   save();
 
