@@ -280,9 +280,9 @@ $('#finish').onclick=()=>{
 
   const todayKey=new Date().toISOString().slice(0,10);
   const yesterdayKey=new Date(Date.now()-86400000).toISOString().slice(0,10);
-  if(a.lastPracticeDate!==todayKey){
-    a.streak=a.lastPracticeDate===yesterdayKey?(a.streak||0)+1:1;
-    a.lastPracticeDate=todayKey;
+  if(s.stats.lastPracticeDate!==todayKey){
+    s.stats.streak=s.stats.lastPracticeDate===yesterdayKey?(s.stats.streak||0)+1:1;
+    s.stats.lastPracticeDate=todayKey;
   }
 
   let lv=['A1','A2','B1','B2','C1','C2'];
