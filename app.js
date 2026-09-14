@@ -20,6 +20,11 @@ let callStartedAt=0;
 let callTimer=null;
 let finishing=false;
 let remoteSelectedBadges=[];
+let remoteStream=null;
+let remoteTrackReady=false;
+let audioPlaybackReady=false;
+let rtcConnected=false;
+let rtcOfferInFlight=false;
 let activeMatchPasses=[];
 
 function save(){
@@ -300,6 +305,7 @@ async function findPartner(){
     try{
       localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
       $('#listen').textContent='Microphone ready. Finding your person…';
+      primeRemoteAudioPlayback();
     }catch(err){
       const denied=err?.name==='NotAllowedError'||err?.name==='PermissionDeniedError';
       $('#listen').textContent=denied
@@ -375,6 +381,9 @@ async function findPartner(){
         stopMatchPolling();
         setMatchPhase('connected');
         $('#partner').textContent='Someone is ready ✨';
+        rtcConnected=false;
+        remoteTrackReady=false;
+        audioPlaybackReady=false;
         await refreshMatchPasses();
         $('#partnerMeta').textContent=(data.candidate.name||'Your speaking partner')+' • '+(data.candidate.country||'Global')+' • '+(data.candidate.level||'level not assessed');
         remoteSelectedBadges=[];
@@ -429,6 +438,11 @@ function setMatchPhase(phase){
 function openConversationModal(){
   finishing=false;
   currentPartner=null;
+  remoteStream=null;
+  remoteTrackReady=false;
+  audioPlaybackReady=false;
+  rtcConnected=false;
+  rtcOfferInFlight=false;
   stopMatchPolling();
   $('#modal').classList.remove('hidden');
   document.body.classList.add('modal-open');
@@ -592,8 +606,61 @@ function waitForIceGathering(peer,timeout=6000){
   });
 }
 
+function primeRemoteAudioPlayback(){
+  const audio=$('#remoteAudio');
+  if(!audio)return;
+  audio.autoplay=true;
+  audio.playsInline=true;
+  audio.muted=false;
+  audio.volume=1;
+  try{
+    if(!audio.srcObject) audio.srcObject=new MediaStream();
+    audio.play().catch(()=>{});
+  }catch{}
+}
+
+async function enableRemoteAudio(){
+  const audio=$('#remoteAudio');
+  if(!audio)return;
+  try{
+    audio.muted=false;
+    audio.volume=1;
+    if(audio.srcObject) await audio.play();
+    audioPlaybackReady=true;
+    $('#mic').style.display='none';
+    $('#mic').disabled=true;
+    $('#mic').onclick=null;
+    maybeMarkRtcUsable();
+  }catch(err){
+    audioPlaybackReady=false;
+    $('#listen').textContent='Speaker access is still blocked. Tap again or check Safari audio permissions.';
+  }
+}
+
+function maybeMarkRtcUsable(){
+  if(finishing || !currentPartner || !pc)return;
+  if(pc.connectionState!=='connected' || !remoteTrackReady || !audioPlaybackReady)return;
+  clearTimeout(rtcConnectTimer);
+  if(!callStartedAt) startCallClock();
+  if(supabaseClient && currentPartner.call_id){
+    supabaseClient.from('calls').update({status:'active',started_at:new Date().toISOString()})
+      .eq('id',currentPartner.call_id).then(()=>{}).catch(()=>{});
+  }
+  $('#listen').textContent='Successfully connected — you’re live with a real person.';
+  $('#partnerMeta').textContent=(currentPartner.name||'Your partner')+' • LIVE HUMAN CONVERSATION';
+  $('#transcript').innerHTML='<div class="queue-status success"><span>✓</span><b>Successfully connected</b><small>Your private peer-to-peer audio connection is live.</small></div>';
+  $('#mic').style.display='none';
+  $('#mic').disabled=true;
+  $('#mic').onclick=null;
+  $('#finish').disabled=false;
+}
+
 async function ensurePeer(){
   if(pc)return pc;
+  remoteStream=null;
+  remoteTrackReady=false;
+  audioPlaybackReady=false;
+  rtcConnected=false;
   // STUN handles direct peers; TURN is the fallback for restrictive Wi-Fi,
   // carrier NAT and phone-to-phone networks that cannot connect directly.
   // Keep the relay configurable for production deployments.
@@ -624,45 +691,41 @@ async function ensurePeer(){
     console.warn('Open Talk ICE candidate error:',e.errorCode,e.url,e.errorText);
   };
   pc.ontrack=e=>{
+    // Do not call this a successful call just because ontrack fired.
+    // Mobile Safari may deliver the track before ICE/DTLS is usable, and
+    // remote speaker autoplay can still be blocked.
     const audio=$('#remoteAudio');
-    if(audio.srcObject!==e.streams[0])audio.srcObject=e.streams[0];
-    audio.play().catch(()=>{});
-    $('#listen').textContent='Successfully connected — you’re live with a real person.';
-    $('#partnerMeta').textContent=`${currentPartner?.name||'Your partner'} • LIVE HUMAN CONVERSATION`;
-    $('#transcript').innerHTML='<div class="queue-status success"><span>✓</span><b>Successfully connected</b><small>Your private peer-to-peer audio connection is live.</small></div>';
-    $('#mic').disabled=true;
-    $('#mic').textContent='🎙 Live';
-    $('#mic').classList.add('is-live');
-    $('#mic').onclick=null;
-    $('#mic').style.display='none';
-    renderRemoteBadges();
-  };
-  clearTimeout(rtcConnectTimer);
-  rtcConnectTimer=setTimeout(()=>{
-    if(pc && pc.connectionState!=='connected' && !finishing && signalingSessionId){
-      $('#listen').textContent='Still connecting — retrying the private voice link…';
-      scheduleRtcRecovery();
+    audio.autoplay=true;
+    audio.playsInline=true;
+    audio.muted=false;
+    audio.volume=1;
+    if(!remoteStream) remoteStream=new MediaStream();
+    if(e.track && !remoteStream.getTracks().some(t=>t.id===e.track.id)){
+      remoteStream.addTrack(e.track);
     }
-  },12000);
-
+    audio.srcObject=e.streams?.[0] || remoteStream;
+    remoteTrackReady=!!e.track;
+    renderRemoteBadges();
+    audio.play().then(()=>{
+      audioPlaybackReady=true;
+      maybeMarkRtcUsable();
+    }).catch(err=>{
+      audioPlaybackReady=false;
+      console.warn('Open Talk remote audio autoplay:',err);
+      $('#listen').textContent='Your partner is connected. Tap Enable speaker to hear them.';
+      $('#mic').style.display='';
+      $('#mic').disabled=false;
+      $('#mic').textContent='🔊 Enable speaker';
+      $('#mic').onclick=enableRemoteAudio;
+    });
+  };
   pc.onconnectionstatechange=()=>{
     const state=pc.connectionState;
+    rtcConnected=state==='connected';
     if(state==='connected'){
-      // Mark the call active as soon as WebRTC is actually connected. This
-      // distinguishes a live conversation from a stale "matched" handshake.
       clearTimeout(rtcConnectTimer);
-      if(supabaseClient && currentPartner?.call_id){
-        supabaseClient.from('calls').update({status:'active',started_at:new Date().toISOString()})
-          .eq('id',currentPartner.call_id).then(()=>{}).catch(()=>{});
-      }
-      startCallClock();
-      $('#listen').textContent='Successfully connected — you’re live with a real person.';
-      $('#partnerMeta').textContent=(currentPartner?.name||'Your partner')+' • LIVE HUMAN CONVERSATION';
-      $('#transcript').innerHTML='<div class="queue-status success"><span>✓</span><b>Successfully connected</b><small>Your private peer-to-peer audio connection is live.</small></div>';
-      $('#mic').style.display='none';
-      $('#mic').disabled=true;
-      $('#mic').onclick=null;
       $('#finish').disabled=false;
+      maybeMarkRtcUsable();
     }else if(state==='failed'){
       $('#listen').textContent='We couldn’t establish the voice connection. Retrying…';
       if(!finishing && signalingSessionId)scheduleRtcRecovery();
@@ -736,8 +799,12 @@ function scheduleRtcRecovery(){
 async function resumeLiveConversation(){
   if(!currentPartner || finishing || $('#modal')?.classList.contains('hidden')) return;
   try{
+    try{ if(navigator.audioSession) navigator.audioSession.type='play-and-record'; }catch{}
     const audio=$('#remoteAudio');
-    if(audio?.srcObject) await audio.play().catch(()=>{});
+    if(audio?.srcObject){
+      await audio.play().then(()=>{audioPlaybackReady=true;}).catch(()=>{});
+      maybeMarkRtcUsable();
+    }
 
     const micEnded=!localStream || localStream.getAudioTracks().some(t=>t.readyState==='ended');
     if(micEnded && navigator.mediaDevices?.getUserMedia){
@@ -874,10 +941,16 @@ async function teardownCall(){
   if(channel&&supabaseClient){try{await supabaseClient.removeChannel(channel)}catch{} channel=null;}
   signalingSessionId=null;
   $('#remoteAudio').srcObject=null;
+  remoteStream=null;
+  remoteTrackReady=false;
+  audioPlaybackReady=false;
+  rtcConnected=false;
+  rtcOfferInFlight=false;
   try{
     if(navigator.audioSession) navigator.audioSession.type='auto';
   }catch{}
   callStartedAt=0;
+  $('#timer').textContent='00:00';
 }
 
 function milestoneKey(title){return title.toLowerCase().replace(/[^a-z0-9]+/g,'');}
