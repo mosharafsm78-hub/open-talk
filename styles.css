@@ -333,6 +333,13 @@ form.card,.assessment{padding:27px}
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
+
+.queue-status{display:flex;align-items:center;gap:12px;min-height:82px}
+.queue-status b{display:block;color:var(--ink);font-weight:900}
+.queue-status small{display:block;color:var(--muted);margin-top:4px}
+.queue-spinner{width:24px;height:24px;border-radius:50%;border:3px solid #e7e5ff;border-top-color:var(--purple);animation:spin .8s linear infinite;flex:0 0 auto}
+.modalCard .transcript{background:linear-gradient(135deg,#fafaff,#f6f7fb);border-color:#e4e2ff}
+
 /* RESPONSIVE */
 @media(max-width:980px){
   .header-inner{padding:0 20px}
