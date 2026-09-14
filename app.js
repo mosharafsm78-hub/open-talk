@@ -480,21 +480,21 @@ function renderMilestones(){
   const coins=Number(a.coins||0);
   const c=Number(a.conversations||0), mins=Number(a.minutes||0), streak=Number(a.streak||0);
   const m=[
-    ['🌱','First Words','Complete your first real human conversation.',c>=1,25,'Start your journey'],
-    ['💬','Three Conversations','Finish 3 real conversations.',c>=3,40,'Build the habit'],
-    ['⚡','Five Alive','Finish 5 real conversations.',c>=5,60,'You are showing up'],
-    ['🚀','Ten Talks','Complete 10 real conversations.',c>=10,100,'Become a regular'],
-    ['🌟','Twenty Strong','Complete 20 real conversations.',c>=20,175,'Consistency compounds'],
-    ['🏆','Half Century','Complete 50 real conversations.',c>=50,400,'A serious speaker'],
-    ['💎','Century Speaker','Complete 100 real conversations.',c>=100,1000,'Legendary commitment'],
-    ['⏱️','Warm Up','Speak for 10 total minutes.',mins>=10,30,'Get your voice moving'],
-    ['🔥','30 Minute Club','Speak for 30 total minutes.',mins>=30,75,'Real practice adds up'],
-    ['🎧','One Hour In','Speak for 60 total minutes.',mins>=60,125,'Your fluency is growing'],
-    ['🗣️','Three Hour Speaker','Speak for 3 total hours.',mins>=180,300,'Keep the conversation going'],
-    ['🌙','Ten Hour Speaker','Speak for 10 total hours.',mins>=600,750,'You have momentum'],
-    ['🔥','Three-Day Streak','Practice on 3 consecutive days.',streak>=3,50,'Make showing up automatic'],
-    ['📅','Seven-Day Streak','Practice for 7 consecutive days.',streak>=7,125,'A week of courage'],
-    ['👑','Thirty-Day Streak','Practice for 30 consecutive days.',streak>=30,500,'This is your new habit']
+    ['🌱','First Words','Complete your first real human conversation.',c>=1,2,'Start your journey'],
+    ['💬','Three Conversations','Finish 3 real conversations.',c>=3,3,'Build the habit'],
+    ['⚡','Five Alive','Finish 5 real conversations.',c>=5,5,'You are showing up'],
+    ['🚀','Ten Talks','Complete 10 real conversations.',c>=10,7,'Become a regular'],
+    ['🌟','Twenty Strong','Complete 20 real conversations.',c>=20,10,'Consistency compounds'],
+    ['🏆','Half Century','Complete 50 real conversations.',c>=50,15,'A serious speaker'],
+    ['💎','Century Speaker','Complete 100 real conversations.',c>=100,20,'Legendary commitment'],
+    ['⏱️','Warm Up','Speak for 10 total minutes.',mins>=10,2,'Get your voice moving'],
+    ['🔥','30 Minute Club','Speak for 30 total minutes.',mins>=30,4,'Real practice adds up'],
+    ['🎧','One Hour In','Speak for 60 total minutes.',mins>=60,7,'Your fluency is growing'],
+    ['🗣️','Three Hour Speaker','Speak for 3 total hours.',mins>=180,12,'Keep the conversation going'],
+    ['🌙','Ten Hour Speaker','Speak for 10 total hours.',mins>=600,20,'You have momentum'],
+    ['🔥','Three-Day Streak','Practice on 3 consecutive days.',streak>=3,3,'Make showing up automatic'],
+    ['📅','Seven-Day Streak','Practice for 7 consecutive days.',streak>=7,6,'A week of courage'],
+    ['👑','Thirty-Day Streak','Practice for 30 consecutive days.',streak>=30,15,'This is your new habit']
   ];
   const rewarded=new Set(a.rewardedMilestones||[]);
   const unlocked=m.filter(x=>x[3]).length;
