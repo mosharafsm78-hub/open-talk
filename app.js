@@ -61,16 +61,85 @@ $("#profileForm").onsubmit = (e) => {
   alert("Profile saved and locked for 30 days.");
 };
 let rec = null,
-  run = false,
+  conversationState = "closed",
   sec = 0,
+  startedAt = 0,
   int = null,
-  finishing = false;
+  restartTimeout = null;
+
+function renderTimer() {
+  if (conversationState === "listening")
+    sec = Math.floor((Date.now() - startedAt) / 1000);
+  $("#timer").textContent =
+    String(Math.floor(sec / 60)).padStart(2, "0") +
+    ":" +
+    String(sec % 60).padStart(2, "0");
+}
+
+function stopTimer() {
+  clearInterval(int);
+  int = null;
+}
+
+function stopRecognition() {
+  clearTimeout(restartTimeout);
+  restartTimeout = null;
+  if (!rec) return;
+  const activeRecognition = rec;
+  rec = null;
+  activeRecognition.onend = null;
+  try {
+    activeRecognition.stop();
+  } catch {}
+}
+
+function startRecognition() {
+  if (conversationState !== "listening" || rec) return;
+  const R = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new R();
+  rec = recognition;
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = "en-US";
+  recognition.onresult = (event) => {
+    if (conversationState !== "listening") return;
+    let transcript = "";
+    for (let i = 0; i < event.results.length; i++)
+      transcript += event.results[i][0].transcript + " ";
+    $("#transcript").textContent = transcript.trim();
+  };
+  recognition.onerror = (event) => {
+    if (conversationState !== "listening") return;
+    if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+      conversationState = "ready";
+      stopTimer();
+      rec = null;
+      $("#listen").textContent = "Microphone access is required.";
+      $("#mic").disabled = false;
+      $("#mic").textContent = "🎙 Start speaking";
+    }
+  };
+  recognition.onend = () => {
+    if (rec === recognition) rec = null;
+    if (conversationState === "listening")
+      restartTimeout = setTimeout(startRecognition, 250);
+  };
+  try {
+    recognition.start();
+  } catch {
+    rec = null;
+    if (conversationState === "listening")
+      restartTimeout = setTimeout(startRecognition, 250);
+  }
+}
+
 function open() {
+  stopTimer();
+  stopRecognition();
   $("#modal").classList.remove("hidden");
   sec = 0;
-  run = false;
-  finishing = false;
-  rec = null;
+  startedAt = 0;
+  conversationState = "ready";
   $("#timer").textContent = "00:00";
   $("#listen").textContent = "Ready";
   $("#partner").textContent = "Your speaking partner is ready";
@@ -83,7 +152,6 @@ function open() {
   $("#close").disabled = false;
   $("#finish").disabled = false;
   $("#finish").textContent = "Finish";
-  clearInterval(int);
 }
 $("#talkNow").onclick = open;
 $("#findPartner").onclick = () => {
@@ -97,60 +165,38 @@ $("#findPartner").onclick = () => {
   }, 900);
 };
 $("#close").onclick = () => {
-  if (finishing) return;
+  if (conversationState === "finishing") return;
+  conversationState = "closed";
   $("#modal").classList.add("hidden");
-  run = false;
-  if (rec) rec.stop();
-  clearInterval(int);
+  stopRecognition();
+  stopTimer();
 };
 $("#mic").onclick = () => {
+  if (conversationState !== "ready") return;
   if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window))
     return ($("#listen").textContent =
       "Speech recognition unavailable in this browser.");
-  let R = window.SpeechRecognition || window.webkitSpeechRecognition;
-  rec = new R();
-  rec.continuous = true;
-  rec.interimResults = true;
-  rec.lang = "en-US";
-  rec.onstart = () => {
-    if (finishing) {
-      rec.stop();
-      return;
-    }
-    run = true;
-    $("#listen").textContent = "Listening…";
-    $("#mic").textContent = "🔴 Listening";
-    $("#finish").disabled = false;
-    clearInterval(int);
-    int = setInterval(() => {
-      sec++;
-      $("#timer").textContent =
-        String(Math.floor(sec / 60)).padStart(2, "0") +
-        ":" +
-        String(sec % 60).padStart(2, "0");
-    }, 1000);
-  };
-  rec.onresult = (e) => {
-    let x = "";
-    for (let i = e.resultIndex; i < e.results.length; i++)
-      x += e.results[i][0].transcript + " ";
-    $("#transcript").textContent = x.trim();
-  };
-  rec.onerror = (e) => ($("#listen").textContent = "Microphone: " + e.error);
-  rec.onend = () => {
-    if (run)
-      try {
-        rec.start();
-      } catch {}
-  };
-  rec.start();
+  conversationState = "listening";
+  startedAt = Date.now();
+  sec = 0;
+  $("#listen").textContent = "Listening…";
+  $("#mic").textContent = "🔴 Listening";
+  $("#mic").disabled = true;
+  renderTimer();
+  int = setInterval(renderTimer, 250);
+  startRecognition();
 };
 $("#finish").onclick = async () => {
-  if (finishing) return;
-  finishing = true;
-  run = false;
-  if (rec) rec.stop();
-  clearInterval(int);
+  if (
+    conversationState === "finishing" ||
+    conversationState === "finished" ||
+    conversationState === "closed"
+  )
+    return;
+  if (conversationState === "listening") renderTimer();
+  conversationState = "finishing";
+  stopRecognition();
+  stopTimer();
   $("#mic").disabled = true;
   $("#close").disabled = true;
   $("#finish").disabled = true;
@@ -176,6 +222,7 @@ $("#finish").onclick = async () => {
   if (s.stats.minutes >= 30)
     s.stats.achievements = [...new Set([...s.stats.achievements, "thirty"])];
   save();
+  conversationState = "finished";
   $("#partner").textContent = "Conversation complete";
   $("#listen").textContent = "Finished";
   $("#finish").textContent = "Finished";
