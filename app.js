@@ -263,7 +263,6 @@ function openConversationModal(){
 
 $('#talkNow').onclick=findPartner;
 $('#findPartner').onclick=findPartner;
-$('#talkNowBottom').onclick=findPartner;
 
 $('#close').onclick=leaveConversation;
 $('#finish').onclick=finishConversation;
@@ -461,7 +460,7 @@ async function finishConversation(){
           s.stats.coins=Number(reward.total_coins||s.stats.coins||0);
           s.stats.rewardedMilestones=[...new Set([...(s.stats.rewardedMilestones||[]),...(reward.newly_awarded||[])])];
           save();
-          if(Number(reward.coins_earned||0)>0) toast('Milestone unlocked! +'+reward.coins_earned+' coins 🪙');
+          if(Number(reward.coins_earned||0)>0) toast('Milestone unlocked! +'+reward.coins_earned+' coins');
         }
       }catch{}
     }
@@ -594,7 +593,7 @@ function renderMilestones(){
         const pct=x[3]?100:Math.min(99,Math.round((current/target)*100));
         return '<article class="milestone-card card '+(x[3]?'is-unlocked':'is-locked')+' milestone-tier-card">'+
           '<div class="milestone-icon">'+x[0]+'</div>'+
-          '<div class="milestone-body"><div class="milestone-title"><h3>'+x[1]+'</h3><span class="reward-pill">🪙 +'+x[4]+'</span></div>'+
+          '<div class="milestone-body"><div class="milestone-title"><h3>'+x[1]+'</h3><span class="reward-pill">+ '+x[4]+' coins</span></div>'+
           '<p>'+x[2]+'</p><div class="milestone-bar"><span style="width:'+pct+'%"></span></div>'+
           '<small>'+ (x[3]?(claimed?'Reward credited':'Milestone complete'):'Locked · '+x[5]) +'</small></div>'+
           '<div class="milestone-state">'+(x[3]?'✓':'🔒')+'</div>'+
