@@ -1061,16 +1061,24 @@ async function finishConversation(){
 }
 
 async function leaveConversation(){
+  // Close the UI FIRST. Never make the user wait for Supabase/Realtime.
+  // Previously the X button awaited the network request before hiding the
+  // modal, so a slow/hung request made the X button look completely dead.
+  finishing=true;
+  stopMatchPolling();
   document.body.classList.remove('modal-open');
-  // Tell the server immediately that this browser left. This removes the
-  // waiting row and cancels an unstarted match so the partner cannot be
-  // offered again on another device.
-  if(backendReady){
-    try{await api('/api/match','POST',{action:'leave'});}catch{}
-  }
-  if(!$('#modal').classList.contains('hidden'))await teardownCall();
-  $('#modal').classList.add('hidden');
+  $('#modal')?.classList.add('hidden');
   currentPartner=null;
+
+  // Clean up the local WebRTC/browser resources without blocking the UI.
+  try{await teardownCall();}catch(err){console.warn('Open Talk teardown:',err);}
+
+  // Server cleanup is best-effort and must never prevent closing the modal.
+  if(backendReady){
+    api('/api/match','POST',{action:'leave'}).catch(err=>{
+      console.warn('Open Talk leave sync:',err);
+    });
+  }
   finishing=false;
 }
 
