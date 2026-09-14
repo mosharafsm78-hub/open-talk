@@ -23,7 +23,7 @@
       <button data-view="milestones">Rewards</button>
       <button data-view="achievements">Achievements</button><button data-view="coins">Coins</button>
     </nav>
-    <button class="coin-wallet" data-view="coins" title="Open Talk coins"><span class="gold-bar"></span><b id="coinBalance">0</b><small>coins</small></button>
+    <button class="coin-wallet" data-view="coins" title="Open Talk coins"><span class="coin-icon" aria-hidden="true"></span><b id="coinBalance">0</b></button>
     <button class="avatar" data-view="profile" aria-label="Open profile">M</button>
   </div>
 </header>
@@ -123,7 +123,7 @@
 <section id="milestones" class="view">
   <div class="page-intro milestone-intro">
     <div><span class="eyebrow">YOUR REWARDS</span><h1>Rewards</h1><p>Small wins become speaking confidence. Complete challenges, earn coins, and keep moving forward.</p></div>
-    <div class="coin-hero card"><span class="gold-bar"></span><div><small>YOUR COINS</small><strong id="milestoneCoins">0</strong></div><b>Keep earning →</b></div>
+    <div class="coin-hero card" aria-label="Coin balance"><span class="coin-icon" aria-hidden="true"></span><strong id="milestoneCoins">0</strong></div>
   </div>
   <div class="journey-banner card"><span>✦</span><div><b>Every meaningful step earns a little back.</b><p>Finish a challenge once and the coins are yours. Your rewards never disappear.</p></div></div>
   <div class="milestone-summary">
@@ -136,7 +136,7 @@
 
 <section id="coins" class="view">
   <div class="page-intro coin-page-intro"><span class="eyebrow">OPEN TALK ECONOMY</span><h1>Coins that mean something.</h1><p>Earn a small number of coins by actually showing up. Spend them only when you want extra control over how you meet people.</p></div>
-  <div class="coin-balance-card card"><div class="coin-balance-icon gold-bar"></div><div><span class="card-kicker">YOUR BALANCE</span><strong id="shopCoins">0</strong><p>Earned through real participation. No pay-to-win speaking level.</p></div><div class="coin-balance-note">Slow earn. Useful spend.</div></div>
+  <div class="coin-balance-card card"><div class="coin-balance-icon coin-icon" aria-hidden="true"></div><div><span class="card-kicker">YOUR BALANCE</span><strong id="shopCoins">0</strong><p>Earned through real participation. No pay-to-win speaking level.</p></div><div class="coin-balance-note">Slow earn. Useful spend.</div></div>
   <div class="coin-earning card">
     <div class="coin-earning-head">
       <div><span class="eyebrow">EARN COINS</span><h2>Earn coins through real progress.</h2><p>Real conversations unlock small rewards. The harder the milestone, the more meaningful the reward.</p></div>
@@ -177,7 +177,7 @@
 <!-- Mobile navigation: every core destination stays one thumb-tap away. -->
 <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
   <button data-view="home" class="mobile-nav-item nav-active"><span>⌂</span><small>Home</small></button>
-  <button data-view="coins" class="mobile-nav-item"><span class="gold-bar"></span><small>Coins</small></button>
+  <button data-view="coins" class="mobile-nav-item"><span class="coin-icon" aria-hidden="true"></span><small>Coins</small></button>
   <button data-view="milestones" class="mobile-nav-item"><span>✦</span><small>Journey</small></button>
   <button data-view="achievements" class="mobile-nav-item"><span>🏆</span><small>Badges</small></button>
   <button data-view="profile" class="mobile-nav-item"><span>●</span><small>Profile</small></button>
