@@ -148,7 +148,7 @@ async function api(path,method='GET',body=null){
   }
   if(path==='/api/profile'){
     if(method==='GET'){
-      const r=await supabaseClient.from('profiles').select('id,name,age,country,english_level,gender_preference').eq('id',currentUser.id).maybeSingle();
+      const r=await supabaseClient.from('profiles').select('id,name,age,country,gender,english_level,gender_preference').eq('id',currentUser.id).maybeSingle();
       return new Response(JSON.stringify(r.data||{id:currentUser.id}),{status:r.error?500:200,headers:{'content-type':'application/json'}});
     }
     const profile={...body,id:currentUser.id,updated_at:new Date().toISOString()};
