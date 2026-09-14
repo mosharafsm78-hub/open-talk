@@ -68,21 +68,7 @@
     <div class="progress wide"><span id="goalProgress"></span></div>
   </div>
 
-  <div class="dashboard-grid">
-    <div class="match card">
-      <div class="match-top">
-        <div class="match-icon">✦</div>
-        <div><span class="card-kicker">SMART MATCH</span><h2>Find your next conversation</h2><p>Tell us how you want to practice. We'll take it from there.</p></div>
-      </div>
-      <div class="match-controls">
-        <select id="matchPreference" aria-label="Conversation preference">
-          <option>Anyone</option><option>Similar level</option><option>Challenge me</option><option>Practice weak areas</option>
-        </select>
-        <button id="findPartner" class="primary">Find partner <b>→</b></button>
-      </div>
-      <div class="match-meta"><span><i></i> Best available match</span><span>Based on your profile & history</span></div>
-    </div>
-
+  <div class="dashboard-grid single-dashboard">
     <div class="streak-card card">
       <div class="streak-top"><span class="card-kicker">CONSISTENCY</span><span class="streak-flame">🔥</span></div>
       <div class="streak-number"><b id="statStreakHome">0</b><span>day streak</span></div>
@@ -151,6 +137,13 @@
 <section id="coins" class="view">
   <div class="page-intro coin-page-intro"><span class="eyebrow">OPEN TALK ECONOMY</span><h1>Coins that mean something.</h1><p>Earn a small number of coins by actually showing up. Spend them only when you want extra control over how you meet people.</p></div>
   <div class="coin-balance-card card"><div class="coin-balance-icon">🪙</div><div><span class="card-kicker">YOUR BALANCE</span><strong id="shopCoins">0</strong><p>Earned from milestones. No pay-to-win speaking level.</p></div><div class="coin-balance-note">Slow earn. Useful spend.</div></div>
+  <div class="coin-earning card">
+    <div class="coin-earning-head">
+      <div><span class="eyebrow">EARN COINS</span><h2>Coins are earned, not handed out.</h2><p>Real conversations unlock small rewards. The harder the milestone, the more meaningful the reward.</p></div>
+      <button class="text-button" data-view="milestones">View full journey ↗</button>
+    </div>
+    <div id="coinEarningPreview" class="coin-earning-tiers"></div>
+  </div>
   <div class="section-heading compact"><div><span class="eyebrow">OPTIONAL UNLOCKS</span><h2>Use coins to personalize your conversations.</h2></div></div>
   <div class="coin-use-grid">
     <article class="coin-use card"><span>♀♂</span><div><h3>Choose who you meet</h3><p>Request a preferred gender for your next human conversation.</p></div><b>8 🪙</b></article>
