@@ -147,22 +147,23 @@
   </div>
   <div class="section-heading compact"><div><span class="eyebrow">OPTIONAL UNLOCKS</span><h2>Use coins to personalize your conversations.</h2></div></div>
   <div class="coin-use-grid">
-    <article class="coin-use card"><span>♀♂</span><div><h3>Choose who you meet</h3><p>Request a preferred gender for your next human conversation.</p></div><b>8 coins</b></article>
-    <article class="coin-use card"><span>⚡</span><div><h3>Priority matching</h3><p>Move your request ahead when the live queue is busy.</p></div><b>5 coins</b></article>
-    <article class="coin-use card"><span>🎯</span><div><h3>Target a speaking level</h3><p>Request a similar-level partner or a stronger speaker.</p></div><b>4 coins</b></article>
-    <article class="coin-use card"><span>◎</span><div><h3>Explore a country</h3><p>When available, request a partner from a selected country.</p></div><b>10 coins</b></article>
+    <article class="coin-use card"><span>♀♂</span><div><h3>Choose a gender</h3><p>Request your preferred gender for human matches for 12 hours.</p></div><b>4 coins · 12h</b></article>
+    <article class="coin-use card"><span>🌍</span><div><h3>Choose a country</h3><p>Request people from a selected country for 12 hours.</p></div><b>5 coins · 12h</b></article>
+    <article class="coin-use card"><span>🎯</span><div><h3>Target a speaking level</h3><p>Request a similar or stronger speaking level for 12 hours.</p></div><b>4 coins · 12h</b></article>
+    <article class="coin-use card"><span>⚡</span><div><h3>Priority matching</h3><p>Move your request ahead of the live queue for 12 hours.</p></div><b>3 coins · 12h</b></article>
+    <article class="coin-use card"><span>✦</span><div><h3>Smart Match</h3><p>Combine gender, country and level preferences with one 24-hour pass.</p></div><b>8 coins · 24h</b></article>
   </div>
   <div class="coin-rules card">
-    <div class="coin-rules-head"><span class="eyebrow">HOW PREMIUM MATCHING WORKS</span><h2>Simple rules. No hidden timers.</h2><p>Coins control <b>who you try to meet</b> — not how long you are allowed to talk.</p></div>
+    <div class="coin-rules-head"><span class="eyebrow">HOW PREMIUM MATCHING WORKS</span><h2>Buy access, not individual calls.</h2><p>Coins unlock <b>time-based matching passes</b>. Your conversations remain free once a real person connects.</p></div>
     <div class="coin-rule-grid">
-      <div><span>01</span><b>One spend = one match</b><small>Gender, country, level or Smart Match applies to one successful human connection.</small></div>
-      <div><span>02</span><b>No match, no charge</b><small>If nobody suitable is online, your coins stay in your balance.</small></div>
-      <div><span>03</span><b>Talk without a coin timer</b><small>Once connected, the conversation itself remains free. There is no 5-minute coin limit.</small></div>
-      <div><span>04</span><b>Coins don't expire</b><small>Purchased and earned coins stay on your account while it remains active.</small></div>
+      <div><span>01</span><b>12-hour preference pass</b><small>Gender, country, level or priority stays active for 12 hours and can be used across multiple real matches.</small></div>
+      <div><span>02</span><b>24-hour Smart Match</b><small>Combine gender + country + speaking level in one stronger pass for 24 hours.</small></div>
+      <div><span>03</span><b>No match, no charge</b><small>If nobody suitable is online, your coins stay safe. The pass starts only after a successful human match.</small></div>
+      <div><span>04</span><b>No call limit</b><small>There is no 5-minute or one-call coin limit. Match as many real people as the active pass allows during its validity.</small></div>
     </div>
-    <div class="coin-example"><span>💡</span><b>Example:</b> 50 coins can cover up to 6 gender-filtered matches, 7 country-filtered matches, or 2 full Smart Matches plus other smaller unlocks.</div>
+    <div class="coin-example"><span>💡</span><b>Example:</b> 4 coins can unlock your preferred gender for 12 hours — not just one conversation. 8 coins can unlock Smart Match for 24 hours.</div>
   </div>
-  <div class="coin-business card"><div><span class="eyebrow">COIN STORE</span><h2>More coins, when you want more control.</h2><p>Coins are designed as optional in-app purchases for the Android version. Core human conversations stay free.</p></div>
+  <div class="coin-business card"><div><span class="eyebrow">COIN STORE</span><h2>More coins, when you want more control.</h2><p>Coins are optional in-app purchases for Android. Core human conversations stay free; coins simply unlock better ways to find the people you want to talk to.</p></div>
     <div class="coin-packs"><div><b>50</b><span>🪙 coins</span><small>Starter</small></div><div><b>120</b><span>🪙 coins</span><small>Popular</small></div><div><b>300</b><span>🪙 coins</span><small>Best value</small></div></div>
   </div>
 </section>
@@ -211,7 +212,7 @@
 
     <div id="matchControls" class="match-controls">
       <div class="match-controls-head">
-        <div><span class="card-kicker">MATCH YOUR WAY</span><b>Choose who you want to meet</b><small>Free matching stays open. Coins unlock one successful filtered connection.</small></div>
+        <div><span class="card-kicker">MATCH YOUR WAY</span><b>Choose who you want to meet</b><small>Free matching stays open. Coins unlock <strong>12-hour access</strong> to a preference, or <strong>24-hour Smart Match</strong>.</small></div>
         <div class="match-cost"><span id="matchCost">FREE</span><small id="matchCostNote">Open matching is free. No coins are used.</small></div>
       </div>
       <div class="match-control-grid">
@@ -220,7 +221,7 @@
         <label><span>Speaking level</span><select id="matchLevel"><option value="">Any level · Free</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
         <label class="priority-toggle"><span>Queue priority</span><input id="matchPriority" type="checkbox"><small>+4 coins · move ahead when busy</small></label>
       </div>
-      <div class="match-smart-note"><span>✦</span><span><b>Smart Match</b> — gender + country + level together cost <strong>18 coins</strong> instead of 21. Coins are charged only when a real match is found.</span></div>
+      <div class="match-smart-note"><span>✦</span><span><b>Time-based access</b> — one preference is active for <strong>12 hours</strong>. Smart Match gives gender + country + level together for <strong>24 hours</strong>. Coins are charged only when a real match is found.</span></div>
     </div>
 
     <div class="queue-live">
