@@ -17,12 +17,12 @@
     <button class="brand" data-view="home" aria-label="Open Talk home">
       <span class="brand-mark"><span>OT</span></span><span class="brand-name">Open Talk</span>
     </button>
-    <nav aria-label="Main navigation">
-      <button data-view="home" class="nav-active">Home</button>
-      <button data-view="coins">Coins</button>
-      <button data-view="milestones">Milestones</button>
-      <button data-view="achievements">Badges</button>
-      <button data-view="profile">Profile</button>
+    <nav id="mainNav" aria-label="Main navigation">
+      <button type="button" data-view="home" class="nav-active" onclick="window.openTalkNavigate('home');return false">Home</button>
+      <button type="button" data-view="coins" onclick="window.openTalkNavigate('coins');return false">Coins</button>
+      <button type="button" data-view="milestones" onclick="window.openTalkNavigate('milestones');return false">Milestones</button>
+      <button type="button" data-view="achievements" onclick="window.openTalkNavigate('achievements');return false">Badges</button>
+      <button type="button" data-view="profile" onclick="window.openTalkNavigate('profile');return false">Profile</button>
     </nav>
     <button class="coin-wallet" data-view="coins" title="Open Talk coins"><span class="coin-icon" aria-hidden="true"></span><b id="coinBalance">0</b></button>
     <button class="avatar" data-view="profile" aria-label="Open profile"><img id="headerAvatar" alt="" hidden><span id="headerAvatarFallback">M</span></button>
@@ -276,6 +276,14 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js?v=20260914-9"></script>
 <script>
+window.openTalkNavigate=function(target){
+  var view=document.getElementById(target);
+  if(!view)return false;
+  document.querySelectorAll('.view').forEach(function(v){v.classList.toggle('active',v.id===target);});
+  document.querySelectorAll('[data-view]').forEach(function(b){b.classList.toggle('nav-active',b.getAttribute('data-view')===target);});
+  window.scrollTo(0,0);
+  return false;
+};
 document.getElementById('talkNowBottom')?.addEventListener('click',()=>document.getElementById('talkNow')?.click());
 </script>
 </body>
