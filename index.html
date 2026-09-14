@@ -199,6 +199,17 @@
     <p id="authSubtitle">Create an account to meet real speakers and keep your progress with you.</p>
     <div class="auth-tabs"><button id="showLogin" class="active" type="button">Log in</button><button id="showSignup" type="button">Sign up</button></div>
     <form id="authForm">
+      <div id="signupFields" class="signup-fields hidden">
+        <div class="auth-field-row">
+          <label>Full name<input id="authName" type="text" autocomplete="name" maxlength="80" placeholder="Your name"></label>
+          <label>Age<input id="authAge" type="number" min="13" max="100" inputmode="numeric" placeholder="Age"></label>
+        </div>
+        <div class="auth-photo">
+          <div class="auth-photo-preview"><img id="authPhotoPreview" alt="" hidden><span id="authPhotoFallback">+</span></div>
+          <div><b>Add your photo</b><small>Optional, but recommended. Your future matches can see it.</small>
+          <label class="photo-button">Choose photo<input id="authPhoto" type="file" accept="image/jpeg,image/png,image/webp"></label></div>
+        </div>
+      </div>
       <label>Email<input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com"></label>
       <label>Password<input id="authPassword" type="password" autocomplete="current-password" minlength="6" required placeholder="At least 6 characters"></label>
       <button id="authSubmit" class="primary big" type="submit">Log in <b>→</b></button>
