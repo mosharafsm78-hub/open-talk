@@ -509,22 +509,32 @@ async function setupSignaling(sessionId,partner){
       if(msg.type==='hello'){
         remoteSelectedBadges=Array.isArray(msg.selectedBadges)?msg.selectedBadges.slice(0,3):[];
 
-        // Broadcast is ephemeral. A late subscriber can miss the first offer,
-        // so every hello is also a handshake retry.
-        if(currentUser.id<partner.id){
-          await ensurePeer();
-          if(pc.localDescription?.type==='offer'){
-            await sendSignal({type:'offer',sdp:pc.localDescription});
-          }else if(pc.signalingState==='stable'){
-            await createOffer();
-          }
+        // Only one side is allowed to create the initial offer. Keep this
+        // handshake one-shot: repeated hello packets must never trigger a
+        // second offer while the first negotiation is still in flight.
+        if(currentUser.id<partner.id && !pc?.localDescription){
+          await createOffer();
         }
       }else if(msg.type==='offer'){
         await ensurePeer();
-        if(pc.signalingState==='have-local-offer'){
-          try{await pc.setLocalDescription({type:'rollback'});}catch{}
+
+        // The offerer is deterministic, so the answering peer should not
+        // already have its own offer. If a stale offer ever arrives, ignore it
+        // rather than using Safari's fragile rollback path.
+        if(pc.signalingState!=='stable' && pc.signalingState!=='have-remote-offer'){
+          return;
         }
+
         await pc.setRemoteDescription(msg.sdp);
+
+        // Candidates can arrive before the SDP. Flush them as soon as the
+        // remote offer is installed; otherwise the answerer can remain stuck
+        // in "connecting" forever on mobile networks.
+        for(const ice of pendingIce){
+          try{await pc.addIceCandidate(ice)}catch(err){console.warn('Open Talk pending ICE:',err);}
+        }
+        pendingIce=[];
+
         const answer=await pc.createAnswer();
         await pc.setLocalDescription(answer);
         await waitForIceGathering(pc);
@@ -532,7 +542,9 @@ async function setupSignaling(sessionId,partner){
       }else if(msg.type==='answer'){
         if(!pc) return;
         await pc.setRemoteDescription(msg.sdp);
-        for(const ice of pendingIce){try{await pc.addIceCandidate(ice)}catch{}}
+        for(const ice of pendingIce){
+          try{await pc.addIceCandidate(ice)}catch(err){console.warn('Open Talk pending ICE:',err);}
+        }
         pendingIce=[];
       }else if(msg.type==='ice'){
         const ice=msg.candidate;
@@ -598,11 +610,14 @@ async function ensurePeer(){
     iceCandidatePoolSize:10
   });
 
-  // Offer/answer SDP now carries the gathered ICE candidates. This avoids
-  // losing early candidates when the Supabase broadcast subscriber joins late.
+  // Trickle ICE: forward every candidate as soon as it is gathered.
+  // Candidates may arrive before the remote SDP, so setupSignaling queues them
+  // in pendingIce and flushes them after setRemoteDescription().
   pc.onicecandidate=e=>{
-    if(e.candidate && pc.iceGatheringState==='complete'){
-      sendSignal({type:'ice',candidate:e.candidate.toJSON?.()||e.candidate}).catch(()=>{});
+    if(e.candidate){
+      sendSignal({type:'ice',candidate:e.candidate.toJSON?.()||e.candidate}).catch(err=>{
+        console.warn('Open Talk ICE send:',err);
+      });
     }
   };
   pc.onicecandidateerror=e=>{
@@ -671,14 +686,18 @@ async function ensurePeer(){
 
 async function createOffer(){
   await ensurePeer();
-  if(pc.localDescription?.type==='offer'){
-    await sendSignal({type:'offer',sdp:pc.localDescription});
-    return;
-  }
+  if(!pc || pc.signalingState!=='stable' || pc.localDescription)return;
+
   const offer=await pc.createOffer({offerToReceiveAudio:true});
   await pc.setLocalDescription(offer);
+
+  // Send the final SDP after ICE gathering as well as trickled candidates.
+  // This gives mobile Safari both paths and makes the handshake resilient to
+  // a candidate message arriving before the other phone subscribes.
   await waitForIceGathering(pc);
-  await sendSignal({type:'offer',sdp:pc.localDescription});
+  if(pc?.localDescription?.type==='offer'){
+    await sendSignal({type:'offer',sdp:pc.localDescription});
+  }
 }
 
 async function startCallTransport(sessionId,partner){
