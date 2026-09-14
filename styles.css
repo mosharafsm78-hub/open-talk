@@ -1508,3 +1508,63 @@ nav button{
 .coin-example span{font-size:15px}.coin-example b{color:#4c4634}
 @media(max-width:800px){.coin-rule-grid{grid-template-columns:1fr 1fr}.coin-rules{padding:18px}}
 @media(max-width:480px){.coin-rule-grid{grid-template-columns:1fr}.coin-rules-head h2{font-size:20px}}
+
+
+/* FINAL MATCHING POLISH — clean desktop card + calmer mobile flow */
+.match-controls{
+  display:block;
+  width:100%;
+  min-width:0;
+}
+.match-controls-head,
+.match-control-grid,
+.match-smart-note{
+  min-width:0;
+}
+.match-controls-head>div:first-child{
+  min-width:0;
+  flex:1;
+}
+.match-control-grid{
+  width:100%;
+}
+.match-control-grid label{
+  min-width:0;
+}
+.match-control-grid select{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.match-cost{
+  flex:0 0 auto;
+}
+@media(max-width:700px){
+  /* The numbered process is useful on desktop, but noisy on a phone. */
+  .live-modal .queue-steps{
+    display:none;
+  }
+  .live-modal .match-smart-note{
+    margin-top:9px;
+  }
+}
+
+/* Mobile navigation sits under the header instead of floating over the conversation. */
+@media(max-width:680px){
+  body{
+    padding-bottom:18px;
+  }
+  main{
+    padding-top:76px;
+  }
+  .mobile-bottom-nav{
+    top:74px;
+    bottom:auto;
+  }
+  .modal{
+    z-index:200;
+  }
+}
+@media(max-width:430px){
+  main{padding-top:74px}
+}
