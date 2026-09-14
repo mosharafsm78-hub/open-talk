@@ -1,0 +1,17 @@
+name: Validate Open Talk
+on:
+  push:
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          test -f index.html
+          test -f styles.css
+          test -f app.js
+          test -f manifest.json
+          test -f netlify.toml
+          test -f supabase/schema.sql
+      - run: node --check app.js
