@@ -1089,3 +1089,157 @@ html{scroll-padding-top:72px}body{padding-bottom:calc(var(--mobile-nav-height) +
 @media (max-width:420px){
   .mobile-bottom-nav{top:72px!important;left:9px!important;right:9px!important}
 }
+
+
+/* FINAL MOBILE POLISH — fixed top dock + premium coin icon */
+.coin-icon{
+  position:relative;
+  width:42px;
+  height:42px;
+  flex:0 0 42px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 32% 25%,rgba(255,255,255,.95) 0 5%,transparent 6%),
+    radial-gradient(circle at 35% 30%,#ffe89a 0,#f3c95d 30%,#d99d2f 62%,#b87818 100%);
+  border:1px solid rgba(155,101,20,.42);
+  box-shadow:
+    inset 0 2px 2px rgba(255,255,255,.72),
+    inset 0 -4px 7px rgba(113,65,8,.22),
+    0 6px 16px rgba(143,91,19,.16);
+}
+.coin-icon:before{
+  content:"✦";
+  width:27px;
+  height:27px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(113,70,12,.28);
+  color:#8a5a16;
+  font-size:13px;
+  font-weight:900;
+  text-shadow:0 1px 0 rgba(255,255,255,.45);
+}
+.coin-icon:after{
+  content:"";
+  position:absolute;
+  inset:5px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.34);
+  pointer-events:none;
+}
+
+/* The mobile dock is navigation, not a floating bottom action bar. */
+@media(max-width:760px){
+  body{
+    padding-bottom:0!important;
+  }
+  .mobile-bottom-nav{
+    display:grid!important;
+    position:fixed!important;
+    top:calc(68px + env(safe-area-inset-top))!important;
+    bottom:auto!important;
+    left:12px!important;
+    right:12px!important;
+    width:auto!important;
+    height:64px!important;
+    min-height:64px!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    z-index:10000!important;
+    transform:none!important;
+    margin:0!important;
+    padding:6px!important;
+    border-radius:22px!important;
+    background:rgba(255,255,255,.94)!important;
+    border:1px solid rgba(220,225,237,.95)!important;
+    box-shadow:0 12px 34px rgba(26,31,70,.14),0 2px 8px rgba(26,31,70,.06)!important;
+    backdrop-filter:blur(20px)!important;
+    -webkit-backdrop-filter:blur(20px)!important;
+  }
+  .mobile-bottom-nav .mobile-nav-item{
+    min-height:52px!important;
+    padding:5px 2px!important;
+    border-radius:16px!important;
+    gap:4px!important;
+  }
+  .mobile-bottom-nav .mobile-nav-item small{
+    font-size:10px!important;
+    line-height:1!important;
+  }
+  .mobile-bottom-nav .mobile-nav-item .coin-icon{
+    width:28px!important;
+    height:28px!important;
+    flex-basis:28px!important;
+  }
+  .mobile-bottom-nav .mobile-nav-item .coin-icon:before{
+    width:19px;
+    height:19px;
+    font-size:9px;
+  }
+  .mobile-bottom-nav .mobile-nav-item .coin-icon:after{
+    inset:4px;
+  }
+
+  /* Keep the fixed dock from covering page content. */
+  main{
+    padding-top:76px!important;
+  }
+  .view{
+    scroll-margin-top:150px!important;
+  }
+  .topbar{
+    position:sticky!important;
+    top:0!important;
+    z-index:10001!important;
+  }
+
+  /* Cleaner reward header: coin + number only. */
+  .coin-hero{
+    min-width:0!important;
+    width:112px!important;
+    height:58px!important;
+    padding:8px 12px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:9px!important;
+    border-radius:18px!important;
+  }
+  .coin-hero .coin-icon{
+    width:34px;
+    height:34px;
+    flex-basis:34px;
+  }
+  .coin-hero .coin-icon:before{
+    width:23px;
+    height:23px;
+    font-size:11px;
+  }
+  .coin-hero .coin-icon:after{inset:4px}
+  .coin-hero strong{
+    font:800 25px 'Plus Jakarta Sans';
+    line-height:1;
+    color:var(--ink);
+  }
+
+  /* No old gold-bar treatment inside the primary mobile currency controls. */
+  .coin-wallet .gold-bar,
+  .coin-hero .gold-bar,
+  .mobile-bottom-nav .gold-bar{
+    display:none!important;
+  }
+}
+
+@media(max-width:420px){
+  .mobile-bottom-nav{
+    top:calc(64px + env(safe-area-inset-top))!important;
+    left:8px!important;
+    right:8px!important;
+    height:62px!important;
+    min-height:62px!important;
+    border-radius:20px!important;
+  }
+  main{padding-top:72px!important}
+}
