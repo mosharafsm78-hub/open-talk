@@ -281,20 +281,46 @@ async function api(path,method='GET',body=null){
   throw new Error('Unknown API route');
 }
 
-document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
-  const target=b.dataset.view;
-  if(b.dataset.action==='talk'){
-    findPartner();
-    return;
-  }
+function navigateToView(target){
+  if(!target)return;
+  const view=document.getElementById(target);
+  if(!view)return;
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===target));
-  document.querySelectorAll('nav button[data-view]').forEach(v=>v.classList.toggle('nav-active',v.dataset.view===target));
-  document.querySelectorAll('.mobile-nav-item[data-view]').forEach(v=>v.classList.toggle('nav-active',v.dataset.view===target && !v.dataset.action));
+  document.querySelectorAll('[data-view]').forEach(v=>v.classList.toggle('nav-active',v.dataset.view===target));
   if(target==='milestones') renderMilestones();
   if(target==='achievements') renderAchievements();
   if(target==='coins') renderCoinEarningPreview();
-  scrollTo({top:0,behavior:'smooth'});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+document.querySelectorAll('[data-view]').forEach(b=>{
+  b.addEventListener('click',e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    const target=b.dataset.view;
+    if(b.dataset.action==='talk'){
+      findPartner();
+      return;
+    }
+    navigateToView(target);
+  });
 });
+
+// Delegated fallback: keeps navigation working even if another component re-renders
+// part of the header or a browser/plugin interferes with an individual button handler.
+document.addEventListener('click',e=>{
+  const button=e.target.closest?.('[data-view]');
+  if(!button)return;
+  const target=button.dataset.view;
+  if(!target)return;
+  e.preventDefault();
+  e.stopPropagation();
+  if(button.dataset.action==='talk'){
+    findPartner();
+    return;
+  }
+  navigateToView(target);
+},true);
 
 $('#profilePhoto')?.addEventListener('change',e=>{
   const file=e.target.files?.[0];
