@@ -37,9 +37,13 @@ function setAuthMode(mode){
   const signup=mode==='signup';
   $('#showLogin')?.classList.toggle('active',!signup);
   $('#showSignup')?.classList.toggle('active',signup);
+  $('#signupFields')?.classList.toggle('hidden',!signup);
+  ['authName','authAge'].forEach(id=>{
+    const el=$('#'+id); if(el)el.required=signup;
+  });
   if($('#authTitle'))$('#authTitle').textContent=signup?'Create your Open Talk account':'Welcome back';
   if($('#authSubtitle'))$('#authSubtitle').textContent=signup
-    ?'Sign up once, then build your profile and meet real speakers.'
+    ?'Start with the essentials. Your name and age help us create better, safer conversations.'
     :'Log in to continue your conversations and keep your progress.';
   if($('#authSubmit'))$('#authSubmit').innerHTML=(signup?'Create account':'Log in')+' <b>→</b>';
   if($('#authPassword'))$('#authPassword').setAttribute('autocomplete',signup?'new-password':'current-password');
@@ -953,25 +957,57 @@ $('#logoutButton')?.addEventListener('click',async()=>{
 
 $('#showLogin')?.addEventListener('click',()=>setAuthMode('login'));
 $('#showSignup')?.addEventListener('click',()=>setAuthMode('signup'));
+$('#authPhoto')?.addEventListener('change',e=>{
+  const file=e.target.files?.[0];
+  if(!file)return;
+  if(file.size>5*1024*1024)return toast('Please choose a photo under 5 MB.');
+  if(!/^image\\/(jpeg|png|webp)$/.test(file.type))return toast('Please choose a JPG, PNG or WebP image.');
+  const preview=$('#authPhotoPreview'), fallback=$('#authPhotoFallback');
+  if(preview){preview.src=URL.createObjectURL(file);preview.hidden=false;}
+  if(fallback)fallback.hidden=true;
+});
+
 $('#authForm')?.addEventListener('submit',async e=>{
   e.preventDefault();
   const email=$('#authEmail').value.trim();
   const password=$('#authPassword').value;
   const signup=$('#showSignup')?.classList.contains('active');
+  const name=$('#authName')?.value.trim()||'';
+  const age=Number($('#authAge')?.value||0);
+  const photo=$('#authPhoto')?.files?.[0]||null;
+  if(signup && (!name || !age)){if($('#authMessage'))$('#authMessage').textContent='Please enter your name and age.';return;}
   const submit=$('#authSubmit');
   if(submit)submit.disabled=true;
   if($('#authMessage'))$('#authMessage').textContent=signup?'Creating your account…':'Signing you in…';
   try{
     let result;
-    if(signup) result=await supabaseClient.auth.signUp({email,password});
-    else result=await supabaseClient.auth.signInWithPassword({email,password});
+    if(signup){
+      result=await supabaseClient.auth.signUp({
+        email,password,
+        options:{data:{full_name:name,age}}
+      });
+    }else{
+      result=await supabaseClient.auth.signInWithPassword({email,password});
+    }
     if(result.error)throw result.error;
     if(signup && !result.data.session){
-      $('#authMessage').textContent='Account created. Check your email to confirm, then log in.';
+      // Keep the essential onboarding data in Auth metadata; it is applied when the user first logs in.
+      $('#authMessage').textContent='Almost there. Check your email to verify your account, then log in to finish your profile.';
       return;
     }
     authSession=result.data.session;
     currentUser=result.data.user;
+    if(signup){
+      s.profile={...s.profile,name,age};
+      if(photo){
+        const url=await uploadProfilePhoto(photo);
+        s.profile.avatar_url=url;
+      }
+      await supabaseClient.from('profiles').upsert({
+        id:currentUser.id,name,age,avatar_url:s.profile.avatar_url||'',
+        country:'',gender:'',english_level:'A1',gender_preference:'any'
+      });
+    }
     backendReady=!!currentUser;
     setAuthGate(false);
     await bootstrapBackend();
