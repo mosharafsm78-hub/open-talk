@@ -1019,3 +1019,10 @@ html{scroll-padding-top:72px}body{padding-bottom:calc(var(--mobile-nav-height) +
   #profile .features.stats article{margin:0;padding:15px;border-radius:18px}
   #profile .features.stats article b{font-size:25px}
 }
+
+/* GOLD BAR CURRENCY — premium, tactile, restrained */
+.gold-bar{position:relative;width:58px;height:34px;border-radius:7px;display:grid;place-items:center;flex:none;background:linear-gradient(145deg,#fff0a8 0%,#e8bd55 28%,#b97822 55%,#f3d274 78%,#c68b2d 100%);border:1px solid rgba(137,89,19,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 -3px 6px rgba(106,64,11,.2),0 7px 16px rgba(143,91,19,.18)}
+.gold-bar:before{content:"OT";font:900 10px 'Plus Jakarta Sans',sans-serif;letter-spacing:.8px;color:#70450f}.gold-bar:after{content:"";position:absolute;left:7px;right:7px;top:6px;height:1px;background:rgba(255,255,255,.65);border-radius:99px}
+.coin-hero .gold-bar{width:62px;height:38px}.coin-balance-icon.gold-bar{width:64px;height:38px;border-radius:8px}.coin-wallet .gold-bar{width:38px;height:24px;border-radius:5px}.coin-wallet .gold-bar:before{font-size:7px}
+.mobile-bottom-nav .gold-bar{width:27px;height:17px;border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 4px rgba(106,64,11,.18),0 3px 8px rgba(143,91,19,.12)}.mobile-bottom-nav .gold-bar:before{font-size:5px}.mobile-bottom-nav .gold-bar:after{left:4px;right:4px;top:3px}
+@media(max-width:760px){.mobile-bottom-nav{grid-template-columns:repeat(5,1fr)!important}.gold-bar{width:54px;height:32px}.coin-hero .gold-bar{width:58px;height:35px}.coin-balance-icon.gold-bar{width:58px;height:35px}.milestone-intro{padding-bottom:12px}.journey-banner{margin-top:8px;margin-bottom:10px}.milestone-summary{margin-top:10px}}
