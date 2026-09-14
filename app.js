@@ -21,7 +21,9 @@ function render(){
   $('#statMinutes').textContent=a.minutes;
   $('#statStreak').textContent=a.streak||0;
   $('#statAch').textContent=a.achievements.length;
-  $('#goalCount').textContent=`${t.conversations}/4`;
+  const goalDone=Math.min(t.conversations,4);
+  $('#goalCount').textContent=`${goalDone}/4`;
+  $('#goalStatus').textContent=t.conversations>=4?'Goal completed — beautiful work.':`${4-t.conversations} conversation${4-t.conversations===1?'':'s'} to go`;
   $('#goalProgress').style.width=Math.min(100,t.conversations/4*100)+'%';
   let n={A1:12,A2:28,B1:45,B2:62,C1:82,C2:100};
   $('#levelBar').style.width=(n[l]||0)+'%';
@@ -32,8 +34,10 @@ function render(){
 }
 
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===b.dataset.view));
-  scrollTo(0,0);
+  const target=b.dataset.view;
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===target));
+  document.querySelectorAll('nav button[data-view]').forEach(v=>v.classList.toggle('nav-active',v.dataset.view===target));
+  scrollTo({top:0,behavior:'smooth'});
 });
 
 $('#profileForm').onsubmit=e=>{
