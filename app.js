@@ -80,6 +80,7 @@ function render(){
     ?'Your profile stays editable. Changes are used for future matching.'
     :'Profile is editable locally. Live matching activates when the backend is connected.';
   renderMilestones();
+  renderCoinEarningPreview();
   renderAchievements();
   renderBadgeShowcase();
   if($('#shopCoins'))$('#shopCoins').textContent=a.coins||0;
@@ -493,10 +494,7 @@ async function teardownCall(){
 
 function milestoneKey(title){return title.toLowerCase().replace(/[^a-z0-9]+/g,'');}
 
-function renderMilestones(){
-  const a=s.stats||{},coins=Number(a.coins||0);
-  const c=Number(a.conversations||0),mins=Number(a.minutes||0),streak=Number(a.streak||0);
-  const m=[
+const MILESTONES=[
     ['🌱','First Words','Complete your first real human conversation.',c>=1,1,'Take the first step','easy'],
     ['💬','Two Talks','Complete 2 real conversations.',c>=2,1,'Keep going','easy'],
     ['⏱️','Warm Up','Speak for 10 total minutes.',mins>=10,1,'Get your voice moving','easy'],
@@ -521,7 +519,45 @@ function renderMilestones(){
     ['🌍','World Speaker','Complete 75 real conversations.',c>=75,4,'Keep meeting the world','hard'],
     ['🛡️','Two Hundred Conversations','Complete 200 real conversations.',c>=200,4,'You are part of the community','hard'],
     ['🚀','Twenty Hour Speaker','Speak for 20 total hours.',mins>=1200,4,'Mastery takes time','hard']
+  ];;
+
+
+function renderCoinEarningPreview(){
+  const host=$('#coinEarningPreview'); if(!host)return;
+  const a=s.stats||{}, c=Number(a.conversations||0), mins=Number(a.minutes||0), streak=Number(a.streak||0);
+  const tiers=[
+    {key:'easy',label:'Easy',icon:'🌱',sub:'First steps',reward:'1 coin'},
+    {key:'medium',label:'Medium',icon:'⚡',sub:'Consistency',reward:'2 coins'},
+    {key:'hard',label:'Hard',icon:'🏆',sub:'Serious commitment',reward:'4 coins'}
   ];
+  const valueFor=(title)=>{
+    if(/Minute|Hour|Speaker/.test(title)){
+      const targets={'Warm Up':10,'30 Minute Club':30,'One Hour In':60,'Three Hour Speaker':180,'Five Hour Speaker':300,'Ten Hour Speaker':600,'Twenty Hour Speaker':1200};
+      return [mins,targets[title]||1];
+    }
+    if(/Streak/.test(title)){
+      const targets={'Two-Day Streak':2,'Seven-Day Streak':7,'Fourteen-Day Streak':14,'Thirty-Day Streak':30};
+      return [streak,targets[title]||1];
+    }
+    const targets={'First Words':1,'Two Talks':2,'Three Conversations':3,'Five Alive':5,'Ten Talks':10,'Twenty Strong':20,'Thirty Conversations':30,'Half Century':50,'Century Speaker':100,'World Speaker':75,'Two Hundred Conversations':200,'Conversation Builder':15,'Fluency Momentum':25};
+    return [c,targets[title]||1];
+  };
+  host.innerHTML=tiers.map(tier=>{
+    const items=MILESTONES.filter(x=>x[6]===tier.key);
+    const earned=items.filter(x=>x[3]).length;
+    const examples=items.slice(0,3).map(x=>{
+      const [cur,target]=valueFor(x[1]);
+      const done=x[3];
+      return '<div class="coin-earning-item"><span class="coin-earning-check">'+(done?'✓':'○')+'</span><div><b>'+x[1]+'</b><small>'+x[2]+'</small></div><strong>+'+x[4]+'</strong></div>';
+    }).join('');
+    return '<article class="coin-tier '+tier.key+'"><div class="coin-tier-top"><div><span class="tier-icon">'+tier.icon+'</span><div><b>'+tier.label+'</b><small>'+tier.sub+' · '+tier.reward+'</small></div></div><em>'+earned+'/'+items.length+'</em></div>'+examples+'</article>';
+  }).join('');
+}
+
+function renderMilestones(){
+  const a=s.stats||{},coins=Number(a.coins||0);
+  const c=Number(a.conversations||0),mins=Number(a.minutes||0),streak=Number(a.streak||0);
+  const m=MILESTONES;
   const rewarded=new Set(a.rewardedMilestones||[]);
   const tiers=[
     {key:'easy',label:'Easy wins',sub:'Start small · 1 coin each',icon:'🌱'},
