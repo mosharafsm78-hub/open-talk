@@ -31,6 +31,9 @@ let activeMatchPasses=[];
 let remoteAudioContext=null;
 let remoteAudioSource=null;
 let remoteAudioGain=null;
+let signalPoll=null;
+let signalPollBusy=false;
+let signalSeen=new Set();
 
 function save(){
   localStorage.setItem(K,JSON.stringify(s));
@@ -130,7 +133,15 @@ async function bootstrapBackend(){
     const {data:p,error:pe}=await supabaseClient.from('profiles')
       .select('id,name,age,country,gender,english_level,gender_preference')
       .eq('id',currentUser.id).maybeSingle();
-    if(!pe&&p){s.profile={...s.profile,...p};save();}
+    if(!pe&&p){
+      const merged={...s.profile};
+      for(const key of ['name','age','country','gender','english_level','gender_preference']){
+        const value=p[key];
+        if(value!==null&&value!==undefined&&String(value).trim()!=='') merged[key]=value;
+      }
+      s.profile=merged;
+      save();
+    }
     try{
       const rewards=await supabaseClient.from('user_milestone_rewards').select('milestone_key,coins').eq('user_id',currentUser.id);
       const balance=await supabaseClient.rpc('available_coins',{p_user_id:currentUser.id});
@@ -564,89 +575,90 @@ async function startHumanCall(sessionId,partner){
 }
 
 async function setupSignaling(sessionId,partner){
-  if(channel){
-    try{await supabaseClient.removeChannel(channel)}catch{}
-  }
+  if(channel){try{await supabaseClient.removeChannel(channel)}catch{} channel=null;}
+  stopSignalPolling();
   signalingSessionId=sessionId;
-  channel=supabaseClient.channel('open-talk:'+sessionId,{
-    config:{broadcast:{ack:true}}
-  });
+  signalSeen=new Set();
 
-  channel.on('broadcast',{event:'signal'},async payload=>{
-    const msg=payload.payload||{};
-    if(msg.from===currentUser.id)return;
+  const processSignal=async(msg)=>{
+    if(!msg||msg.from===currentUser.id)return;
+    const type=msg.type||msg.kind;
+    if(!['offer','answer','ice'].includes(type))return;
+    const fingerprint=type+':'+String(msg.from)+':'+JSON.stringify(msg.sdp||msg.candidate||'');
+    if(signalSeen.has(fingerprint))return;
+    signalSeen.add(fingerprint);
     try{
-      if(msg.type==='hello'){
-        remoteSelectedBadges=Array.isArray(msg.selectedBadges)?msg.selectedBadges.slice(0,3):[];
-
-        // Only one side is allowed to create the initial offer. Keep this
-        // handshake one-shot: repeated hello packets must never trigger a
-        // second offer while the first negotiation is still in flight.
-        if(currentUser.id<partner.id && !pc?.localDescription){
-          await createOffer();
-        }
-      }else if(msg.type==='offer'){
+      if(type==='offer'){
         await ensurePeer();
-
-        // The offerer is deterministic, so the answering peer should not
-        // already have its own offer. If a stale offer ever arrives, ignore it
-        // rather than using Safari's fragile rollback path.
-        if(pc.signalingState!=='stable' && pc.signalingState!=='have-remote-offer'){
-          return;
-        }
-
+        if(pc.signalingState!=='stable'&&pc.signalingState!=='have-remote-offer')return;
         await pc.setRemoteDescription(msg.sdp);
-
-        // Candidates can arrive before the SDP. Flush them as soon as the
-        // remote offer is installed; otherwise the answerer can remain stuck
-        // in "connecting" forever on mobile networks.
-        for(const ice of pendingIce){
-          try{await pc.addIceCandidate(ice)}catch(err){console.warn('Open Talk pending ICE:',err);}
-        }
+        for(const ice of pendingIce){try{await pc.addIceCandidate(ice)}catch(err){console.warn('Open Talk pending ICE:',err);}}
         pendingIce=[];
-
         const answer=await pc.createAnswer();
         await pc.setLocalDescription(answer);
         await waitForIceGathering(pc);
         await sendSignal({type:'answer',sdp:pc.localDescription});
-      }else if(msg.type==='answer'){
-        if(!pc) return;
+      }else if(type==='answer'){
+        if(!pc||pc.signalingState!=='have-local-offer')return;
         await pc.setRemoteDescription(msg.sdp);
-        for(const ice of pendingIce){
-          try{await pc.addIceCandidate(ice)}catch(err){console.warn('Open Talk pending ICE:',err);}
-        }
+        for(const ice of pendingIce){try{await pc.addIceCandidate(ice)}catch(err){console.warn('Open Talk pending ICE:',err);}}
         pendingIce=[];
-      }else if(msg.type==='ice'){
+      }else{
         const ice=msg.candidate;
-        if(!pc?.remoteDescription){pendingIce.push(ice);}
-        else{try{await pc.addIceCandidate(ice)}catch{}}
+        if(!pc?.remoteDescription)pendingIce.push(ice);
+        else{try{await pc.addIceCandidate(ice)}catch(err){console.warn('Open Talk ICE:',err);}}
       }
     }catch(err){
       console.error('Open Talk signaling:',err);
       $('#listen').textContent='The voice connection needs another attempt. Please leave and find a new partner.';
     }
+  };
+
+  channel=supabaseClient.channel('open-talk:'+sessionId,{config:{broadcast:{ack:true}}});
+  channel.on('broadcast',{event:'signal'},payload=>{
+    processSignal(payload.payload||{}).catch(err=>console.warn('Open Talk broadcast:',err));
+  });
+  channel.subscribe(status=>{
+    if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')console.warn('Open Talk realtime unavailable; using database signaling.');
   });
 
-  await new Promise((resolve,reject)=>{
-    channel.subscribe(status=>{
-      if(status==='SUBSCRIBED')resolve();
-      if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')reject(new Error('Realtime signaling unavailable'));
-    });
-  });
+  signalPoll=setInterval(async()=>{
+    if(signalPollBusy||finishing||!supabaseClient||!currentUser||signalingSessionId!==sessionId)return;
+    signalPollBusy=true;
+    try{
+      const {data,error}=await supabaseClient.from('call_signals').select('id,sender_id,kind,payload,created_at').eq('call_id',sessionId).order('created_at',{ascending:true}).limit(100);
+      if(!error)for(const row of(data||[]))await processSignal({...row.payload||{},from:row.sender_id});
+      else console.warn('Open Talk signal polling:',error);
+    }catch(err){console.warn('Open Talk signal polling:',err);}
+    finally{signalPollBusy=false;}
+  },300);
 
-  // Realtime broadcasts are ephemeral. Announce readiness more than once
-  // so a phone that subscribed a moment later still receives the handshake.
-  await sendSignal({type:'hello'});
-  [450,1100,1900].forEach(delay=>setTimeout(()=>{
-    if(channel && !finishing) sendSignal({type:'hello'}).catch(()=>{});
-  },delay));
+  // Start the handshake immediately; do not wait for an ephemeral hello packet.
+  if(currentUser.id<partner.id){
+    try{await createOffer();}catch(err){
+      console.error('Open Talk initial offer:',err);
+      $('#listen').textContent='We could not start the private voice connection. Please try again.';
+    }
+  }
+}
+
+function stopSignalPolling(){
+  if(signalPoll){clearInterval(signalPoll);signalPoll=null;}
+  signalPollBusy=false;
+  signalSeen=new Set();
 }
 
 async function sendSignal(message){
-  if(!channel)return;
+  if(!currentUser||!signalingSessionId)return;
   const payload={...message,from:currentUser.id,selectedBadges:s.stats.selectedBadges||[]};
-  const result=await channel.send({type:'broadcast',event:'signal',payload});
-  if(result==='error')throw new Error('Realtime signaling send failed');
+  if(['offer','answer','ice'].includes(message.type)){
+    const {error}=await supabaseClient.from('call_signals').insert({call_id:signalingSessionId,sender_id:currentUser.id,kind:message.type,payload});
+    if(error)throw error;
+  }
+  if(channel){
+    try{const result=await channel.send({type:'broadcast',event:'signal',payload});if(result==='error')console.warn('Open Talk broadcast send failed; database signal is saved.');}
+    catch(err){console.warn('Open Talk broadcast send:',err);}
+  }
 }
 
 function waitForIceGathering(peer,timeout=6000){
@@ -681,11 +693,11 @@ async function primeRemoteAudioPlayback(){
   if(audio){
     audio.autoplay=true;
     audio.playsInline=true;
-    audio.muted=true;
-    audio.volume=0;
+    audio.muted=false;
+    audio.volume=1;
     try{
       if(!audio.srcObject) audio.srcObject=remoteStream||new MediaStream();
-      await audio.play().catch(()=>{});
+      await audio.play().then(()=>{audioPlaybackReady=true;}).catch(()=>{});
     }catch{}
   }
 }
@@ -813,7 +825,7 @@ async function ensurePeer(){
   pc.onicecandidateerror=e=>{
     console.warn('Open Talk ICE candidate error:',e.errorCode,e.url,e.errorText);
   };
-  pc.ontrack=e=>{
+  pc.ontrack=async e=>{
     // Do not call this a successful call just because ontrack fired.
     // Mobile Safari may deliver the track before ICE/DTLS is usable, and
     // remote speaker autoplay can still be blocked.
@@ -834,6 +846,9 @@ async function ensurePeer(){
       // 0, which made both users talk while hearing silence and kept the
       // call timer at 00:00 forever.
       audio.srcObject=remoteStream;
+      audio.muted=false;
+      audio.volume=1;
+      audio.play().then(()=>{audioPlaybackReady=true;}).catch(()=>{});
     }
     remoteTrackReady=!!e.track;
     renderRemoteBadges();
@@ -1098,6 +1113,7 @@ async function leaveConversation(){
 
 async function teardownCall(){
   stopMatchPolling();
+  stopSignalPolling();
   stopCallClock();
   clearTimeout(rtcConnectTimer);
   rtcConnectTimer=null;
