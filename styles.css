@@ -1576,3 +1576,12 @@ nav button{
 .footer-links a{color:var(--muted);text-decoration:none;font-weight:700}
 .footer-links a:hover{color:var(--purple)}
 @media(max-width:700px){.footer-inner{padding:20px 20px 92px;flex-direction:column}.footer-links{gap:14px}}
+
+
+.danger-button{border:1px solid #f0c5cc;background:#fff7f8;color:#b42335;border-radius:12px;padding:11px 15px;font-weight:800}
+.danger-button:hover{background:#fff0f2}
+.report-panel{margin-top:14px;padding:16px;border:1px solid #f0d5da;background:#fff8f9;border-radius:16px}
+.report-panel.hidden{display:none}
+.report-panel label{display:block;font-size:12px;font-weight:800;margin-bottom:8px;color:#4d5569}
+.report-panel select{width:100%;border:1px solid #e2d7da;border-radius:10px;background:#fff;padding:11px 12px;margin-bottom:12px}
+.report-panel>div{display:flex;gap:10px;align-items:center}
