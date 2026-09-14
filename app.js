@@ -571,16 +571,12 @@ function renderMilestones(){
   $('#milestoneEarned').textContent=coins;
 
   const currentFor=(title)=>{
-    if(/Minute|Hour|Speaker/.test(title)){
-      const targets={'Warm Up':10,'30 Minute Club':30,'One Hour In':60,'Three Hour Speaker':180,'Five Hour Speaker':300,'Ten Hour Speaker':600,'Twenty Hour Speaker':1200};
-      return [mins,targets[title]||1];
-    }
-    if(/Streak/.test(title)){
-      const targets={'Two-Day Streak':2,'Seven-Day Streak':7,'Fourteen-Day Streak':14,'Thirty-Day Streak':30};
-      return [streak,targets[title]||1];
-    }
-    const targets={'First Words':1,'Two Talks':2,'Three Conversations':3,'Five Alive':5,'Ten Talks':10,'Twenty Strong':20,'Thirty Conversations':30,'Half Century':50,'Century Speaker':100,'Global Speaker':75,'Two Hundred Conversations':200,'Conversation Builder':15,'Fluency Momentum':25};
-    return [c,targets[title]||1];
+    const minuteTargets={'Warm Up':10,'30 Minute Club':30,'One Hour In':60,'Three Hour Speaker':180,'Five Hour Speaker':300,'Ten Hour Speaker':600,'Twenty Hour Speaker':1200};
+    const streakTargets={'Two-Day Streak':2,'Seven-Day Streak':7,'Fourteen-Day Streak':14,'Thirty-Day Streak':30};
+    const conversationTargets={'First Words':1,'Two Talks':2,'Three Conversations':3,'Five Alive':5,'Ten Talks':10,'Twenty Strong':20,'Thirty Conversations':30,'Half Century':50,'Century Speaker':100,'Global Speaker':75,'Two Hundred Conversations':200,'Conversation Builder':15,'Fluency Momentum':25};
+    if(Object.prototype.hasOwnProperty.call(minuteTargets,title)) return [mins,minuteTargets[title]];
+    if(Object.prototype.hasOwnProperty.call(streakTargets,title)) return [streak,streakTargets[title]];
+    return [c,conversationTargets[title]||1];
   };
 
   $('#milestoneList').innerHTML=tiers.map(tier=>{
