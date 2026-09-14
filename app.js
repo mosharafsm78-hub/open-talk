@@ -1000,7 +1000,7 @@ $('#authPhoto')?.addEventListener('change',e=>{
   const file=e.target.files?.[0];
   if(!file)return;
   if(file.size>5*1024*1024)return toast('Please choose a photo under 5 MB.');
-  if(!/^image\\/(jpeg|png|webp)$/.test(file.type))return toast('Please choose a JPG, PNG or WebP image.');
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type))return toast('Please choose a JPG, PNG or WebP image.');
   const preview=$('#authPhotoPreview'), fallback=$('#authPhotoFallback');
   if(preview){preview.src=URL.createObjectURL(file);preview.hidden=false;}
   if(fallback)fallback.hidden=true;
