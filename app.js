@@ -473,6 +473,9 @@ async function startHumanCall(sessionId,partner){
   $('#partnerMeta').textContent=`${partner.country||'A nearby speaker'} • ${partner.level||'level not assessed'} • Real person`;
   $('#listen').textContent='Connecting securely…';
   $('#transcript').textContent='Your voice will be sent directly to your matched partner. No AI is speaking here.';
+  try{
+    if(navigator.audioSession) navigator.audioSession.type='play-and-record';
+  }catch{}
 
   // Microphone permission is requested from the original Find button.
   // Reuse that live stream here instead of asking again after the match.
@@ -619,11 +622,20 @@ async function ensurePeer(){
     $('#mic').style.display='none';
     renderRemoteBadges();
   };
+  clearTimeout(rtcConnectTimer);
+  rtcConnectTimer=setTimeout(()=>{
+    if(pc && pc.connectionState!=='connected' && !finishing && signalingSessionId){
+      $('#listen').textContent='Still connecting — retrying the private voice link…';
+      scheduleRtcRecovery();
+    }
+  },12000);
+
   pc.onconnectionstatechange=()=>{
     const state=pc.connectionState;
     if(state==='connected'){
       // Mark the call active as soon as WebRTC is actually connected. This
       // distinguishes a live conversation from a stale "matched" handshake.
+      clearTimeout(rtcConnectTimer);
       if(supabaseClient && currentPartner?.call_id){
         supabaseClient.from('calls').update({status:'active',started_at:new Date().toISOString()})
           .eq('id',currentPartner.call_id).then(()=>{}).catch(()=>{});
@@ -683,6 +695,7 @@ async function startCallTransport(sessionId,partner){
 
 let reconnectingAfterBackground=false;
 let rtcRecoveryTimer=null;
+let rtcConnectTimer=null;
 
 function scheduleRtcRecovery(){
   if(rtcRecoveryTimer||finishing||!signalingSessionId||!currentPartner)return;
@@ -835,11 +848,16 @@ async function leaveConversation(){
 async function teardownCall(){
   stopMatchPolling();
   stopCallClock();
+  clearTimeout(rtcConnectTimer);
+  rtcConnectTimer=null;
   if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
   if(pc){pc.close();pc=null;}
   if(channel&&supabaseClient){try{await supabaseClient.removeChannel(channel)}catch{} channel=null;}
   signalingSessionId=null;
   $('#remoteAudio').srcObject=null;
+  try{
+    if(navigator.audioSession) navigator.audioSession.type='auto';
+  }catch{}
   callStartedAt=0;
 }
 
