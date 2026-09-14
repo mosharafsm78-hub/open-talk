@@ -114,7 +114,7 @@
       <label>Name<input id="name" required placeholder="Your name"></label>
       <label>Age<input id="age" type="number" min="13" max="100" required placeholder="Age"></label>
       <label>Country<select id="country" required><option value="">Choose</option><option>Bangladesh</option><option>India</option><option>Malaysia</option><option>United Kingdom</option><option>United States</option><option>Other</option></select></label>
-      <label>Gender<select id="gender"><option>Prefer not to say</option><option>Male</option><option>Female</option><option>Other</option></select></label>
+      <label>Gender<select id="gender" required><option value="">Choose</option><option>Male</option><option>Female</option><option>Other</option></select></label>
     </div><button class="primary">Save profile <b>→</b></button><small id="profileLock"></small></form>
     <div class="card assessment"><span class="card-kicker">AI ASSESSMENT</span><div id="levelValue" class="level">Not assessed yet</div><p>Your level is determined automatically from your conversations.</p><div class="levelbar"><span id="levelBar"></span></div><div class="scale"><span>A1</span><span>A2</span><span>B1</span><span>B2</span><span>C1</span><span>C2</span></div><div class="assessment-tip">💡 Keep speaking — your level becomes clearer with more practice.</div></div>
   </div>
@@ -197,6 +197,20 @@
     <div class="match-visual">
       <div class="match-orbit orbit-a"></div><div class="match-orbit orbit-b"></div>
       <div class="conversationOrb"><div class="pulse"></div><span>👥</span></div>
+    </div>
+
+    <div id="matchControls" class="match-controls">
+      <div class="match-controls-head">
+        <div><span class="card-kicker">MATCH YOUR WAY</span><b>Choose who you want to meet</b><small>Free matching stays open. Coins unlock one successful filtered connection.</small></div>
+        <div class="match-cost"><span id="matchCost">FREE</span><small id="matchCostNote">Open matching is free. No coins are used.</small></div>
+      </div>
+      <div class="match-control-grid">
+        <label><span>Gender</span><select id="matchGender"><option value="any">Anyone · Free</option><option value="female">Women · 8 coins</option><option value="male">Men · 8 coins</option><option value="other">Other · 8 coins</option></select></label>
+        <label><span>Country</span><select id="matchCountry"><option value="">Any country · Free</option><option>Bangladesh</option><option>India</option><option>Malaysia</option><option>United Kingdom</option><option>United States</option><option>Saudi Arabia</option><option>United Arab Emirates</option><option>Philippines</option><option>Indonesia</option><option>Other</option></select></label>
+        <label><span>Speaking level</span><select id="matchLevel"><option value="">Any level · Free</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
+        <label class="priority-toggle"><span>Queue priority</span><input id="matchPriority" type="checkbox"><small>+4 coins · move ahead when busy</small></label>
+      </div>
+      <div class="match-smart-note"><span>✦</span><span><b>Smart Match</b> — gender + country + level together cost <strong>18 coins</strong> instead of 21. Coins are charged only when a real match is found.</span></div>
     </div>
 
     <div class="queue-live">
