@@ -169,6 +169,9 @@ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===target));
   document.querySelectorAll('nav button[data-view]').forEach(v=>v.classList.toggle('nav-active',v.dataset.view===target));
   document.querySelectorAll('.mobile-nav-item[data-view]').forEach(v=>v.classList.toggle('nav-active',v.dataset.view===target && !v.dataset.action));
+  if(target==='milestones') renderMilestones();
+  if(target==='achievements') renderAchievements();
+  if(target==='coins') renderCoinEarningPreview();
   scrollTo({top:0,behavior:'smooth'});
 });
 
@@ -554,6 +557,8 @@ function renderCoinEarningPreview(){
 }
 
 function renderMilestones(){
+  const host=$('#milestoneList');
+  if(!host)return;
   const a=s.stats||{},coins=Number(a.coins||0);
   const c=Number(a.conversations||0),mins=Number(a.minutes||0),streak=Number(a.streak||0);
   const m=MILESTONES;
@@ -668,7 +673,8 @@ function renderRemoteBadges(){
   host.innerHTML=badges.length?'<span class="remote-label">THEIR ACHIEVEMENTS</span>'+badges.map(a=>'<span class="remote-badge"><b>'+a.icon+'</b>'+a.title+'</span>').join(''):'<span class="remote-empty">Achievement badges will appear here when your partner has chosen them.</span>';
 }
 function renderAchievements(){
-  const host=$('#achievementGrid'); if(!host)return;
+  const host=$('#achievementGrid');
+  if(!host)return;
   const selected=new Set(s.stats.selectedBadges||[]);
   const tiers=[
     {key:'easy',label:'Easy',sub:'Early wins · build your identity',icon:'🌱'},
