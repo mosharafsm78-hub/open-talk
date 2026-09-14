@@ -228,6 +228,7 @@ async function api(path,method='GET',body=null){
         age:Number(body?.age),
         country:String(body?.country||'').trim(),
         gender:String(body?.gender||'').trim(),
+        avatar_url:String(body?.avatar_url||''),
         english_level:String(body?.english_level||s.stats?.level||'A1'),
         gender_preference:String(body?.gender_preference||'any')
       };
