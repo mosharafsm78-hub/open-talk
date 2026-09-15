@@ -3057,3 +3057,66 @@ body.modal-open{overflow:hidden!important;height:100%!important}
   .auth-modal{padding: max(14px,env(safe-area-inset-top)) 12px max(20px,env(safe-area-inset-bottom))!important;}
   .auth-card{max-height:calc(100dvh - 34px)!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;}
 }
+
+
+/* DESKTOP BADGE GRID FIX — keep achievement cards readable at desktop widths.
+   The badge page is intentionally 3-up on desktop, 2-up on tablet, 1-up on phones.
+   Scoped strongly so older/stale grid rules cannot collapse all badges into one row. */
+@media (min-width: 901px){
+  #achievementGrid .achievement-tier .achievement-grid-inner{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-auto-flow:row!important;
+    gap:16px!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  #achievementGrid .achievement-tier .achievement-card{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    min-height:154px!important;
+    display:grid!important;
+    grid-template-columns:48px minmax(0,1fr) auto!important;
+    align-items:center!important;
+    gap:12px!important;
+    overflow:hidden!important;
+  }
+  #achievementGrid .achievement-tier .achievement-copy{
+    min-width:0!important;
+    overflow:hidden!important;
+  }
+  #achievementGrid .achievement-tier .achievement-copy b,
+  #achievementGrid .achievement-tier .achievement-copy small,
+  #achievementGrid .achievement-tier .achievement-copy em{
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 900px){
+  #achievementGrid .achievement-tier .achievement-grid-inner{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-auto-flow:row!important;
+    gap:14px!important;
+  }
+  #achievementGrid .achievement-tier .achievement-card{
+    width:100%!important;
+    min-width:0!important;
+  }
+}
+
+@media (max-width:760px){
+  #achievementGrid .achievement-tier .achievement-grid-inner{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    grid-auto-flow:row!important;
+    gap:0!important;
+  }
+  #achievementGrid .achievement-tier .achievement-card{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+  }
+}
