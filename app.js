@@ -705,6 +705,7 @@ function openConversationModal(){
   rtcOfferInFlight=false;
   stopMatchPolling();
   $('#modal').classList.remove('hidden');
+  $('#modal').style.display='';
   document.body.classList.add('modal-open');
   setMatchPhase('choose');
   $('#matchControls')?.classList.remove('hidden');
@@ -1860,7 +1861,12 @@ $('#cancelReport')?.addEventListener('click',()=>$('#reportPanel')?.classList.ad
 
 // Expose a non-blocking cleanup hook for the inline close-button fallback.
 // The UI must never depend on a network request to close.
-window.__openTalkCleanup=()=>{ teardownCall().catch(err=>console.warn('Open Talk cleanup:',err)); };
+window.__openTalkCleanup=()=>{
+  // The inline close fallback may run before this module's click handler.
+  // Use the same canonical reset path so closing and reopening can never
+  // inherit the previous searching/connected phase.
+  leaveConversation().catch(err=>console.warn('Open Talk close cleanup:',err));
+};
 
 render();
 bootstrapBackend();
