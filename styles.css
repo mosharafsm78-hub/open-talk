@@ -2474,3 +2474,36 @@ body.modal-open{overflow:hidden!important;height:100%!important}
     margin-top:12px!important;
   }
 }
+
+/* SEARCHING STATE — after Find a real person is pressed, this becomes a dedicated waiting experience.
+   Browser and Electron stay identical because the desktop client loads the same deployed web app. */
+.modal.searching .live-modal .actions #mic{display:none!important}
+.modal.searching .match-controls,
+.modal.searching .queue-steps,
+.modal.searching #transcript{display:none!important}
+.modal.searching .match-visual{display:block!important}
+.search-experience.hidden{display:none!important}
+.search-experience{display:grid;gap:10px;margin-top:10px}
+.search-preferences{padding:13px 15px;border:1px solid #e7e8f2;border-radius:16px;background:linear-gradient(180deg,#fbfbff,#f8f8fd)}
+.search-label{display:block;color:#7770e8;font-size:9px;font-weight:900;letter-spacing:.12em;margin-bottom:9px}
+.search-preference-list{display:flex;flex-wrap:wrap;gap:7px}
+.search-preference-list span{display:inline-flex;align-items:center;min-height:29px;padding:0 10px;border:1px solid #e4e5ee;border-radius:999px;background:#fff;color:#424b67;font-size:10px;font-weight:800}
+.search-tip{display:flex;align-items:center;gap:11px;padding:13px 15px;border:1px solid #e7e2ff;border-radius:16px;background:#f8f6ff}
+.search-tip-icon{width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;border-radius:10px;background:#ebe7ff;color:#6658f5;font-weight:900}
+.search-tip b{display:block;font-size:11px;color:#29314c}
+.search-tip small{display:block;margin-top:3px;color:#7e879e;font-size:9px;line-height:1.35}
+@media(min-width:761px){
+ .modal.searching .live-modal{width:min(620px,calc(100vw - 80px))!important;padding:30px 34px 26px!important}
+ .modal.searching .match-visual{height:255px!important;margin:4px 0 0!important}
+ .modal.searching .conversationOrb{width:128px!important;height:128px!important}
+ .modal.searching .radar-copy{top:calc(50% + 98px)!important}
+ .modal.searching .queue-live{margin-top:0!important;min-height:72px!important;border-radius:18px!important}
+ .modal.searching .search-experience{grid-template-columns:1fr 1.35fr}
+}
+@media(max-width:760px){
+ .modal.searching .live-modal{padding-top:calc(26px + env(safe-area-inset-top))!important}
+ .modal.searching .match-visual{min-height:305px!important;height:305px!important;margin-top:2px!important}
+ .modal.searching .conversationOrb{width:116px!important;height:116px!important}
+ .modal.searching .radar-copy{top:220px!important}
+ .modal.searching .queue-live{margin-top:0!important}
+}
