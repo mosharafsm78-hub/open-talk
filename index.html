@@ -306,7 +306,7 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script type="module" src="app.js?v=20260915-32"></script>
+<script type="module" src="app.js?v=20260915-33"></script>
 <script>
 /* Emergency navigation fallback: this must work even if the app module/backend fails. */
 (function(){
@@ -340,8 +340,16 @@
     }catch(err){console.warn('close cleanup',err);}
   };
   window.__openTalkFallback=function(){
+    if(window.__openTalkOpen){
+      window.__openTalkOpen();
+      return;
+    }
     var m=document.getElementById('modal');
-    if(m){m.classList.remove('hidden');m.style.display='grid';}
+    if(m){
+      m.classList.remove('hidden');
+      m.style.display='';
+    }
+    if(window.__openTalkResetMatch) window.__openTalkResetMatch();
   };
   var talk=document.getElementById('talkNow');
   if(talk)talk.addEventListener('click',function(e){
