@@ -476,7 +476,7 @@ function updateMatchSelectionUI(){
   if(controls) controls.classList.toggle('insufficient',m.cost>balance);
 }
 
-async function findPartner(){
+async async function findPartner(){
   if(finishing)return;
   const startButton=$('#mic');
   const resetStartButton=()=>{
