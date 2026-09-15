@@ -529,8 +529,13 @@ async function findPartner(){
   $('#partnerMeta').textContent=match.cost
     ? (match.base?.hours===24?'Smart Match is ready for 24-hour access.':'Your preference is ready for 12-hour access.')+' No charge until a real person is found.'
     : 'Open Talk is finding another real person for you. No AI will replace your partner.';
-  $('#listen').textContent='Scanning the live community…';
-  $('#transcript').innerHTML='<div class="queue-status"><span class="queue-spinner"></span><b>Hold on — we’re finding someone</b><small>Your match will appear here as soon as a real person is available.</small></div>';
+  $('#listen').textContent='Still looking for someone who is online…';
+  $('#queueLiveSub').textContent='Keep this window open. We’ll connect you the moment a real person is available.';
+  $('#searchHeadline').textContent='Searching the live community';
+  $('#searchSubline').textContent='Looking for someone who is online and ready to talk.';
+  $('#searchTipTitle').textContent='Your microphone is ready';
+  $('#searchTipText').textContent='Stay here — Open Talk is searching for a real person, not an AI.';
+  $('#transcript').innerHTML='';
   $('#mic').disabled=true;
   $('#finish').disabled=false;
   updateMatchSelectionUI();
@@ -587,6 +592,9 @@ async function findPartner(){
           ? 'Your preferred match is not online yet. Your coins remain untouched.'
           : 'You are safely in the live matching queue. We will never substitute an AI.';
         $('#listen').textContent='Still looking for someone who is online…';
+        const elapsed=Number(String($('#timer').textContent||'00:00').split(':').pop()||0);
+        if($('#searchHeadline')) $('#searchHeadline').textContent=elapsed>=30?'Still searching — your person could join at any moment.':'Searching the live community';
+        if($('#searchTipTitle')) $('#searchTipTitle').textContent=elapsed>=30?'Keep going — real people join throughout the day.':'Your microphone is ready';
       }
     }catch(err){
       console.error('Open Talk match:',err);
@@ -610,18 +618,31 @@ function setMatchPhase(phase){
   const queue=$('.queue-live');
   const steps=$('.queue-steps');
   const actions=$('.live-modal .actions');
+  const searchExperience=$('#searchExperience');
   modal?.classList.toggle('searching',phase==='searching');
   controls?.classList.toggle('hidden',phase==='searching'||phase==='connected');
   visual?.classList.toggle('hidden',phase!=='searching');
   queue?.classList.toggle('hidden',phase!=='searching'&&phase!=='connected');
   steps?.classList.toggle('hidden',phase!=='connected');
-  if(actions){
-    actions.classList.toggle('search-actions',phase==='searching');
-  }
+  searchExperience?.classList.toggle('hidden',phase!=='searching');
+  if(actions) actions.classList.toggle('search-actions',phase==='searching');
   if(phase==='searching'){
     $('#mic').disabled=true;
     $('#mic').textContent='Searching…';
+    $('#mic').style.display='none';
     $('#finish').disabled=false;
+    const m=matchSelection();
+    const genderLabel=m.gender==='any'?'Anyone':m.gender==='female'?'Women':m.gender==='male'?'Men':'Other';
+    if($('#searchPrefGender')) $('#searchPrefGender').textContent=genderLabel;
+    if($('#searchPrefCountry')) $('#searchPrefCountry').textContent=m.country||'Any country';
+    if($('#searchPrefLevel')) $('#searchPrefLevel').textContent=m.level||'Any level';
+    if($('#searchHeadline')) $('#searchHeadline').textContent='Searching the live community';
+    if($('#searchSubline')) $('#searchSubline').textContent='Looking for someone who is online and ready to talk.';
+    if($('#searchTipTitle')) $('#searchTipTitle').textContent='Your microphone is ready';
+    if($('#searchTipText')) $('#searchTipText').textContent='Stay here — Open Talk is searching for a real person, not an AI.';
+  }else{
+    $('#mic').style.display='';
+    if(searchExperience) searchExperience.classList.add('hidden');
   }
 }
 function openConversationModal(){
