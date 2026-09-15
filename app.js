@@ -1517,20 +1517,49 @@ async function finishConversation(){
   }
 }
 
+function resetMatchToFirstPage(){
+  currentPartner=null;
+  remoteSelectedBadges=[];
+  setMatchPhase('choose');
+  stopMatchPolling();
+  stopCallStateWatch();
+  stopSignalPolling();
+  $('#matchControls')?.classList.remove('hidden');
+  $('.match-visual')?.classList.add('hidden');
+  $('.queue-live')?.classList.add('hidden');
+  $('.queue-steps')?.classList.add('hidden');
+  $('#searchExperience')?.classList.add('hidden');
+  $('#feedback')?.classList.add('hidden');
+  $('#feedback').innerHTML='';
+  $('#reportPanel')?.classList.add('hidden');
+  $('#reportPartner').disabled=true;
+  $('#partner').textContent='Choose your match';
+  $('#partnerMeta').textContent='Choose your preferences.';
+  $('#listen').textContent='Ready when you are';
+  $('#transcript').innerHTML='<div class="queue-status"><span class="queue-spinner"></span><b>Ready when you are</b></div>';
+  $('#timer').textContent='00:00';
+  $('#finish').disabled=true;
+  $('#mic').disabled=false;
+  $('#mic').textContent='🎙 Find a real person';
+  $('#mic').classList.remove('is-live');
+  $('#mic').style.display='';
+  $('#mic').onclick=()=>findPartner();
+  updateMatchSelectionUI();
+}
+
 async function leaveConversation(){
-  // Close the UI FIRST. Never make the user wait for Supabase/Realtime.
-  // Previously the X button awaited the network request before hiding the
-  // modal, so a slow/hung request made the X button look completely dead.
+  // Leaving always returns the conversation modal to page 1.
+  // Never preserve the previous searching/connected phase.
   finishing=true;
   stopMatchPolling();
   document.body.classList.remove('modal-open');
   $('#modal')?.classList.add('hidden');
-  currentPartner=null;
 
-  // Clean up the local WebRTC/browser resources without blocking the UI.
   try{await teardownCall();}catch(err){console.warn('Open Talk teardown:',err);}
 
-  // Server cleanup is best-effort and must never prevent closing the modal.
+  resetMatchToFirstPage();
+
+  // Server cleanup is best-effort and never blocks the UI.
   if(backendReady){
     api('/api/match','POST',{action:'leave'}).catch(err=>{
       console.warn('Open Talk leave sync:',err);
