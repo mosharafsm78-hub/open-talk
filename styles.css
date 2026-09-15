@@ -3031,3 +3031,29 @@ body.modal-open{overflow:hidden!important;height:100%!important}
 @media(max-width:600px){
   #modal[data-phase="connecting"] .queue-live{padding:18px 16px;}
 }
+
+
+/* FINAL ACCOUNT MODAL FIX — always above sticky navigation and fully dismissible. */
+.auth-modal{
+  position:fixed!important;
+  inset:0!important;
+  z-index:50000!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-height:100dvh!important;
+  box-sizing:border-box!important;
+  isolation:isolate!important;
+}
+.auth-card{
+  position:relative!important;
+  z-index:50001!important;
+}
+.auth-close{
+  z-index:50002!important;
+  cursor:pointer!important;
+}
+.auth-modal.hidden{display:none!important}
+@media(max-width:680px){
+  .auth-modal{padding: max(14px,env(safe-area-inset-top)) 12px max(20px,env(safe-area-inset-bottom))!important;}
+  .auth-card{max-height:calc(100dvh - 34px)!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;}
+}
