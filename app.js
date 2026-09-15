@@ -611,8 +611,8 @@ async function findPartner(){
         setQueueStage(2);
         currentPartner={...data.candidate,call_id:data.call_id||data.session_id};
         stopMatchPolling();
-        setMatchPhase('connected');
-        $('#partner').textContent='Someone is ready ✨';
+        setMatchPhase('connecting');
+        $('#partner').textContent='Connecting securely';
         rtcConnected=false;
         remoteTrackReady=false;
         audioPlaybackReady=false;
@@ -658,15 +658,15 @@ function setMatchPhase(phase){
   const steps=$('.queue-steps');
   const actions=$('.live-modal .actions');
   const searchExperience=$('#searchExperience');
-  modal?.classList.toggle('searching',phase==='searching');
+  modal?.classList.toggle('searching',phase==='searching'||phase==='connecting');
   modal?.setAttribute('data-phase',phase);
-  controls?.classList.toggle('hidden',phase==='searching'||phase==='connected');
+  controls?.classList.toggle('hidden',phase!=='choose');
   visual?.classList.toggle('hidden',phase!=='searching');
-  queue?.classList.toggle('hidden',phase!=='searching'&&phase!=='connected');
-  steps?.classList.toggle('hidden',phase!=='connected');
+  queue?.classList.toggle('hidden',phase==='choose');
+  steps?.classList.add('hidden');
   searchExperience?.classList.toggle('hidden',phase!=='searching');
   if(actions) actions.classList.toggle('search-actions',phase==='searching');
-  if(phase==='searching'){
+  if(phase==='searching' || phase==='connecting'){
     $('#mic').disabled=true;
     $('#mic').textContent='Searching…';
     $('#mic').style.display='none';
@@ -676,8 +676,8 @@ function setMatchPhase(phase){
     if($('#searchPrefGender')) $('#searchPrefGender').textContent=genderLabel;
     if($('#searchPrefCountry')) $('#searchPrefCountry').textContent=m.country||'Any country';
     if($('#searchPrefLevel')) $('#searchPrefLevel').textContent=m.level||'Any level';
-    if($('#searchHeadline')) $('#searchHeadline').textContent='Finding your person';
-    if($('#searchSubline')) $('#searchSubline').textContent='Looking for someone online.';
+    if($('#searchHeadline')) $('#searchHeadline').textContent=phase==='connecting'?'Connecting securely':'Finding your person';
+    if($('#searchSubline')) $('#searchSubline').textContent=phase==='connecting'?'Setting up private audio.':'Looking for someone online.';
     if($('#searchTipTitle')) $('#searchTipTitle').textContent='Microphone ready';
     if($('#searchTipText')) $('#searchTipText').textContent='Searching real people.';
   }else{
@@ -1195,6 +1195,7 @@ function maybeMarkRtcUsable(){
     supabaseClient.from('calls').update({status:'active',started_at:new Date().toISOString()})
       .eq('id',currentPartner.call_id).then(()=>{}).catch(()=>{});
   }
+  setMatchPhase('connected');
   $('#listen').textContent='Successfully connected — you’re live with a real person.';
   $('#partnerMeta').textContent=(currentPartner.name||'Your partner')+' • LIVE HUMAN CONVERSATION';
   $('#transcript').innerHTML='<div class="queue-status success"><span>✓</span><b>Successfully connected</b><small>Your private peer-to-peer audio connection is live.</small></div>';
