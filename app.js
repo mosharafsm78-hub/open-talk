@@ -562,19 +562,17 @@ async function findPartner(){
   setMatchPhase('searching');
   stopMatchPolling();
   currentPartner=null;
-  $('#partner').textContent='Finding your person';
+  $('#partner').textContent='Finding your person…';
   $('#partnerMeta').textContent=match.cost
     ? 'Searching with your selected preference. Your coins are safe until a real person is found.'
     : 'Looking across the live community for a real person.';
-  $('#partnerMeta').textContent=match.cost
-    ? (match.base?.hours===24?'Smart Match is ready for 24-hour access.':'Your preference is ready for 12-hour access.')+' No charge until a real person is found.'
-    : 'Open Talk is finding another real person for you. No AI will replace your partner.';
-  $('#listen').textContent='Still looking for someone who is online…';
-  $('#queueLiveSub').textContent='Keep this window open. We’ll connect you the moment a real person is available.';
-  $('#searchHeadline').textContent='Searching the live community';
-  $('#searchSubline').textContent='Looking for someone who is online and ready to talk.';
-  $('#searchTipTitle').textContent='Your microphone is ready';
-  $('#searchTipText').textContent='Stay here — Open Talk is searching for a real person, not an AI.';
+  $('#partnerMeta').textContent=match.cost ? 'Preference ready. No charge until a match is found.' : 'Searching the live community.';
+  $('#listen').textContent='Finding your person…';
+  $('#queueLiveSub').textContent='Stay here — we’ll connect you when someone is ready.';
+  $('#searchHeadline').textContent='Searching real people';
+  $('#searchSubline').textContent='Looking for someone online.';
+  $('#searchTipTitle').textContent='Microphone ready';
+  $('#searchTipText').textContent='Searching real people.';
   $('#transcript').innerHTML='';
   $('#mic').disabled=true;
   $('#finish').disabled=false;
