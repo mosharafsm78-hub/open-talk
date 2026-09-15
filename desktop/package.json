@@ -1,0 +1,23 @@
+{
+  "name":"open-talk-desktop",
+  "version":"0.1.0",
+  "description":"Open Talk desktop client for Windows",
+  "private":true,
+  "main":"main.js",
+  "scripts":{
+    "start":"electron .",
+    "build:win":"electron-builder --win --x64"
+  },
+  "devDependencies":{
+    "electron":"^38.1.0",
+    "electron-builder":"^26.0.12"
+  },
+  "build":{
+    "appId":"com.opentalk.desktop",
+    "productName":"Open Talk",
+    "directories":{"output":"dist"},
+    "files":["main.js","preload.js"],
+    "win":{"target":[{"target":"nsis","arch":["x64"]}]},
+    "nsis":{"oneClick":false,"perMachine":false,"allowToChangeInstallationDirectory":true}
+  }
+}
