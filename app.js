@@ -1861,6 +1861,7 @@ $('#cancelReport')?.addEventListener('click',()=>$('#reportPanel')?.classList.ad
 
 // Expose a non-blocking cleanup hook for the inline close-button fallback.
 // The UI must never depend on a network request to close.
+window.__openTalkResetMatch=resetMatchToFirstPage;
 window.__openTalkCleanup=()=>{
   // The inline close fallback may run before this module's click handler.
   // Use the same canonical reset path so closing and reopening can never
