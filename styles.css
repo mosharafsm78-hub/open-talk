@@ -3094,3 +3094,43 @@ body.modal-open{overflow:hidden!important;height:100%!important}
     grid-template-columns:1fr;
   }
 }
+
+
+/* FINAL DESKTOP BADGES LAYOUT FIX
+   The generated badge container uses .achievement-grid (not an ID selector).
+   Make the three tiers stack vertically; each tier owns the full content width. */
+.achievement-grid{
+  display:block !important;
+  width:100%;
+}
+.achievement-grid > .achievement-tier{
+  display:block;
+  width:100%;
+  min-width:0;
+}
+.achievement-grid > .achievement-tier + .achievement-tier{
+  margin-top:28px;
+}
+.achievement-grid .achievement-grid-inner{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;
+  width:100%;
+}
+.achievement-grid .achievement-card{
+  width:100%;
+  min-width:0;
+}
+@media (max-width:1050px){
+  .achievement-grid .achievement-grid-inner{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+@media (max-width:760px){
+  .achievement-grid .achievement-grid-inner{
+    display:block;
+  }
+  .achievement-grid .achievement-card{
+    width:100%;
+  }
+}
