@@ -1251,59 +1251,87 @@ async function finishConversation(){
     toast('You left the waiting room.');
     return;
   }
+
   finishing=true;
   stopMatchPolling();
   const seconds=callStartedAt?Math.max(1,Math.floor((Date.now()-callStartedAt)/1000)):0;
-  await teardownCall();
+  const completedPartner=currentPartner ? {...currentPartner} : null;
 
-  if(seconds>0){
-    const mins=Math.max(1,Math.round(seconds/60));
-    s.stats.conversations++;
-    s.stats.minutes+=mins;
-    s.today.conversations++;
-    s.today.minutes+=mins;
-    const todayKey=new Date().toISOString().slice(0,10);
-    const yesterdayKey=new Date(Date.now()-86400000).toISOString().slice(0,10);
-    if(s.stats.lastPracticeDate!==todayKey){
-      s.stats.streak=s.stats.lastPracticeDate===yesterdayKey?(s.stats.streak||0)+1:1;
-      s.stats.lastPracticeDate=todayKey;
-    }
-    const lv=['A1','A2','B1','B2','C1','C2'];
-    s.stats.level=s.stats.level||lv[Math.min(5,Math.floor(s.stats.conversations/2)+1)];
-    if(s.stats.conversations>=1)s.stats.achievements=[...new Set([...s.stats.achievements,'first'])];
-    if(s.stats.conversations>=4)s.stats.achievements=[...new Set([...s.stats.achievements,'four'])];
-    if(s.stats.minutes>=30)s.stats.achievements=[...new Set([...s.stats.achievements,'thirty'])];
-    if((s.stats.streak||0)>=7)s.stats.achievements=[...new Set([...s.stats.achievements,'streak'])];
-    if(s.stats.level)s.stats.achievements=[...new Set([...s.stats.achievements,'level'])];
-    s.stats.achievements=[...new Set(ACHIEVEMENTS.filter(x=>x[4]({...s.stats,today:Number(s.today?.conversations||0)})).map(x=>x[0]))];
-    s.stats.selectedBadges=(s.stats.selectedBadges||[]).filter(k=>s.stats.achievements.includes(k)).slice(0,3);
-    save();
+  try{
+    await teardownCall();
 
-    if(backendReady){
-      try{
-        await api('/api/complete-conversation','POST',{
-          call_id:currentPartner?.call_id||null,
-          partner_id:currentPartner?.id||null,
-          duration_seconds:seconds
-        });
-        const rewardResult=await supabaseClient.rpc('award_eligible_milestones',{p_user_id:currentUser.id});
-        const reward=rewardResult.data?.[0];
-        if(!rewardResult.error && reward){
-          s.stats.coins=Number(reward.total_coins||s.stats.coins||0);
-          s.stats.rewardedMilestones=[...new Set([...(s.stats.rewardedMilestones||[]),...(reward.newly_awarded||[])])];
-          save();
-          if(Number(reward.coins_earned||0)>0) toast('Milestone unlocked! +'+reward.coins_earned+' coins');
-        }
-      }catch{}
+    if(seconds>0){
+      const mins=Math.max(1,Math.round(seconds/60));
+      s.stats.conversations++;
+      s.stats.minutes+=mins;
+      s.today.conversations++;
+      s.today.minutes+=mins;
+      const todayKey=new Date().toISOString().slice(0,10);
+      const yesterdayKey=new Date(Date.now()-86400000).toISOString().slice(0,10);
+      if(s.stats.lastPracticeDate!==todayKey){
+        s.stats.streak=s.stats.lastPracticeDate===yesterdayKey?(s.stats.streak||0)+1:1;
+        s.stats.lastPracticeDate=todayKey;
+      }
+      const lv=['A1','A2','B1','B2','C1','C2'];
+      s.stats.level=s.stats.level||lv[Math.min(5,Math.floor(s.stats.conversations/2)+1)];
+      if(s.stats.conversations>=1)s.stats.achievements=[...new Set([...s.stats.achievements,'first'])];
+      if(s.stats.conversations>=4)s.stats.achievements=[...new Set([...s.stats.achievements,'four'])];
+      if(s.stats.minutes>=30)s.stats.achievements=[...new Set([...s.stats.achievements,'thirty'])];
+      if((s.stats.streak||0)>=7)s.stats.achievements=[...new Set([...s.stats.achievements,'streak'])];
+      if(s.stats.level)s.stats.achievements=[...new Set([...s.stats.achievements,'level'])];
+      s.stats.achievements=[...new Set(ACHIEVEMENTS.filter(x=>x[4]({...s.stats,today:Number(s.today?.conversations||0)})).map(x=>x[0]))];
+      s.stats.selectedBadges=(s.stats.selectedBadges||[]).filter(k=>s.stats.achievements.includes(k)).slice(0,3);
+      save();
+
+      if(backendReady){
+        try{
+          await api('/api/complete-conversation','POST',{
+            call_id:completedPartner?.call_id||null,
+            partner_id:completedPartner?.id||null,
+            duration_seconds:seconds
+          });
+          const rewardResult=await supabaseClient.rpc('award_eligible_milestones',{p_user_id:currentUser.id});
+          const reward=rewardResult.data?.[0];
+          if(!rewardResult.error && reward){
+            s.stats.coins=Number(reward.total_coins||s.stats.coins||0);
+            s.stats.rewardedMilestones=[...new Set([...(s.stats.rewardedMilestones||[]),...(reward.newly_awarded||[])])];
+            save();
+            if(Number(reward.coins_earned||0)>0) toast('Milestone unlocked! +'+reward.coins_earned+' coins');
+          }
+        }catch(err){console.warn('Open Talk conversation completion sync:',err);}
+      }
     }
+
+    // Reset the modal after every finished call. A new match must never inherit
+    // the previous partner, timer, "Conversation ended" status, or completion card.
+    currentPartner=null;
+    remoteSelectedBadges=[];
+    setMatchPhase('choose');
+    $('#matchControls')?.classList.remove('hidden');
+    $('.match-visual')?.classList.add('hidden');
+    $('.queue-live')?.classList.add('hidden');
+    $('.queue-steps')?.classList.add('hidden');
+    $('#feedback')?.classList.add('hidden');
+    $('#feedback').innerHTML='';
+    $('#reportPanel')?.classList.add('hidden');
+    $('#reportPartner').disabled=true;
+    $('#partner').textContent='Choose your match';
+    $('#partnerMeta').textContent='Talk to anyone for free, or add a preference.';
+    $('#listen').textContent='Ready when you are';
+    $('#transcript').innerHTML='<div class="queue-status"><span class="queue-spinner"></span><b>Ready for your next conversation</b><small>Your previous conversation was saved. Choose your match and start again.</small></div>';
+    $('#timer').textContent='00:00';
+    $('#finish').disabled=true;
+    $('#mic').disabled=false;
+    $('#mic').textContent='🎙 Find a real person';
+    $('#mic').classList.remove('is-live');
+    $('#mic').style.display='';
+    $('#mic').onclick=null;
+    $('#close').onclick=leaveConversation;
+    updateMatchSelectionUI();
+    toast('Conversation saved. Ready for another person.');
+  } finally {
+    finishing=false;
   }
-
-  $('#feedback').classList.remove('hidden');
-  $('#feedback').innerHTML='<b>Conversation complete</b><p>You just practiced with a real person. Your speaking time and progress have been saved.</p>';
-  $('#listen').textContent='Conversation ended';
-  $('#mic').disabled=true;
-  $('#finish').disabled=true;
-  toast('Real conversation saved.');
 }
 
 async function leaveConversation(){
