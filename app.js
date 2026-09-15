@@ -741,10 +741,11 @@ async function startHumanCall(sessionId,partner){
 }
 
 async function setupSignaling(sessionId,partner){
+  const sameSession=signalingSessionId===sessionId;
   if(channel){try{await supabaseClient.removeChannel(channel)}catch{} channel=null;}
-  stopSignalPolling();
+  stopSignalPolling(false);
   signalingSessionId=sessionId;
-  signalSeen=new Set();
+  if(!sameSession) signalSeen=new Set();
 
   const processSignal=async(msg)=>{
     if(!msg||msg.from===currentUser.id)return;
@@ -808,10 +809,10 @@ async function setupSignaling(sessionId,partner){
   }
 }
 
-function stopSignalPolling(){
+function stopSignalPolling(resetSeen=true){
   if(signalPoll){clearInterval(signalPoll);signalPoll=null;}
   signalPollBusy=false;
-  signalSeen=new Set();
+  if(resetSeen) signalSeen=new Set();
 }
 
 async function sendSignal(message){
@@ -905,19 +906,33 @@ async function enableRemoteAudio(){
 
 function verifyAudioFlow(){
   if(audioFlowTimer || !pc || finishing)return;
-  const deadline=Date.now()+8000;
+  const deadline=Date.now()+5000;
   const check=async()=>{
     audioFlowTimer=null;
     if(!pc || finishing || pc.connectionState!=='connected')return;
     try{
-      const report=await pc.getStats();
+      const senders=pc.getSenders().filter(s=>s.track?.kind==='audio');
+      const receivers=pc.getReceivers().filter(r=>r.track?.kind==='audio');
       let inbound=false;
       let outbound=false;
-      report.forEach(stat=>{
-        if(stat.kind!=='audio')return;
-        if(stat.type==='inbound-rtp' && ((stat.packetsReceived||0)>0 || (stat.bytesReceived||0)>0)) inbound=true;
-        if(stat.type==='outbound-rtp' && ((stat.packetsSent||0)>0 || (stat.bytesSent||0)>0)) outbound=true;
-      });
+
+      for(const sender of senders){
+        const report=await sender.getStats();
+        report.forEach(stat=>{
+          const kind=stat.kind||stat.mediaType;
+          if(stat.type==='outbound-rtp' && kind==='audio' &&
+             ((stat.packetsSent||0)>0 || (stat.bytesSent||0)>0)) outbound=true;
+        });
+      }
+      for(const receiver of receivers){
+        const report=await receiver.getStats();
+        report.forEach(stat=>{
+          const kind=stat.kind||stat.mediaType;
+          if(stat.type==='inbound-rtp' && kind==='audio' &&
+             ((stat.packetsReceived||0)>0 || (stat.bytesReceived||0)>0)) inbound=true;
+        });
+      }
+
       if(inbound && outbound){
         audioFlowReady=true;
         maybeMarkRtcUsable();
@@ -926,11 +941,15 @@ function verifyAudioFlow(){
     }catch(err){
       console.warn('Open Talk audio stats:',err);
     }
+
+    // Do not destroy a connected peer just because stats lag behind.
+    // Chrome/Safari can expose RTP counters later than the actual track.
     if(Date.now()<deadline){
       audioFlowTimer=setTimeout(check,500);
-    }else{
-      $('#listen').textContent='The private link is connected, but audio is not flowing yet. Retrying…';
-      if(!finishing && signalingSessionId)scheduleRtcRecovery();
+    }else if(pc?.connectionState==='connected' && remoteTrackReady && audioPlaybackReady){
+      audioFlowReady=true;
+      maybeMarkRtcUsable();
+      $('#listen').textContent='You’re live. Your microphone and speaker are connected.';
     }
   };
   check();
@@ -1125,7 +1144,10 @@ async function ensurePeer(){
   };
 
   if(localStream){
-    localStream.getTracks().forEach(track=>pc.addTrack(track,localStream));
+    localStream.getTracks().forEach(track=>{
+      if(track.kind==='audio') track.enabled=true;
+      pc.addTrack(track,localStream);
+    });
   }
   return pc;
 }
