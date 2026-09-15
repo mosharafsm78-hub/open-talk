@@ -675,10 +675,10 @@ function setMatchPhase(phase){
     if($('#searchPrefGender')) $('#searchPrefGender').textContent=genderLabel;
     if($('#searchPrefCountry')) $('#searchPrefCountry').textContent=m.country||'Any country';
     if($('#searchPrefLevel')) $('#searchPrefLevel').textContent=m.level||'Any level';
-    if($('#searchHeadline')) $('#searchHeadline').textContent='Searching the live community';
-    if($('#searchSubline')) $('#searchSubline').textContent='Looking for someone who is online and ready to talk.';
-    if($('#searchTipTitle')) $('#searchTipTitle').textContent='Your microphone is ready';
-    if($('#searchTipText')) $('#searchTipText').textContent='Stay here — Open Talk is searching for a real person, not an AI.';
+    if($('#searchHeadline')) $('#searchHeadline').textContent='Finding your person';
+    if($('#searchSubline')) $('#searchSubline').textContent='Looking for someone online.';
+    if($('#searchTipTitle')) $('#searchTipTitle').textContent='Microphone ready';
+    if($('#searchTipText')) $('#searchTipText').textContent='Searching real people.';
   }else{
     $('#mic').style.display='';
     if(searchExperience) searchExperience.classList.add('hidden');
@@ -721,8 +721,8 @@ function openConversationModal(){
   $('#mic').style.display='';
   $('#reportPartner').disabled=true;
   $('#reportPanel')?.classList.add('hidden');
-  $('#partner').textContent='Choose your match';
-  $('#partnerMeta').textContent='Talk to anyone for free, or add a preference.';
+  $('#partner').textContent='Find your person';
+  $('#partnerMeta').textContent='Choose your preferences, then we’ll match you.';
   $('#listen').textContent='Ready when you are';
   refreshMatchPasses().finally(updateMatchSelectionUI);
 }
