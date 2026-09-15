@@ -659,6 +659,7 @@ function setMatchPhase(phase){
   const actions=$('.live-modal .actions');
   const searchExperience=$('#searchExperience');
   modal?.classList.toggle('searching',phase==='searching');
+  modal?.setAttribute('data-phase',phase);
   controls?.classList.toggle('hidden',phase==='searching'||phase==='connected');
   visual?.classList.toggle('hidden',phase!=='searching');
   queue?.classList.toggle('hidden',phase!=='searching'&&phase!=='connected');
@@ -761,7 +762,13 @@ function safeBind(id, handler){
 safeBind('talkNow',()=>openConversationModal());
 safeBind('findPartner',()=>openConversationModal());
 const micButton=document.getElementById('mic');
-if(micButton) micButton.onclick=()=>findPartner();
+if(micButton) micButton.onclick=()=>findPartner().catch(err=>{
+  console.error('Open Talk matchmaking click failed:',err);
+  micButton.disabled=false;
+  micButton.style.display='';
+  micButton.textContent='🎙 Find a real person';
+  toast('Something went wrong. Please try again.');
+});
 ['matchGender','matchCountry','matchLevel','matchPriority'].forEach(id=>{
   const el=document.getElementById(id);
   el?.addEventListener('change',()=>updateMatchSelectionUI());
