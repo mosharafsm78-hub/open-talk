@@ -1,7 +1,7 @@
 const {app,BrowserWindow,session,shell}=require('electron');
 const path=require('path');
 
-const APP_URL=process.env.OPEN_TALK_URL||'https://open-talk.netlify.app';
+const APP_URL=process.env.OPEN_TALK_URL||'https://mosharafsm78-hub.github.io/open-talk/';
 
 function createWindow(){
   const win=new BrowserWindow({
