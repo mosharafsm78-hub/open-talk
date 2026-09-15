@@ -479,22 +479,47 @@ function updateMatchSelectionUI(){
 async function findPartner(){
   if(finishing)return;
   const startButton=$('#mic');
+  const resetStartButton=()=>{
+    if(startButton){
+      startButton.disabled=false;
+      startButton.style.display='';
+      startButton.textContent=matchSelection().cost?'🪙 Find a match':'🎙 Find a real person';
+    }
+  };
   if(startButton){
     startButton.disabled=true;
-    startButton.textContent='⏳ Starting…';
+    startButton.textContent='Checking…';
   }
-  $('#listen').textContent='Preparing your live conversation…';
   if(!currentUser){
+    resetStartButton();
     openAuthModal('signin');
     toast('Sign in or create an account before starting a real conversation.');
     return;
   }
-  if(!backendReady){ toast('Connecting to Open Talk… please try again in a moment.'); return; }
+  if(!backendReady){
+    resetStartButton();
+    toast('Connecting to Open Talk… please try again in a moment.');
+    return;
+  }
   const p=s.profile||{};
   if(!p.name||!p.age||!p.country||!p.gender){
-    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='profile'));
-    document.querySelectorAll('nav button[data-view]').forEach(v=>v.classList.toggle('nav-active',v.dataset.view==='profile'));
+    resetStartButton();
+    navigateToView('profile');
     toast('Complete your profile first — it takes less than a minute.');
+    return;
+  }
+
+  // Check the selected match cost BEFORE requesting microphone access.
+  // The user should never grant mic access for a match they cannot afford.
+  await refreshMatchPasses();
+  const match=matchSelection();
+  if(match.cost>Number(s.stats?.coins||0)){
+    resetStartButton();
+    $('#modal')?.classList.add('hidden');
+    document.body.classList.remove('modal-open');
+    navigateToView('coins');
+    renderCoinEarningPreview();
+    toast('You need '+(match.cost-Number(s.stats?.coins||0))+' more coins to use that match.');
     return;
   }
 
@@ -534,16 +559,6 @@ async function findPartner(){
     }
   }
 
-  await refreshMatchPasses();
-  const match=matchSelection();
-  if(match.cost>Number(s.stats?.coins||0)){
-    $('#modal')?.classList.add('hidden');
-    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='coins'));
-    document.querySelectorAll('nav button[data-view], .mobile-nav-item').forEach(v=>v.classList.toggle('nav-active',v.dataset.view==='coins'));
-    renderCoinEarningPreview();
-    toast('You need '+(match.cost-Number(s.stats?.coins||0))+' more coins to use that match.');
-    return;
-  }
   setMatchPhase('searching');
   stopMatchPolling();
   currentPartner=null;
