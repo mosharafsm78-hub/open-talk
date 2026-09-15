@@ -252,7 +252,7 @@
     <div class="match-visual">
       <div class="match-orbit orbit-a"></div><div class="match-orbit orbit-b"></div>
       <div class="conversationOrb"><div class="pulse"></div><span>👥</span></div>
-      <div class="radar-copy"><b>Finding your person</b><small>Scanning the live community…</small><span class="radar-dots"><i></i><i></i><i></i></span></div>
+      <div class="radar-copy"><b id="searchHeadline">Searching the live community</b><small id="searchSubline">Looking for someone who is online and ready to talk.</small><span class="radar-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
     </div>
 
     <div id="matchControls" class="match-controls">
@@ -271,8 +271,22 @@
 
     <div class="queue-live hidden">
       <span class="queue-live-dot"></span>
-      <div><b id="listen">Looking for someone who is online…</b><small>Keep this window open. The moment a real person is available, you'll be connected.</small></div>
+      <div><b id="listen">Still looking for someone who is online…</b><small id="queueLiveSub">Keep this window open. We’ll connect you the moment a real person is available.</small></div>
       <strong id="timer">00:00</strong>
+    </div>
+    <div id="searchExperience" class="search-experience hidden" aria-live="polite">
+      <div class="search-preferences">
+        <span class="search-label">YOUR MATCH</span>
+        <div class="search-preference-list">
+          <span id="searchPrefGender">Anyone</span>
+          <span id="searchPrefCountry">Any country</span>
+          <span id="searchPrefLevel">Any level</span>
+        </div>
+      </div>
+      <div class="search-tip">
+        <span class="search-tip-icon">✦</span>
+        <div><b id="searchTipTitle">Your microphone is ready</b><small id="searchTipText">Stay here — Open Talk is searching for a real person, not an AI.</small></div>
+      </div>
     </div>
 
     <div class="queue-steps hidden" aria-label="Connection status">
