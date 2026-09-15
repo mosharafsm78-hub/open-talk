@@ -2945,3 +2945,47 @@ body.modal-open{overflow:hidden!important;height:100%!important}
   }
   #modal.searching .live-modal .queue-live small{white-space:normal}
 }
+
+
+/* FINAL STATE CONTRACT — no stale controls between choose/search/connect */
+#modal[data-phase="choose"] .match-visual{display:flex!important;height:155px;min-height:155px;margin:0;}
+#modal[data-phase="choose"] .radar-copy{display:none!important;}
+#modal[data-phase="choose"] .queue-live,
+#modal[data-phase="choose"] .queue-steps,
+#modal[data-phase="choose"] #searchExperience,
+#modal[data-phase="choose"] #remoteBadges,
+#modal[data-phase="choose"] #transcript,
+#modal[data-phase="choose"] #finish,
+#modal[data-phase="choose"] #reportPartner{display:none!important;}
+#modal[data-phase="choose"] .actions{margin-top:14px;}
+#modal[data-phase="choose"] .actions #mic{width:100%;min-height:48px;border-radius:14px;}
+
+#modal[data-phase="searching"] #matchControls,
+#modal[data-phase="searching"] .queue-steps,
+#modal[data-phase="searching"] #remoteBadges,
+#modal[data-phase="searching"] #transcript,
+#modal[data-phase="searching"] #reportPartner{display:none!important;}
+#modal[data-phase="searching"] #searchExperience{display:none!important;}
+#modal[data-phase="searching"] .match-visual{display:flex!important;}
+#modal[data-phase="searching"] .actions #mic{display:none!important;}
+#modal[data-phase="searching"] .actions #finish{
+  display:block!important;width:100%;min-height:46px;border-radius:14px;
+}
+
+#modal[data-phase="connected"] .match-visual,
+#modal[data-phase="connected"] #matchControls,
+#modal[data-phase="connected"] #searchExperience{display:none!important;}
+#modal[data-phase="connected"] .queue-live,
+#modal[data-phase="connected"] .queue-steps,
+#modal[data-phase="connected"] #remoteBadges,
+#modal[data-phase="connected"] #transcript,
+#modal[data-phase="connected"] #reportPartner,
+#modal[data-phase="connected"] #finish{display:block;}
+#modal[data-phase="connected"] .actions{display:flex;flex-wrap:wrap;}
+
+@media(max-width:600px){
+  #modal[data-phase="choose"] .match-visual{height:125px;min-height:125px;}
+  #modal[data-phase="choose"] .conversationOrb{width:92px;height:92px;}
+  #modal[data-phase="choose"] .match-orbit.orbit-a{width:124px;height:124px;}
+  #modal[data-phase="choose"] .match-orbit.orbit-b{width:156px;height:156px;}
+}
