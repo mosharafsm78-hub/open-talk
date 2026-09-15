@@ -2989,3 +2989,45 @@ body.modal-open{overflow:hidden!important;height:100%!important}
   #modal[data-phase="choose"] .match-orbit.orbit-a{width:124px;height:124px;}
   #modal[data-phase="choose"] .match-orbit.orbit-b{width:156px;height:156px;}
 }
+
+
+/* Open Talk v35 — focused live-call UI */
+#modal[data-phase="connecting"] .match-visual,
+#modal[data-phase="connected"] .match-visual{display:none!important;}
+#modal[data-phase="connecting"] .queue-steps,
+#modal[data-phase="connected"] .queue-steps,
+#modal[data-phase="connecting"] #remoteBadges{display:none!important;}
+#modal[data-phase="connecting"] #searchExperience,
+#modal[data-phase="connected"] #searchExperience{display:none!important;}
+#modal[data-phase="connecting"] .queue-live{
+  display:flex!important;align-items:center;gap:14px;margin:18px 0;
+  padding:22px 20px;border:1px solid #e6e5ff;border-radius:20px;
+  background:linear-gradient(135deg,#faf9ff,#f5f3ff);
+}
+#modal[data-phase="connecting"] .queue-live-dot{
+  width:10px;height:10px;min-width:10px;border-radius:50%;
+  box-shadow:0 0 0 7px rgba(98,87,245,.10);background:#6257f5;
+}
+#modal[data-phase="connecting"] .queue-live strong{margin-left:auto;font-size:22px;}
+#modal[data-phase="connecting"] #transcript{
+  margin-top:10px;text-align:center;color:#69738f;
+  border:0;background:transparent;padding:4px 12px;
+}
+#modal[data-phase="connecting"] .actions #mic{display:none!important;}
+#modal[data-phase="connecting"] .actions #finish{
+  display:block!important;width:100%;min-height:48px;border-radius:14px;
+}
+#modal[data-phase="connected"] #matchControls,
+#modal[data-phase="connected"] .queue-live,
+#modal[data-phase="connected"] #transcript{display:none!important;}
+#modal[data-phase="connected"] #remoteBadges{display:none!important;}
+#modal[data-phase="connected"] .actions #mic{display:none!important;}
+#modal[data-phase="connected"] .actions #finish{
+  display:block!important;width:100%;min-height:48px;border-radius:14px;
+}
+#modal[data-phase="connected"] .live-modal-head{margin-bottom:8px;}
+#modal[data-phase="connecting"] #partnerMeta,
+#modal[data-phase="connected"] #partnerMeta{max-width:480px;margin-left:auto;margin-right:auto;}
+@media(max-width:600px){
+  #modal[data-phase="connecting"] .queue-live{padding:18px 16px;}
+}
