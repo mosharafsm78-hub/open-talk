@@ -34,6 +34,8 @@ let remoteAudioGain=null;
 let signalPoll=null;
 let signalPollBusy=false;
 let signalSeen=new Set();
+let callStatePoll=null;
+let callStatePollBusy=false;
 
 function save(){
   localStorage.setItem(K,JSON.stringify(s));
@@ -589,6 +591,7 @@ async function findPartner(){
         $('#listen').textContent='Great match found — preparing your private connection…';
         $('#transcript').innerHTML='<div class="queue-status success"><span>✓</span><b>Real person found</b><small>Your selected preferences matched. Setting up the private audio connection.</small></div>';
         setQueueStage(3);
+        startCallStateWatch(currentPartner.call_id);
         await startHumanCall(data.session_id,data.candidate);
       }else{
         $('#partner').textContent='Waiting for a real person…';
@@ -831,6 +834,106 @@ async function setupSignaling(sessionId,partner){
       console.error('Open Talk initial offer:',err);
       $('#listen').textContent='We could not start the private voice connection. Please try again.';
     }
+  }
+}
+
+function startCallStateWatch(callId){
+  stopCallStateWatch();
+  if(!callId||!supabaseClient||!currentUser)return;
+  const check=async()=>{
+    if(callStatePollBusy||finishing||!currentPartner||currentPartner.call_id!==callId)return;
+    callStatePollBusy=true;
+    try{
+      const {data,error}=await supabaseClient.from('calls')
+        .select('id,status,ended_at,duration_seconds')
+        .eq('id',callId)
+        .maybeSingle();
+      if(error)throw error;
+      if(data && ['completed','cancelled'].includes(data.status) && !finishing && currentPartner?.call_id===callId){
+        await handlePartnerLeft(data.status==='cancelled'?'The other person left before the conversation started.':'Your speaking partner left the conversation.');
+      }
+    }catch(err){
+      console.warn('Open Talk call-state watch:',err);
+    }finally{
+      callStatePollBusy=false;
+    }
+  };
+  check();
+  callStatePoll=setInterval(check,1500);
+}
+
+function stopCallStateWatch(){
+  if(callStatePoll){clearInterval(callStatePoll);callStatePoll=null;}
+  callStatePollBusy=false;
+}
+
+async function handlePartnerLeft(message='Your speaking partner left the conversation.'){
+  if(finishing)return;
+  finishing=true;
+  stopMatchPolling();
+  stopSignalPolling();
+  stopCallStateWatch();
+  const seconds=callStartedAt?Math.max(1,Math.floor((Date.now()-callStartedAt)/1000)):0;
+  const completedPartner=currentPartner ? {...currentPartner} : null;
+
+  try{
+    await teardownCall();
+
+    // A conversation that actually started still counts, even when the
+    // partner ended it. A match that never reached a live call does not.
+    if(seconds>0){
+      const mins=Math.max(1,Math.round(seconds/60));
+      s.stats.conversations++;
+      s.stats.minutes+=mins;
+      s.today.conversations++;
+      s.today.minutes+=mins;
+      const todayKey=new Date().toISOString().slice(0,10);
+      const yesterdayKey=new Date(Date.now()-86400000).toISOString().slice(0,10);
+      if(s.stats.lastPracticeDate!==todayKey){
+        s.stats.streak=s.stats.lastPracticeDate===yesterdayKey?(s.stats.streak||0)+1:1;
+        s.stats.lastPracticeDate=todayKey;
+      }
+      const lv=['A1','A2','B1','B2','C1','C2'];
+      s.stats.level=s.stats.level||lv[Math.min(5,Math.floor(s.stats.conversations/2)+1)];
+      s.stats.achievements=[...new Set(ACHIEVEMENTS.filter(x=>x[4]({...s.stats,today:Number(s.today?.conversations||0)})).map(x=>x[0]))];
+      s.stats.selectedBadges=(s.stats.selectedBadges||[]).filter(k=>s.stats.achievements.includes(k)).slice(0,3);
+      save();
+      if(backendReady && completedPartner?.call_id){
+        try{ await api('/api/complete-conversation','POST',{
+          call_id:completedPartner.call_id,
+          partner_id:completedPartner.id||null,
+          duration_seconds:seconds
+        }); }catch(err){ console.warn('Open Talk partner-left completion sync:',err); }
+      }
+    }
+
+    currentPartner=null;
+    remoteSelectedBadges=[];
+    setMatchPhase('choose');
+    $('#matchControls')?.classList.remove('hidden');
+    $('.match-visual')?.classList.add('hidden');
+    $('.queue-live')?.classList.add('hidden');
+    $('.queue-steps')?.classList.add('hidden');
+    $('#feedback')?.classList.add('hidden');
+    $('#feedback').innerHTML='';
+    $('#reportPanel')?.classList.add('hidden');
+    $('#reportPartner').disabled=true;
+    $('#partner').textContent='Conversation ended';
+    $('#partnerMeta').textContent='Your speaking partner left the conversation.';
+    $('#listen').textContent='Your partner has left.';
+    $('#transcript').innerHTML='<div class="queue-status"><span>✓</span><b>'+message+'</b><small>Your call has been closed safely. You can find another real person whenever you’re ready.</small></div>';
+    $('#timer').textContent='00:00';
+    $('#finish').disabled=true;
+    $('#mic').disabled=false;
+    $('#mic').textContent='🎙 Find a real person';
+    $('#mic').classList.remove('is-live');
+    $('#mic').style.display='';
+    $('#mic').onclick=null;
+    $('#close').onclick=leaveConversation;
+    updateMatchSelectionUI();
+    toast('Your partner left. Ready for another person.');
+  }finally{
+    finishing=false;
   }
 }
 
@@ -1406,6 +1509,7 @@ async function leaveConversation(){
 async function teardownCall(){
   hideLiveAudioControls();
   stopMatchPolling();
+  stopCallStateWatch();
   stopSignalPolling();
   stopCallClock();
   clearTimeout(rtcConnectTimer);
