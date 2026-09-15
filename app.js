@@ -690,8 +690,37 @@ function openConversationModal(){
     openAuthModal('signin');
     return;
   }
-  finishing=false;
+
+  // Every new conversation ALWAYS starts from page 1. Never inherit a
+  // previous searching/connecting/connected state, peer connection,
+  // signaling channel, timer, or stale partner.
+  finishing=true;
+  stopMatchPolling();
+  stopCallStateWatch();
+  stopSignalPolling();
+  clearTimeout(rtcRecoveryTimer);
+  rtcRecoveryTimer=null;
+  clearTimeout(rtcConnectTimer);
+  rtcConnectTimer=null;
+  if(callTimer){clearInterval(callTimer);callTimer=null;}
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
+  if(pc){try{pc.close()}catch{} pc=null;}
+  if(channel&&supabaseClient){try{supabaseClient.removeChannel(channel)}catch{} channel=null;}
+  signalingSessionId=null;
   currentPartner=null;
+  pendingIce=[];
+  signalSeen=new Set();
+  remoteSelectedBadges=[];
+  remoteStream=new MediaStream();
+  remoteTrackReady=false;
+  audioPlaybackReady=false;
+  rtcConnected=false;
+  rtcOfferInFlight=false;
+  audioFlowReady=false;
+  clearTimeout(audioFlowTimer);
+  audioFlowTimer=null;
+  callStartedAt=0;
+  finishing=false;
   remoteStream=new MediaStream();
   remoteTrackReady=false;
   remoteAudioContext=null;
@@ -1218,10 +1247,18 @@ async function ensurePeer(){
   // STUN handles direct peers; TURN is the fallback for restrictive Wi-Fi,
   // carrier NAT and phone-to-phone networks that cannot connect directly.
   // Keep the relay configurable for production deployments.
+  // Production TURN relay — Metered. Keep this object as the single source
+  // of truth for browser WebRTC. Direct STUN is attempted first; TURN is the
+  // reliable fallback for carrier NAT, restrictive Wi-Fi and iOS networks.
   const turn=window.OPEN_TALK_TURN||{
-    urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turn:openrelay.metered.ca:443?transport=tcp'],
-    username:'openrelayproject',
-    credential:'openrelayproject'
+    urls:[
+      'turn:global.relay.metered.ca:80',
+      'turn:global.relay.metered.ca:80?transport=tcp',
+      'turn:global.relay.metered.ca:443',
+      'turns:global.relay.metered.ca:443?transport=tcp'
+    ],
+    username:'7a560205192bb2f93a79b277',
+    credential:'GNFIQKpNjgNxANr0'
   };
   pc=new RTCPeerConnection({
     iceServers:[
@@ -1570,8 +1607,7 @@ function resetMatchToFirstPage(){
 }
 
 async function leaveConversation(){
-  // Leaving always returns the conversation modal to page 1.
-  // Never preserve the previous searching/connected phase.
+  // Leaving is a hard reset. The next open must never inherit this call.
   finishing=true;
   stopMatchPolling();
   document.body.classList.remove('modal-open');
