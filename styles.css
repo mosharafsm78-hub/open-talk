@@ -2544,3 +2544,61 @@ body.modal-open{overflow:hidden!important;height:100%!important}
   .auth-card form{padding-bottom:4px!important;}
   .auth-submit{display:block!important;margin-bottom:4px!important;}
 }
+
+
+
+/* FINAL AUTH MOBILE FIX — iPhone 7 / short mobile viewports.
+   The auth dialog must scroll independently; never clip the lower form fields.
+   This keeps the same auth behavior across browser and the desktop client. */
+.auth-modal{
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  align-items:flex-start!important;
+  justify-items:center!important;
+  padding:16px!important;
+  -webkit-overflow-scrolling:touch!important;
+  overscroll-behavior:contain!important;
+}
+.auth-card{
+  margin:0 auto 20px!important;
+  max-height:none!important;
+  overflow:visible!important;
+  flex:none!important;
+}
+@media(max-width:680px){
+  .auth-modal{
+    min-height:100dvh!important;
+    padding:
+      max(12px,env(safe-area-inset-top))
+      12px
+      max(20px,env(safe-area-inset-bottom))!important;
+  }
+  .auth-card{
+    width:100%!important;
+    max-width:460px!important;
+    margin:0 auto 20px!important;
+    padding:20px 16px!important;
+    border-radius:22px!important;
+  }
+  .auth-brand{margin-bottom:17px!important}
+  .auth-tabs{margin-bottom:18px!important}
+  .auth-card h2{font-size:24px!important}
+  .auth-card>p{font-size:12px!important;margin-bottom:15px!important}
+  .auth-card form label{margin-bottom:10px!important}
+  .auth-card form input{min-height:46px!important}
+  .auth-signup-fields{grid-template-columns:minmax(0,1fr) 92px!important}
+  .auth-submit{min-height:48px!important;margin-bottom:2px!important}
+}
+@media(max-width:390px){
+  .auth-modal{
+    padding-left:10px!important;
+    padding-right:10px!important;
+  }
+  .auth-card{
+    padding:18px 14px!important;
+  }
+  .auth-signup-fields{
+    grid-template-columns:minmax(0,1fr) 84px!important;
+    gap:8px!important;
+  }
+}
