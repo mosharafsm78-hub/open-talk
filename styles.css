@@ -285,7 +285,7 @@ form.card,.assessment{padding:27px}
 /* CONVERSATION MODAL */
 .modal{
   position:fixed;inset:0;background:rgba(10,15,36,.72);backdrop-filter:blur(16px);
-  display:grid;place-items:center;padding:20px;z-index:50
+  display:grid;place-items:center;padding:20px;z-index:1000!important
 }
 .hidden{display:none!important}
 .modalCard{
