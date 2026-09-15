@@ -726,6 +726,19 @@ function openConversationModal(){
   $('#partner').textContent='Find your person';
   $('#partnerMeta').textContent='Choose your preferences, then we’ll match you.';
   $('#listen').textContent='Ready when you are';
+  // Rebind the primary action every time the modal opens. Other call-state
+  // handlers intentionally clear this property after a connection, so the
+  // next conversation must restore it explicitly.
+  const openStartButton=$('#mic');
+  if(openStartButton){
+    openStartButton.onclick=()=>findPartner().catch(err=>{
+      console.error('Open Talk matchmaking click failed:',err);
+      openStartButton.disabled=false;
+      openStartButton.style.display='';
+      openStartButton.textContent='🎙 Find a real person';
+      toast('Something went wrong. Please try again.');
+    });
+  }
   refreshMatchPasses().finally(updateMatchSelectionUI);
 }
 
