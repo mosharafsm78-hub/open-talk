@@ -476,7 +476,7 @@ function updateMatchSelectionUI(){
   if(controls) controls.classList.toggle('insufficient',m.cost>balance);
 }
 
-async async function findPartner(){
+async function findPartner(){
   if(finishing)return;
   const startButton=$('#mic');
   const resetStartButton=()=>{
@@ -1862,6 +1862,7 @@ $('#cancelReport')?.addEventListener('click',()=>$('#reportPanel')?.classList.ad
 // Expose a non-blocking cleanup hook for the inline close-button fallback.
 // The UI must never depend on a network request to close.
 window.__openTalkResetMatch=resetMatchToFirstPage;
+window.__openTalkOpen=()=>openConversationModal();
 window.__openTalkCleanup=()=>{
   // The inline close fallback may run before this module's click handler.
   // Use the same canonical reset path so closing and reopening can never
