@@ -478,6 +478,12 @@ function updateMatchSelectionUI(){
 
 async function findPartner(){
   if(finishing)return;
+  const startButton=$('#mic');
+  if(startButton){
+    startButton.disabled=true;
+    startButton.textContent='⏳ Starting…';
+  }
+  $('#listen').textContent='Preparing your live conversation…';
   if(!currentUser){
     openAuthModal('signin');
     toast('Sign in or create an account before starting a real conversation.');
@@ -498,17 +504,30 @@ async function findPartner(){
   // prevents the post-match screen from repeatedly asking for permission.
   if(!localStream || !localStream.getAudioTracks().some(t=>t.readyState==='live')){
     try{
-      localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+      if(!navigator.mediaDevices?.getUserMedia) throw new Error('Microphone access is not supported by this browser.');
+      // Some browsers can leave getUserMedia pending indefinitely when a
+      // permission prompt is blocked or hidden. Race it with a clear timeout
+      // so the user always gets visible feedback instead of a dead button.
+      const mediaPromise=navigator.mediaDevices.getUserMedia({audio:true,video:false});
+      localStream=await Promise.race([
+        mediaPromise,
+        new Promise((_,reject)=>setTimeout(()=>reject(Object.assign(new Error('Microphone permission is still pending.'),{name:'PermissionPending'})),8000))
+      ]);
       $('#listen').textContent='Microphone ready. Finding your person…';
       primeRemoteAudioPlayback();
     }catch(err){
       const denied=err?.name==='NotAllowedError'||err?.name==='PermissionDeniedError';
+      const pending=err?.name==='PermissionPending';
       $('#listen').textContent=denied
         ? 'Microphone access is blocked for this site.'
-        : 'We could not start your microphone.';
+        : pending
+          ? 'Microphone permission did not respond.'
+          : 'We could not start your microphone.';
       $('#transcript').innerHTML=denied
-        ? '<div class="queue-status"><b>Allow microphone access to continue</b><small>In Safari, open this site’s website settings and set Microphone to Allow, then return and tap Find a real person again.</small></div>'
-        : '<div class="queue-status"><b>Microphone could not start</b><small>Please check your microphone and browser permissions, then try again.</small></div>';
+        ? '<div class="queue-status error"><b>Allow microphone access to continue</b><small>Open this site’s browser permissions and set Microphone to Allow, then tap Find a real person again.</small></div>'
+        : pending
+          ? '<div class="queue-status error"><b>Microphone permission is waiting</b><small>Your browser did not show the permission prompt. Check the 🔒 site settings near the address bar and allow Microphone, then tap Find a real person again.</small></div>'
+          : '<div class="queue-status error"><b>Microphone could not start</b><small>Please check your microphone and browser permissions, then try again.</small></div>';
       $('#mic').disabled=false;
       $('#mic').textContent='🎙 Allow microphone';
       return;
@@ -727,7 +746,8 @@ function safeBind(id, handler){
 }
 safeBind('talkNow',()=>openConversationModal());
 safeBind('findPartner',()=>openConversationModal());
-safeBind('mic',()=>findPartner());
+const micButton=document.getElementById('mic');
+if(micButton) micButton.onclick=()=>findPartner();
 ['matchGender','matchCountry','matchLevel','matchPriority'].forEach(id=>{
   const el=document.getElementById(id);
   el?.addEventListener('change',()=>updateMatchSelectionUI());
