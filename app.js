@@ -273,26 +273,30 @@ async function bootstrapBackend(){
     }
     backendReady=!!currentUser;
     updateAuthUI();
-    const {data:p,error:pe}=await supabaseClient.from('profiles')
-      .select('id,name,age,country,gender,english_level,gender_preference')
-      .eq('id',currentUser.id).maybeSingle();
-    if(!pe&&p){
-      const merged={...s.profile};
-      for(const key of ['name','age','country','gender','english_level','gender_preference']){
-        const value=p[key];
-        if(value!==null&&value!==undefined&&String(value).trim()!=='') merged[key]=value;
+    /* Only load user-specific data when a session actually exists.
+       Anonymous visitors must still be able to create an account. */
+    if(currentUser){
+      const {data:p,error:pe}=await supabaseClient.from('profiles')
+        .select('id,name,age,country,gender,english_level,gender_preference')
+        .eq('id',currentUser.id).maybeSingle();
+      if(!pe&&p){
+        const merged={...s.profile};
+        for(const key of ['name','age','country','gender','english_level','gender_preference']){
+          const value=p[key];
+          if(value!==null&&value!==undefined&&String(value).trim()!=='') merged[key]=value;
+        }
+        s.profile=merged;
+        save();
       }
-      s.profile=merged;
-      save();
+      try{
+        const rewards=await supabaseClient.from('user_milestone_rewards').select('milestone_key,coins').eq('user_id',currentUser.id);
+        const balance=await supabaseClient.rpc('available_coins',{p_user_id:currentUser.id});
+        if(!rewards.error) s.stats.rewardedMilestones=(rewards.data||[]).map(x=>x.milestone_key);
+        if(!balance.error && Number.isFinite(Number(balance.data))) s.stats.coins=Number(balance.data);
+        else s.stats.coins=(rewards.data||[]).reduce((sum,x)=>sum+Number(x.coins||0),0);
+        save();
+      }catch{}
     }
-    try{
-      const rewards=await supabaseClient.from('user_milestone_rewards').select('milestone_key,coins').eq('user_id',currentUser.id);
-      const balance=await supabaseClient.rpc('available_coins',{p_user_id:currentUser.id});
-      if(!rewards.error) s.stats.rewardedMilestones=(rewards.data||[]).map(x=>x.milestone_key);
-      if(!balance.error && Number.isFinite(Number(balance.data))) s.stats.coins=Number(balance.data);
-      else s.stats.coins=(rewards.data||[]).reduce((sum,x)=>sum+Number(x.coins||0),0);
-      save();
-    }catch{}
     supabaseClient.auth.onAuthStateChange((event,session)=>{
       authSession=session||null;
       currentUser=session?.user||null;
