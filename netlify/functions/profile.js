@@ -30,13 +30,19 @@ exports.handler=async(event)=>{
       const age=Number(b.age);
       const country=String(b.country||"").trim();
       const gender=String(b.gender||"Prefer not to say");
+      const dob=b.date_of_birth?String(b.date_of_birth):null;
+      if(dob){
+        const d=new Date(dob+"T00:00:00Z");
+        const cutoff=new Date();cutoff.setUTCFullYear(cutoff.getUTCFullYear()-18);
+        if(Number.isNaN(d.getTime())||d>cutoff)return {statusCode:400,headers,body:JSON.stringify({error:"You must be at least 18 years old to use Open Talk."})};
+      }
 
       if(!name||!Number.isInteger(age)||age<13||age>100||!country){
         return {statusCode:400,headers,body:JSON.stringify({error:"Please complete the required profile fields."})};
       }
 
       const {data,error}=await sb.from("profiles").upsert({
-        id:user.id,name,age,country,gender,updated_at:new Date().toISOString()
+        id:user.id,name,age,country,gender,...(dob?{date_of_birth:dob}:{}),updated_at:new Date().toISOString()
       }).select("id,name,age,country,gender,level,created_at,updated_at").single();
 
       if(error) throw error;
