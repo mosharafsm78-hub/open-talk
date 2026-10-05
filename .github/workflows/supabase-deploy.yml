@@ -1,0 +1,115 @@
+name: Deploy Supabase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/functions/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      # Applied to production by hand before this pipeline existed.
+      ADOPTED_MIGRATIONS: '20261005000100 20261005000200 20261005000300'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.119.0
+
+      - name: Link project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      # One-time adoption of the hand-applied migrations. Skipped once the
+      # remote history already lists them, so it is safe on every run.
+      - name: Mark hand-applied migrations as applied
+        run: |
+          set -euo pipefail
+          remote=$(supabase migration list --linked | awk -F'|' '{gsub(/[ \t]/,"",$2); if ($2 ~ /^[0-9]+$/) print $2}')
+          todo=""
+          for v in $ADOPTED_MIGRATIONS; do
+            ls supabase/migrations/${v}_*.sql >/dev/null
+            grep -qx "$v" <<<"$remote" || todo="$todo $v"
+          done
+          if [ -n "$todo" ]; then
+            supabase migration repair --status applied $todo --linked
+          else
+            echo "Already recorded as applied; nothing to repair."
+          fi
+
+      - name: Check local and remote migration history match
+        run: |
+          set -euo pipefail
+          supabase migration list --linked | tee "$RUNNER_TEMP/migration-list.txt"
+          python3 .github/scripts/check-migration-list.py --allow-local-only $ADOPTED_MIGRATIONS < "$RUNNER_TEMP/migration-list.txt"
+
+      # Runs after the repair so the adopted migrations are not "pending".
+      # Nothing has been applied yet at this point.
+      - name: Scan pending migrations for destructive statements
+        run: |
+          set -euo pipefail
+          supabase db push --linked --dry-run | tee "$RUNNER_TEMP/pending.txt"
+          python3 .github/scripts/check-destructive-migrations.py < "$RUNNER_TEMP/pending.txt"
+
+      - name: Apply migrations
+        run: supabase db push --linked
+
+      - name: Confirm local and remote migrations fully match
+        run: supabase migration list --linked | python3 .github/scripts/check-migration-list.py
+
+      - name: Find changed Edge Functions
+        id: changed
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          all() { for d in supabase/functions/*/; do n=$(basename "$d"); [[ $n == _* ]] || echo "$n"; done; }
+          if [[ $BEFORE_SHA =~ ^0+$ ]] || ! git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+            echo "Previous commit unknown; treating every function as changed."
+            names=$(all)
+          else
+            files=$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" -- supabase/functions)
+            if grep -q '^supabase/functions/_' <<<"$files"; then
+              echo "Shared code changed; redeploying every function."
+              names=$(all)
+            else
+              names=$(cut -d/ -f3 <<<"$files" | sort -u)
+            fi
+          fi
+          out=""
+          for n in $names; do
+            [[ $n =~ ^[A-Za-z0-9_-]+$ ]] || { echo "::error::Unexpected function name"; exit 1; }
+            [ -d "supabase/functions/$n" ] && out="$out $n" || echo "Skipping removed function: $n"
+          done
+          echo "functions=${out# }" >> "$GITHUB_OUTPUT"
+          echo "Functions to deploy: ${out:-none}"
+
+      - name: Verify live verify_jwt matches config.toml
+        if: steps.changed.outputs.functions != ''
+        run: .github/scripts/check-function-jwt.sh ${{ steps.changed.outputs.functions }}
+
+      - name: Deploy changed Edge Functions
+        if: steps.changed.outputs.functions != ''
+        run: supabase functions deploy ${{ steps.changed.outputs.functions }} --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Confirm verify_jwt unchanged after deploy
+        if: steps.changed.outputs.functions != ''
+        run: .github/scripts/check-function-jwt.sh ${{ steps.changed.outputs.functions }}
