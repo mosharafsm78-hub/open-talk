@@ -1,0 +1,96 @@
+name: Supabase migration status
+
+on:
+  # Read-only. Runs once when this workflow (or its scripts) lands on main.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/supabase-status.yml'
+      - '.github/scripts/check-migration-list.py'
+      - '.github/scripts/post-issue.sh'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: supabase-status
+  cancel-in-progress: false
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - name: Check required secrets
+        id: preflight
+        run: |
+          missing=""
+          for n in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_ID SUPABASE_DB_PASSWORD; do
+            [ -n "${!n:-}" ] || missing="$missing $n"
+          done
+          missing="${missing# }"
+          echo "missing=$missing" >> "$GITHUB_OUTPUT"
+          [ -z "$missing" ] || echo "::error::Missing secrets: $missing"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        if: steps.preflight.outputs.missing == ''
+        with:
+          version: 2.119.0
+
+      - name: Link project
+        id: link
+        if: steps.preflight.outputs.missing == ''
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      # Read-only: lists migration history, changes nothing.
+      - name: List migrations and build report
+        id: list
+        if: steps.preflight.outputs.missing == ''
+        run: |
+          set -euo pipefail
+          supabase migration list --linked > "$RUNNER_TEMP/migration-list.txt"
+          python3 .github/scripts/check-migration-list.py --no-fail \
+            --report "$RUNNER_TEMP/report.md" < "$RUNNER_TEMP/migration-list.txt"
+
+      # Result goes to a public issue: migration versions and names, secret
+      # NAMES and the run link only.
+      - name: Report result in a GitHub issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          MISSING: ${{ steps.preflight.outputs.missing }}
+          LINK_OUTCOME: ${{ steps.link.outcome }}
+          LIST_OUTCOME: ${{ steps.list.outcome }}
+        run: |
+          set -euo pipefail
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          body="$RUNNER_TEMP/issue-body.md"
+          if [ -n "$MISSING" ]; then
+            echo "⚠️ **Not run — missing secret(s):** \`${MISSING// /\`, \`}\`" > "$body"
+          elif [ "$LINK_OUTCOME" != success ]; then
+            echo "❌ **Failed** at: link project" > "$body"
+          elif [ "$LIST_OUTCOME" != success ]; then
+            echo "❌ **Failed** at: migration list" > "$body"
+          else
+            cp "$RUNNER_TEMP/report.md" "$body"
+          fi
+          {
+            echo
+            echo "- Commit: \`${GITHUB_SHA::7}\`"
+            echo "- Run: $run_url"
+          } >> "$body"
+          .github/scripts/post-issue.sh "Supabase migration status" "$body"
+
+      - name: Fail the run if secrets are missing
+        if: steps.preflight.outputs.missing != ''
+        run: exit 1

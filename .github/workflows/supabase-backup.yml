@@ -3,10 +3,16 @@ name: Supabase backup
 on:
   schedule:
     - cron: '17 2 * * *'
-  workflow_dispatch:
+  # Runs once when this workflow (or its scripts) lands on main; no manual button.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/supabase-backup.yml'
+      - '.github/scripts/post-issue.sh'
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: supabase-backup
@@ -21,37 +27,62 @@ jobs:
       SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
     steps:
+      - name: Check required secrets
+        id: preflight
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          missing=""
+          for n in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_ID SUPABASE_DB_PASSWORD BACKUP_PASSPHRASE; do
+            [ -n "${!n:-}" ] || missing="$missing $n"
+          done
+          if [ -n "${BACKUP_PASSPHRASE:-}" ] && [ "${#BACKUP_PASSPHRASE}" -lt 16 ]; then
+            missing="$missing BACKUP_PASSPHRASE(shorter-than-16-characters)"
+          fi
+          missing="${missing# }"
+          echo "missing=$missing" >> "$GITHUB_OUTPUT"
+          [ -z "$missing" ] || echo "::error::Missing or invalid secrets: $missing"
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        if: steps.preflight.outputs.missing == ''
         with:
           version: 2.119.0
 
       - name: Link project
+        id: link
+        if: steps.preflight.outputs.missing == ''
         run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
 
       # The repo is public: the plain dump stays in $RUNNER_TEMP/plain, is never
       # printed or uploaded, and is shredded on exit. Only the .gpg file in
       # $RUNNER_TEMP/encrypted is uploaded.
       - name: Dump and encrypt
+        id: dump
+        if: steps.preflight.outputs.missing == ''
         env:
           BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
           set -euo pipefail
           umask 077
-          if [ "${#BACKUP_PASSPHRASE}" -lt 16 ]; then
-            echo "::error::BACKUP_PASSPHRASE is missing or shorter than 16 characters."
-            exit 1
-          fi
           plain="$RUNNER_TEMP/plain"
           enc="$RUNNER_TEMP/encrypted"
           mkdir -p "$plain" "$enc"
           trap 'find "$plain" -type f -exec shred -u {} + ; rm -rf "$plain"' EXIT
 
           supabase db dump --linked -f "$plain/schema.sql"
+          # Data for every non-internal schema. This includes the auth schema
+          # (users, identities, sessions, MFA, ...) so a restore keeps logins.
           supabase db dump --linked --data-only --use-copy -f "$plain/data.sql"
+
+          # Fail rather than ship a backup without logins. -q: nothing is printed.
+          for t in users identities; do
+            grep -Eq "^COPY \"?auth\"?\.\"?$t\"? " "$plain/data.sql" \
+              || { echo "::error::auth.$t is missing from the data dump."; exit 1; }
+          done
 
           out="$enc/supabase-backup-$(date -u +%Y%m%dT%H%M%SZ).tar.gpg"
           tar -C "$plain" -cf - schema.sql data.sql \
@@ -67,9 +98,50 @@ jobs:
           echo "Encrypted backup written ($(stat -c %s "$out") bytes)."
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        id: upload
+        if: steps.preflight.outputs.missing == ''
         with:
           name: supabase-backup-${{ github.run_id }}
           path: ${{ runner.temp }}/encrypted/*.gpg
           retention-days: 14
           if-no-files-found: error
           compression-level: 0
+
+      # Result goes to a public issue: step names, secret NAMES and the run link
+      # only. Never data, secret values or command output.
+      - name: Report result in a GitHub issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          MISSING: ${{ steps.preflight.outputs.missing }}
+          LINK_OUTCOME: ${{ steps.link.outcome }}
+          DUMP_OUTCOME: ${{ steps.dump.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+          ARTIFACT: supabase-backup-${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if [ -n "$MISSING" ]; then
+            result="⚠️ **Not run — missing or invalid secret(s):** \`${MISSING// /\`, \`}\`"
+          elif [ "$LINK_OUTCOME" != success ]; then
+            result="❌ **Failed** at: link project"
+          elif [ "$DUMP_OUTCOME" != success ]; then
+            result="❌ **Failed** at: dump and encrypt"
+          elif [ "$UPLOAD_OUTCOME" != success ]; then
+            result="❌ **Failed** at: upload artifact"
+          else
+            result="✅ **Succeeded.** Encrypted artifact \`$ARTIFACT\` (kept 14 days). Contains the schema and the data including auth users; the plain dump never left the runner."
+          fi
+          {
+            echo "$result"
+            echo
+            echo "- Trigger: \`$GITHUB_EVENT_NAME\`"
+            echo "- Commit: \`${GITHUB_SHA::7}\`"
+            echo "- Run: $run_url"
+          } > "$RUNNER_TEMP/issue-body.md"
+          .github/scripts/post-issue.sh "Supabase backup status" "$RUNNER_TEMP/issue-body.md"
+
+      - name: Fail the run if secrets are missing
+        if: steps.preflight.outputs.missing != ''
+        run: exit 1
