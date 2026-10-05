@@ -216,7 +216,8 @@
     <form id="authForm">
       <div id="signupFields" class="auth-signup-fields hidden">
         <label>Name<input id="authName" type="text" autocomplete="name" placeholder="Your name"></label>
-        <label>Age<input id="authAge" type="number" min="13" max="100" autocomplete="bday-year" placeholder="Age"></label>
+        <label>Date of birth<input id="authDob" type="date" value="" autocomplete="off" placeholder="YYYY-MM-DD"></label>
+        <small class="auth-note">You must be 18 or older to use Open Talk.</small>
       </div>
       <label>Email<input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com"></label>
       <label>Password<input id="authPassword" type="password" minlength="6" autocomplete="current-password" required placeholder="At least 6 characters"></label>
@@ -227,6 +228,21 @@
       <div><span class="card-kicker">SIGNED IN</span><strong id="authUserEmail">—</strong></div>
       <button id="signOutButton" class="secondary" type="button">Sign out</button>
     </div>
+  </div>
+</div>
+
+<!-- Age verification for accounts created before the 18+ rule. -->
+<div id="dobModal" class="auth-modal hidden" role="dialog" aria-modal="true" aria-labelledby="dobTitle">
+  <div class="auth-card">
+    <div class="auth-brand"><span class="brand-mark"><span>OT</span></span><div><b>Open Talk</b><small>Real people. Real practice.</small></div></div>
+    <h2 id="dobTitle">Confirm your date of birth</h2>
+    <p id="dobSubtitle">Open Talk is for people aged 18 and over. Enter your date of birth to join the queue.</p>
+    <form id="dobForm">
+      <label>Date of birth<input id="dobInput" type="date" value="" autocomplete="off" required></label>
+      <button id="dobSubmit" class="primary auth-submit" type="submit">Confirm <b>→</b></button>
+      <button id="dobCancel" class="text-button" type="button">Not now</button>
+      <p id="dobMessage" class="auth-message" aria-live="polite"></p>
+    </form>
   </div>
 </div>
 
@@ -300,7 +316,7 @@
       <div class="queue-status"><span class="queue-spinner"></span><b>Ready when you are</b></div>
     </div>
     <audio id="remoteAudio" autoplay playsinline></audio>
-    <div class="actions"><button id="mic" class="primary big">🎙 Find a real person</button><button id="finish" class="secondary" disabled>Leave queue</button><button id="reportPartner" class="danger-button" type="button" disabled>Report partner</button></div>
+    <div class="actions"><button id="mic" class="primary big">🎙 Find a real person</button><button id="finish" class="secondary" disabled>Leave queue</button><button id="reportPartner" class="danger-button" type="button" disabled>Report partner</button><button id="blockPartner" class="danger-button" type="button" disabled>Block partner</button></div>
     <div id="reportPanel" class="report-panel hidden"><label for="reportReason">Why are you reporting this person?</label><select id="reportReason"><option value="harassment">Harassment or bullying</option><option value="sexual_content">Sexual or inappropriate content</option><option value="hate">Hate or hateful conduct</option><option value="spam">Spam or scam</option><option value="other">Other safety concern</option></select><div><button id="submitReport" class="primary" type="button">Submit report</button><button id="cancelReport" class="text-button" type="button">Cancel</button></div></div><div id="feedback" class="feedback hidden"></div>
     <div id="safety" class="safety-note">🔒 Private, peer-to-peer audio.</div>
   </div>

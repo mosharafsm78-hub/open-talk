@@ -192,11 +192,14 @@ async function handleAuthSubmit(event){
   try{
     if(authMode==='signup'){
       const name=$('#authName').value.trim();
-      const age=Number($('#authAge').value);
-      if(!name||!age||age<13||age>100)throw new Error('Please enter your name and a valid age (13–100).');
+      const dob=$('#authDob').value;
+      const age=ageFromDob(dob);
+      if(!name)throw new Error('Please enter your name.');
+      if(age===null||age>100)throw new Error('Please enter your date of birth.');
+      if(age<18)throw new Error('You must be at least 18 years old to create an Open Talk account.');
       const {data,error}=await supabaseClient.auth.signUp({
         email,password,
-        options:{data:{name,age}}
+        options:{data:{name,age,date_of_birth:dob}}
       });
       if(error)throw error;
       if(data.session?.user){
@@ -206,15 +209,23 @@ async function handleAuthSubmit(event){
         s.profile={...s.profile,name,age};
         save();
         try{
-          await supabaseClient.from('profiles').upsert({
-            id:currentUser.id,name,age,
+          const profileResult=await supabaseClient.from('profiles').upsert({
+            id:currentUser.id,name,age,date_of_birth:dob,
             country:s.profile.country||'',
             gender:s.profile.gender||'',
             english_level:s.stats.level||'A1',
             gender_preference:s.profile.gender_preference||'any',
             updated_at:new Date().toISOString()
           });
-        }catch{}
+          if(profileResult.error?.code==='23514'){
+            // Server-side age gate refused the profile.
+            try{await supabaseClient.auth.signOut();}catch{}
+            authSession=null; currentUser=null; backendReady=false;
+            throw new Error(profileResult.error.message||'You must be at least 18 years old to use Open Talk.');
+          }
+        }catch(err){
+          if(err?.message&&/18|date of birth/i.test(err.message))throw err;
+        }
         updateAuthUI(); updateBackendStatus();
         closeAuthModal();
         toast('Account created successfully.');
@@ -237,6 +248,16 @@ async function handleAuthSubmit(event){
   }finally{
     submit.disabled=false;
   }
+}
+function ageFromDob(value){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value||'')))return null;
+  const [y,m,d]=value.split('-').map(Number);
+  const dob=new Date(y,m-1,d);
+  if(Number.isNaN(dob.getTime())||dob.getMonth()!==m-1||dob>new Date())return null;
+  const now=new Date();
+  let age=now.getFullYear()-y;
+  if(now.getMonth()<m-1||(now.getMonth()===m-1&&now.getDate()<d))age--;
+  return age;
 }
 async function handleSignOut(){
   try{
@@ -476,6 +497,60 @@ function updateMatchSelectionUI(){
   if(controls) controls.classList.toggle('insufficient',m.cost>balance);
 }
 
+// Accounts created before the 18+ rule have no date of birth. They can sign in
+// but must supply one (enforced again by the database) before joining the queue.
+function askForDateOfBirth(){
+  return new Promise(resolve=>{
+    const modal=$('#dobModal'),form=$('#dobForm'),input=$('#dobInput'),message=$('#dobMessage'),submit=$('#dobSubmit'),cancel=$('#dobCancel');
+    if(!modal||!form||!input){resolve(false);return;}
+    input.value='';
+    message.textContent='';
+    modal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    setTimeout(()=>input.focus(),50);
+    const done=ok=>{
+      modal.classList.add('hidden');
+      form.onsubmit=null;cancel.onclick=null;
+      if(!$('#modal')||$('#modal').classList.contains('hidden'))document.body.classList.remove('modal-open');
+      resolve(ok);
+    };
+    cancel.onclick=()=>done(false);
+    form.onsubmit=async ev=>{
+      ev.preventDefault();
+      const age=ageFromDob(input.value);
+      if(age===null||age>100){message.textContent='Please enter your date of birth.';return;}
+      if(age<18){
+        message.textContent='You must be at least 18 years old to use Open Talk.';
+        return;
+      }
+      submit.disabled=true;
+      try{
+        const {error}=await supabaseClient.from('profiles').update({date_of_birth:input.value,age,updated_at:new Date().toISOString()}).eq('id',currentUser.id);
+        if(error)throw error;
+        s.profile={...s.profile,date_of_birth:input.value,age};
+        save();
+        done(true);
+      }catch(err){
+        message.textContent=err?.code==='23514'?(err.message.replace(/^.*?: /,'')||'You must be at least 18 years old to use Open Talk.'):'We could not save your date of birth. Please try again.';
+      }finally{submit.disabled=false;}
+    };
+  });
+}
+async function ensureAdult(){
+  try{
+    const {data,error}=await supabaseClient.from('profiles').select('date_of_birth').eq('id',currentUser.id).maybeSingle();
+    if(error)throw error;
+    const age=ageFromDob(data?.date_of_birth);
+    if(age!==null&&age>=18)return true;
+    if(age!==null&&age<18){toast('You must be at least 18 years old to use Open Talk.');return false;}
+  }catch(err){
+    console.warn('Open Talk age check:',err);
+    toast('We could not verify your age. Please try again.');
+    return false;
+  }
+  return askForDateOfBirth();
+}
+
 async function findPartner(){
   if(finishing)return;
   const startButton=$('#mic');
@@ -506,6 +581,10 @@ async function findPartner(){
     resetStartButton();
     navigateToView('profile');
     toast('Complete your profile first — it takes less than a minute.');
+    return;
+  }
+  if(!(await ensureAdult())){
+    resetStartButton();
     return;
   }
 
@@ -750,7 +829,7 @@ function openConversationModal(){
   $('#mic').textContent='🎙 Find a real person';
   $('#mic').classList.remove('is-live');
   $('#mic').style.display='';
-  $('#reportPartner').disabled=true;
+  $('#reportPartner').disabled=true;if($('#blockPartner'))$('#blockPartner').disabled=true;
   $('#reportPanel')?.classList.add('hidden');
   $('#partner').textContent='Find your person';
   $('#partnerMeta').textContent='Choose your preferences, then we’ll match you.';
@@ -824,7 +903,7 @@ async function startHumanCall(sessionId,partner){
     toast('Live human matching is not initialized.');
     return;
   }
-  $('#reportPartner').disabled=false;
+  $('#reportPartner').disabled=false;if($('#blockPartner'))$('#blockPartner').disabled=false;
   $('#feedback')?.classList.add('hidden');
   $('#feedback').innerHTML='';
   $('#partner').textContent=`${partner.name||'Your speaking partner'} is ready`;
@@ -1000,7 +1079,7 @@ async function handlePartnerLeft(message='Your speaking partner left the convers
     $('#feedback')?.classList.add('hidden');
     $('#feedback').innerHTML='';
     $('#reportPanel')?.classList.add('hidden');
-    $('#reportPartner').disabled=true;
+    $('#reportPartner').disabled=true;if($('#blockPartner'))$('#blockPartner').disabled=true;
     $('#partner').textContent='Conversation ended';
     $('#partnerMeta').textContent='Your speaking partner left the conversation.';
     $('#listen').textContent='Your partner has left.';
@@ -1556,7 +1635,7 @@ async function finishConversation(){
     $('#feedback')?.classList.add('hidden');
     $('#feedback').innerHTML='';
     $('#reportPanel')?.classList.add('hidden');
-    $('#reportPartner').disabled=true;
+    $('#reportPartner').disabled=true;if($('#blockPartner'))$('#blockPartner').disabled=true;
     $('#partner').textContent='Choose your match';
     $('#partnerMeta').textContent='Talk to anyone for free, or add a preference.';
     $('#listen').textContent='Ready when you are';
@@ -1591,7 +1670,7 @@ function resetMatchToFirstPage(){
   $('#feedback')?.classList.add('hidden');
   $('#feedback').innerHTML='';
   $('#reportPanel')?.classList.add('hidden');
-  $('#reportPartner').disabled=true;
+  $('#reportPartner').disabled=true;if($('#blockPartner'))$('#blockPartner').disabled=true;
   $('#partner').textContent='Choose your match';
   $('#partnerMeta').textContent='Choose your preferences.';
   $('#listen').textContent='Ready when you are';
@@ -1899,6 +1978,23 @@ function openReportPanel(){
   $('#reportPanel')?.classList.remove('hidden');
 }
 $('#reportPartner')?.addEventListener('click',openReportPanel);
+async function blockCurrentPartner(){
+  if(!supabaseClient||!currentUser||!currentPartner?.id)return toast('You can block a person after a match.');
+  if(!window.confirm('Block this person? The call will end and you will never be matched with them again.'))return;
+  const button=$('#blockPartner');
+  if(button)button.disabled=true;
+  try{
+    const {error}=await supabaseClient.rpc('block_user',{p_blocked_user_id:currentPartner.id});
+    if(error)throw error;
+    toast('User blocked. You will not be matched with them again.');
+    await handlePartnerLeft('You blocked this person and the call has ended.');
+  }catch(err){
+    console.error('Open Talk block:',err);
+    toast('We could not block this person. Please try again.');
+    if(button)button.disabled=false;
+  }
+}
+$('#blockPartner')?.addEventListener('click',blockCurrentPartner);
 document.querySelectorAll('[data-copy-profile]').forEach(btn=>{
   btn.addEventListener('click',async()=>{
     const key=btn.dataset.copyProfile;
