@@ -1,0 +1,12 @@
+project_id = "open-talk"
+
+# The deploy workflow compares this value with the function's LIVE setting
+# before every deploy and refuses to deploy if they differ, so a redeploy can
+# never change how `match` authenticates.
+#
+# TODO(owner): this value is a placeholder and has NOT been checked against
+# production. Confirm it in Dashboard > Edge Functions > match (or with
+# `supabase functions list`) and set it to the live value. If it is wrong the
+# deploy fails safely instead of changing authentication.
+[functions.match]
+verify_jwt = true

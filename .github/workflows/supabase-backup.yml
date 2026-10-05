@@ -1,0 +1,75 @@
+name: Supabase backup
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.119.0
+
+      - name: Link project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      # The repo is public: the plain dump stays in $RUNNER_TEMP/plain, is never
+      # printed or uploaded, and is shredded on exit. Only the .gpg file in
+      # $RUNNER_TEMP/encrypted is uploaded.
+      - name: Dump and encrypt
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          umask 077
+          if [ "${#BACKUP_PASSPHRASE}" -lt 16 ]; then
+            echo "::error::BACKUP_PASSPHRASE is missing or shorter than 16 characters."
+            exit 1
+          fi
+          plain="$RUNNER_TEMP/plain"
+          enc="$RUNNER_TEMP/encrypted"
+          mkdir -p "$plain" "$enc"
+          trap 'find "$plain" -type f -exec shred -u {} + ; rm -rf "$plain"' EXIT
+
+          supabase db dump --linked -f "$plain/schema.sql"
+          supabase db dump --linked --data-only --use-copy -f "$plain/data.sql"
+
+          out="$enc/supabase-backup-$(date -u +%Y%m%dT%H%M%SZ).tar.gpg"
+          tar -C "$plain" -cf - schema.sql data.sql \
+            | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
+                --symmetric --cipher-algo AES256 \
+                --s2k-mode 3 --s2k-digest-algo SHA512 --s2k-count 65011712 \
+                -o "$out" 3< <(printf '%s' "$BACKUP_PASSPHRASE")
+
+          # Prove the file decrypts and holds both dumps (prints file names only).
+          listing=$(gpg --batch --pinentry-mode loopback --passphrase-fd 3 --decrypt "$out" \
+            3< <(printf '%s' "$BACKUP_PASSPHRASE") | tar -tf -)
+          grep -qx schema.sql <<<"$listing" && grep -qx data.sql <<<"$listing"
+          echo "Encrypted backup written ($(stat -c %s "$out") bytes)."
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: supabase-backup-${{ github.run_id }}
+          path: ${{ runner.temp }}/encrypted/*.gpg
+          retention-days: 14
+          if-no-files-found: error
+          compression-level: 0
