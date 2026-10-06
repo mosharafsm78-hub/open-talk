@@ -66,8 +66,11 @@ jobs:
       - name: Scan pending migrations for destructive statements
         run: |
           set -euo pipefail
+          # Pending = in the repo but not applied on the remote. Applied
+          # migrations are never scanned.
+          pending=$(python3 .github/scripts/check-migration-list.py --print-pending < "$RUNNER_TEMP/migration-list.txt")
           supabase db push --linked --dry-run | tee "$RUNNER_TEMP/pending.txt"
-          python3 .github/scripts/check-destructive-migrations.py < "$RUNNER_TEMP/pending.txt"
+          python3 .github/scripts/check-destructive-migrations.py $pending < "$RUNNER_TEMP/pending.txt"
 
       - name: Apply migrations
         run: supabase db push --linked

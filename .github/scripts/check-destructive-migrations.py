@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Fail if a pending migration contains a destructive statement.
 
-Reads the output of `supabase db push --dry-run` on stdin, finds the migration
-files it says would be applied, and scans only those. Flags:
+Scans ONLY migrations that are not yet applied on the remote, never the ones
+already in the remote history. That set is the union of:
+  - versions given as arguments (from `check-migration-list.py --print-pending`,
+    i.e. present locally but absent from the remote history), and
+  - files named in the `supabase db push --dry-run` output on stdin.
+Taking it from the remote history means an unrecognised dry-run format can no
+longer make the scan silently skip a pending migration. Flags:
   - any DROP statement
   - TRUNCATE
   - DELETE FROM without a WHERE clause
@@ -40,7 +45,17 @@ def findings(sql: str):
 
 
 def main() -> int:
-    pending = sorted(set(re.findall(r"\b\d{14}_[\w.-]+\.sql\b", sys.stdin.read())))
+    pending = set(re.findall(r"\b\d{14}_[\w.-]+\.sql\b", sys.stdin.read()))
+    for version in sys.argv[1:]:
+        if not re.fullmatch(r"\d{14}", version):
+            print(f"::error::Unexpected migration version argument: {version!r}")
+            return 1
+        hits = sorted(MIGRATIONS.glob(f"{version}_*.sql"))
+        if not hits:
+            print(f"::error::Pending migration {version} has no file in {MIGRATIONS}")
+            return 1
+        pending.update(h.name for h in hits)
+    pending = sorted(pending)
     if not pending:
         print("No pending migrations; nothing to scan.")
         return 0

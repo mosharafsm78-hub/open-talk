@@ -8,6 +8,8 @@
   --no-fail             exit 0 even when drift is found (report-only use);
                         an unreadable list is still an error
   --print-remote        print the remote versions, one per line, and exit
+  --print-pending       print the versions that exist locally but are not applied
+                        on the remote, one per line, and exit
 A migration that exists only on the remote is always an error.
 """
 import glob
@@ -20,6 +22,7 @@ args = sys.argv[1:]
 allow_local_only = "--allow-local-only" in args
 no_fail = "--no-fail" in args
 print_remote = "--print-remote" in args
+print_pending = "--print-pending" in args
 report = args[args.index("--report") + 1] if "--report" in args else None
 adopted = [a for a in args if re.fullmatch(r"\d+", a)]
 
@@ -34,7 +37,8 @@ rows = {}
 bordered = False  # table has outer | or box-drawing borders (decided from the header row)
 for raw in sys.stdin:
     # Tolerate colour codes and box-drawing separators in the CLI's table.
-    cols = [c.strip() for c in re.split(r"[|\u2502\u2503]", ANSI.sub("", raw))]
+    # CLI 2.119 also wraps every cell in backticks (an empty cell is "` `").
+    cols = [c.strip().strip("`").strip() for c in re.split(r"[|\u2502\u2503]", ANSI.sub("", raw))]
     if "local" in (c.lower() for c in cols) and "remote" in (c.lower() for c in cols):
         bordered = cols[0] == ""
         continue
@@ -52,6 +56,10 @@ if not rows:
 
 if print_remote:
     print("\n".join(sorted(r for l, r in rows.values() if r)))
+    sys.exit(0)
+
+if print_pending:
+    print("\n".join(sorted(l for l, r in rows.values() if l and not r)))
     sys.exit(0)
 
 remote_only = sorted(v for v, (l, r) in rows.items() if r and not l)
