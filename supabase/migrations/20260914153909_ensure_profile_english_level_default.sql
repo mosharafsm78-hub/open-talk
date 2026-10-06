@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ALTER COLUMN english_level SET DEFAULT 'A1'; UPDATE public.profiles SET english_level='A1' WHERE english_level IS NULL; ALTER TABLE public.profiles ALTER COLUMN english_level SET NOT NULL;;
