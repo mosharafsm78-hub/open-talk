@@ -3181,3 +3181,23 @@ body.modal-open{overflow:hidden!important;height:100%!important}
   #home .metrics .metric .card-kicker{order:1}
   #home .metrics .metric small{order:3}
 }
+
+/* ===== Full-screen call sheet on phones ===== */
+@media(max-width:820px){
+  .modal{padding:0!important;align-items:stretch!important}
+  .modalCard.live-modal{
+    width:100%!important;height:100dvh;max-height:100dvh!important;border-radius:0!important;border:0!important;
+    padding:calc(16px + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom))!important;
+    display:flex;flex-direction:column;overflow-y:auto;
+    background:linear-gradient(180deg,#efecff 0%,#fff 38%)!important;box-shadow:none!important}
+  .live-modal h2{font-size:26px!important;margin-top:6px!important}
+  .live-modal .match-visual{height:150px!important;margin:4px auto!important}
+  .live-modal .conversationOrb{width:104px!important;height:104px!important}
+  .live-modal .search-tip,.live-modal .safety-note{display:none!important}
+  .live-modal .remote-badges:has(.remote-empty:only-child){display:none!important}
+  .live-modal .transcript{padding:10px!important;margin-top:10px}
+  .live-modal .actions{position:static!important;margin-top:auto!important;flex-direction:column;gap:10px;padding-top:14px!important;background:none!important}
+  .live-modal .actions button{width:100%}
+  .live-modal #reportPartner:disabled,.live-modal #blockPartner:disabled{display:none!important}
+  .live-modal #mic{min-height:60px!important;font-size:18px}
+}
