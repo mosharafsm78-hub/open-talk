@@ -3134,3 +3134,12 @@ body.modal-open{overflow:hidden!important;height:100%!important}
     width:100%;
   }
 }
+
+/* Account deletion (Google Play requires an in-app path) */
+.delete-account{margin-top:14px;border-top:1px solid var(--line);padding-top:6px}
+.delete-account .text-button{color:#b42335}
+.delete-account-panel{display:grid;gap:12px;margin-top:6px}
+.delete-account-panel p{margin:0;font-size:14px;line-height:1.55;color:#4a5468}
+.delete-account-panel label{display:grid;gap:6px;font-size:13px;font-weight:700}
+.delete-account-panel input{padding:12px 14px;border:1px solid var(--line);border-radius:12px;font:inherit}
+.delete-account-panel .danger-button[disabled]{opacity:.45;cursor:not-allowed}

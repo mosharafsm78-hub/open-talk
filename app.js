@@ -124,6 +124,8 @@ function openAuthModal(mode='signin'){
   document.body.classList.add('modal-open');
   const signedIn=!!currentUser;
   $('#authUserPanel')?.classList.toggle('hidden',!signedIn);
+  $('#deleteAccountSection')?.classList.toggle('hidden',!signedIn);
+  resetDeleteAccountPanel();
   $('#authForm')?.classList.toggle('hidden',signedIn);
   $('#authTitle').textContent=signedIn?'Your Open Talk account':'';
   $('#authSubtitle').textContent=signedIn?'You are signed in. Your profile, progress and conversations are linked to this account.':'';
@@ -259,6 +261,36 @@ function ageFromDob(value){
   if(now.getMonth()<m-1||(now.getMonth()===m-1&&now.getDate()<d))age--;
   return age;
 }
+function resetDeleteAccountPanel(){
+  $('#deleteAccountPanel')?.classList.add('hidden');
+  $('#deleteAccountOpen')?.classList.remove('hidden');
+  const input=$('#deleteAccountConfirm'); if(input)input.value='';
+  const submit=$('#deleteAccountSubmit'); if(submit)submit.disabled=true;
+  const msg=$('#deleteAccountMessage'); if(msg)msg.textContent='';
+}
+async function handleDeleteAccount(){
+  const input=$('#deleteAccountConfirm'), submit=$('#deleteAccountSubmit'), msg=$('#deleteAccountMessage');
+  if(!authSession?.access_token||!input||input.value.trim()!=='DELETE')return;
+  submit.disabled=true; msg.textContent='Deleting your account…';
+  try{
+    const r=await fetch('https://pmyfswozvkdpqgnsiibf.supabase.co/functions/v1/delete-account',{
+      method:'POST',
+      headers:{authorization:'Bearer '+authSession.access_token,apikey:'sb_publishable_RrciEiRwRPkbU6yO6wt8Zg_BI0tSYEW','content-type':'application/json'},
+      body:JSON.stringify({confirm:'DELETE'})
+    });
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'We could not delete your account. Please try again.');
+    try{await supabaseClient?.auth.signOut();}catch{}
+    try{localStorage.removeItem(K);}catch{}
+    authSession=null; currentUser=null; backendReady=false;
+    closeAuthModal(); updateAuthUI(); updateBackendStatus();
+    toast('Your account has been deleted.');
+    setTimeout(()=>location.reload(),1200);
+  }catch(err){
+    msg.textContent=err?.message||'We could not delete your account. Please try again.';
+    submit.disabled=input.value.trim()!=='DELETE';
+  }
+}
 async function handleSignOut(){
   try{
     await supabaseClient?.auth.signOut();
@@ -274,6 +306,16 @@ function bindAuthUI(){
   $('#signUpTab')?.addEventListener('click',()=>setAuthMode('signup'));
   $('#authForm')?.addEventListener('submit',handleAuthSubmit);
   $('#signOutButton')?.addEventListener('click',handleSignOut);
+  $('#deleteAccountOpen')?.addEventListener('click',()=>{
+    $('#deleteAccountPanel')?.classList.remove('hidden');
+    $('#deleteAccountOpen')?.classList.add('hidden');
+    setTimeout(()=>$('#deleteAccountConfirm')?.focus(),50);
+  });
+  $('#deleteAccountCancel')?.addEventListener('click',resetDeleteAccountPanel);
+  $('#deleteAccountConfirm')?.addEventListener('input',e=>{
+    const submit=$('#deleteAccountSubmit'); if(submit)submit.disabled=e.target.value.trim()!=='DELETE';
+  });
+  $('#deleteAccountSubmit')?.addEventListener('click',handleDeleteAccount);
   $('#authModal')?.addEventListener('click',e=>{if(e.target.id==='authModal')closeAuthModal();});
   updateAuthUI();
 }

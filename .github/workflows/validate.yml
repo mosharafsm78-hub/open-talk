@@ -14,4 +14,14 @@ jobs:
           test -f manifest.json
           test -f netlify.toml
           test -f supabase/schema.sql
+          test -f privacy.html
+          test -f terms.html
+          test -f child-safety.html
+          test -f delete-account.html
       - run: node --check app.js
+      - name: Public pages must have a real contact email
+        run: |
+          if grep -l OPEN_TALK_CONTACT_EMAIL *.html; then
+            echo "::error::Replace OPEN_TALK_CONTACT_EMAIL with the public contact email before merging."
+            exit 1
+          fi

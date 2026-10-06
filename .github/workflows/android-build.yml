@@ -46,6 +46,8 @@ jobs:
           cp ../styles.css www/styles.css
           cp ../privacy.html www/privacy.html
           cp ../terms.html www/terms.html
+          cp ../child-safety.html www/child-safety.html
+          cp ../delete-account.html www/delete-account.html
           cp ../manifest.json www/manifest.json
 
       - name: Generate Android project

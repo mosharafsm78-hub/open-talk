@@ -7,7 +7,7 @@
 <meta name="description" content="Open Talk — real conversations, deliberate practice, visible progress.">
 <title>Open Talk — Speak with confidence.</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=20260915-37">
+<link rel="stylesheet" href="styles.css?v=20261007-1">
 </head>
 <body>
 <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
@@ -40,7 +40,7 @@
         <button id="talkNow" class="primary big"><span>🎙</span> Talk to someone <b>→</b></button>
         <button class="text-button" data-view="profile">Complete your profile <span>↗</span></button>
       </div>
-      <div class="trust-row"><span><i>✓</i> Real English conversations</span><span><i>✓</i> Real people</span><span><i>✓</i> AI coaching</span><span><i>✓</i> Trackable progress</span></div>
+      <div class="trust-row"><span><i>✓</i> Real English conversations</span><span><i>✓</i> Real people</span><span><i>✓</i> Adults 18+</span><span><i>✓</i> Trackable progress</span></div>
     </div>
 
     <div class="hero-visual">
@@ -50,7 +50,7 @@
         <div class="orb-wrap"><div class="orb-ring ring-one"></div><div class="orb-ring ring-two"></div><div class="orb"></div><div class="orb-core">◉</div></div>
         <div class="visual-caption"><span class="caption-kicker">YOUR ENGLISH IS YOUR PROGRESS</span><strong>Speak English regularly.<br>Improve visibly.</strong></div>
         <div class="hero-stats">
-          <div><span>YOUR LEVEL</span><strong id="homeLevel">Not assessed</strong><small>AI estimate</small></div>
+          <div><span>YOUR LEVEL</span><strong id="homeLevel">Not assessed</strong><small>Current level</small></div>
           <div><span>SPEAKING TIME</span><strong><span id="homeMinutes">0</span> min</strong><small>all time</small></div>
         </div>
       </div>
@@ -86,7 +86,7 @@
   <div class="metrics">
     <article class="metric card"><span class="metric-icon">💬</span><span class="card-kicker">CONVERSATIONS</span><strong id="homeConvos">0</strong><small>completed</small></article>
     <article class="metric card"><span class="metric-icon">⏱</span><span class="card-kicker">SPEAKING TIME</span><strong id="homeMinutes2">0</strong><small>minutes practiced</small></article>
-    <article class="metric card"><span class="metric-icon">🧠</span><span class="card-kicker">AI LEVEL</span><strong id="homeLevel2">—</strong><small>current estimate</small></article>
+    <article class="metric card"><span class="metric-icon">🧠</span><span class="card-kicker">LEVEL</span><strong id="homeLevel2">—</strong><small>current level</small></article>
     <article class="metric card"><span class="metric-icon">🏆</span><span class="card-kicker">ACHIEVEMENTS</span><strong id="homeAch">0</strong><small>unlocked</small></article>
   </div>
 
@@ -95,7 +95,7 @@
   </div>
 
   <div class="features">
-    <article><div class="feature-icon">🧠</div><span class="feature-number">01</span><h3>AI level detection</h3><p>Your speaking level evolves from real conversations, not a one-time test.</p><div class="feature-line"></div></article>
+    <article><div class="feature-icon">🧠</div><span class="feature-number">01</span><h3>Choose who you practise with</h3><p>Pick the country, level and gender preference of the person you want to talk to.</p><div class="feature-line"></div></article>
     <article><div class="feature-icon">💬</div><span class="feature-number">02</span><h3>Practice that feels human</h3><p>Talk naturally, make mistakes, recover, and build the confidence to keep going.</p><div class="feature-line"></div></article>
     <article><div class="feature-icon">🏆</div><span class="feature-number">03</span><h3>Progress worth returning to</h3><p>Milestones, achievements and streaks turn practice into momentum.</p><div class="feature-line"></div></article>
   </div>
@@ -125,7 +125,7 @@
         <div class="profile-readonly-row"><span>Gender</span><strong id="profileSummaryGender">—</strong><button type="button" data-copy-profile="gender" aria-label="Copy gender">▣</button></div>
       </div>
     </div>
-    <div class="card assessment"><span class="card-kicker">AI ASSESSMENT</span><div id="levelValue" class="level">Not assessed yet</div><p>Your level is determined automatically from your conversations.</p><div class="levelbar"><span id="levelBar"></span></div><div class="scale"><span>A1</span><span>A2</span><span>B1</span><span>B2</span><span>C1</span><span>C2</span></div><div class="assessment-tip">💡 Keep speaking — your level becomes clearer with more practice.</div></div>
+    <div class="card assessment"><span class="card-kicker">YOUR LEVEL</span><div id="levelValue" class="level">Not assessed yet</div><p>Your speaking level, used to find partners at a similar level.</p><div class="levelbar"><span id="levelBar"></span></div><div class="scale"><span>A1</span><span>A2</span><span>B1</span><span>B2</span><span>C1</span><span>C2</span></div><div class="assessment-tip">💡 Every conversation counts toward your milestones.</div></div>
   </div>
   <div class="features stats"><article><span>CONVERSATIONS</span><b id="statConvos">0</b><p>Total completed</p></article><article><span>MINUTES</span><b id="statMinutes">0</b><p>Time spent speaking</p></article><article><span>STREAK</span><b id="statStreak">0</b><p>Days in a row</p></article><article><span>ACHIEVEMENTS</span><b id="statAch">0</b><p>Unlocked</p></article></div>
 </section>
@@ -198,7 +198,7 @@
 <footer class="site-footer">
   <div class="footer-inner">
     <span>© 2026 Open Talk</span>
-    <span class="footer-links"><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Use</a></span>
+    <span class="footer-links"><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Use</a><a href="child-safety.html">Child Safety</a><a href="delete-account.html">Delete account</a></span>
   </div>
 </footer>
 
@@ -227,6 +227,16 @@
     <div id="authUserPanel" class="auth-user-panel hidden">
       <div><span class="card-kicker">SIGNED IN</span><strong id="authUserEmail">—</strong></div>
       <button id="signOutButton" class="secondary" type="button">Sign out</button>
+    </div>
+    <div id="deleteAccountSection" class="delete-account hidden">
+      <button id="deleteAccountOpen" class="text-button" type="button">Delete my account</button>
+      <div id="deleteAccountPanel" class="delete-account-panel hidden">
+        <p><b>This permanently deletes your account</b> and everything linked to it: profile, conversation history, progress, coins and passes. It cannot be undone.</p>
+        <label>Type DELETE to confirm<input id="deleteAccountConfirm" type="text" autocomplete="off" autocapitalize="characters" placeholder="DELETE"></label>
+        <button id="deleteAccountSubmit" class="danger-button" type="button" disabled>Delete my account</button>
+        <button id="deleteAccountCancel" class="text-button" type="button">Cancel</button>
+        <p id="deleteAccountMessage" class="auth-message" aria-live="polite"></p>
+      </div>
     </div>
   </div>
 </div>
