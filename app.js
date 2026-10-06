@@ -1571,11 +1571,14 @@ async function createOffer(){
   }
 }
 
+const nativeCallAudio=()=>window.Capacitor?.isNativePlatform?.()?window.Capacitor?.Plugins?.CallAudio:null;
+
 async function startCallTransport(sessionId,partner){
   if(!localStream){
     try{localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});}
     catch{return}
   }
+  try{await nativeCallAudio()?.start({speaker:true});}catch(err){console.warn('Open Talk native call audio:',err);}
   $('#mic').disabled=true;
   $('#mic').textContent='🔴 Speaking';
   await ensurePeer();
@@ -1810,6 +1813,7 @@ async function leaveConversation(){
 }
 
 async function teardownCall(){
+  try{nativeCallAudio()?.stop();}catch{}
   hideLiveAudioControls();
   stopMatchPolling();
   stopCallStateWatch();
