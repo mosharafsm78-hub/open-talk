@@ -57,7 +57,9 @@ jobs:
         if: steps.preflight.outputs.missing == ''
         run: |
           set -euo pipefail
-          supabase migration list --linked > "$RUNNER_TEMP/migration-list.txt"
+          supabase migration list --linked > "$RUNNER_TEMP/migration-list.txt" 2>&1
+          # Versions and timestamps only; shown so the format can be checked.
+          echo "::group::Raw migration list"; cat "$RUNNER_TEMP/migration-list.txt"; echo "::endgroup::"
           python3 .github/scripts/check-migration-list.py --no-fail \
             --report "$RUNNER_TEMP/report.md" < "$RUNNER_TEMP/migration-list.txt"
 

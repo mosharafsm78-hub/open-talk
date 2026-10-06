@@ -42,7 +42,8 @@ jobs:
       - name: Mark hand-applied migrations as applied
         run: |
           set -euo pipefail
-          remote=$(supabase migration list --linked | awk -F'|' '{gsub(/[ \t]/,"",$2); if ($2 ~ /^[0-9]+$/) print $2}')
+          supabase migration list --linked > "$RUNNER_TEMP/list0.txt" 2>&1
+          remote=$(python3 .github/scripts/check-migration-list.py --print-remote < "$RUNNER_TEMP/list0.txt")
           todo=""
           for v in $ADOPTED_MIGRATIONS; do
             ls supabase/migrations/${v}_*.sql >/dev/null
@@ -57,7 +58,7 @@ jobs:
       - name: Check local and remote migration history match
         run: |
           set -euo pipefail
-          supabase migration list --linked | tee "$RUNNER_TEMP/migration-list.txt"
+          supabase migration list --linked 2>&1 | tee "$RUNNER_TEMP/migration-list.txt"
           python3 .github/scripts/check-migration-list.py --allow-local-only $ADOPTED_MIGRATIONS < "$RUNNER_TEMP/migration-list.txt"
 
       # Runs after the repair so the adopted migrations are not "pending".
@@ -72,7 +73,7 @@ jobs:
         run: supabase db push --linked
 
       - name: Confirm local and remote migrations fully match
-        run: supabase migration list --linked | python3 .github/scripts/check-migration-list.py
+        run: supabase migration list --linked 2>&1 | python3 .github/scripts/check-migration-list.py
 
       - name: Find changed Edge Functions
         id: changed

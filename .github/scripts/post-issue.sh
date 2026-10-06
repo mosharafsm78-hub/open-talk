@@ -5,8 +5,10 @@
 set -euo pipefail
 title=$1
 body=$2
-number=$(gh issue list --app github-actions --state open --limit 100 --json number,title \
-  | jq -r --arg t "$title" '[.[] | select(.title == $t)][0].number // empty')
+# Newest first. Only issues opened by the Actions bot count (its login is shown
+# as "app/github-actions" or "github-actions[bot]" depending on the gh version).
+number=$(gh issue list --state open --limit 100 --json number,title,author \
+  | jq -r --arg t "$title" '[.[] | select(.title == $t and ((.author.login // "") | test("github-actions")))][0].number // empty')
 if [ -n "$number" ]; then
   gh issue comment "$number" --body-file "$body"
 else
