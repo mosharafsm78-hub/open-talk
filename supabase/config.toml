@@ -11,3 +11,6 @@ verify_jwt = true
 # Permanent account deletion. Requires a signed-in user.
 [functions.delete-account]
 verify_jwt = true
+
+[functions.turn-credentials]
+verify_jwt = true

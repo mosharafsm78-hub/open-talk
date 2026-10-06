@@ -1021,8 +1021,13 @@ async function setupSignaling(sessionId,partner){
     if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')console.warn('Open Talk realtime unavailable; using database signaling.');
   });
 
+  let pollTick=0;
   signalPoll=setInterval(async()=>{
     if(signalPollBusy||finishing||!supabaseClient||!currentUser||signalingSessionId!==sessionId)return;
+    // Realtime is the fast path; the database poll is only a safety net, so it
+    // slows right down once the call is connected.
+    pollTick++;
+    if(pc?.connectionState==='connected'&&pollTick%5!==0)return;
     signalPollBusy=true;
     try{
       const {data,error}=await supabaseClient.from('call_signals').select('id,sender_id,kind,payload,created_at').eq('call_id',sessionId).order('created_at',{ascending:true}).limit(100);
@@ -1030,7 +1035,7 @@ async function setupSignaling(sessionId,partner){
       else console.warn('Open Talk signal polling:',error);
     }catch(err){console.warn('Open Talk signal polling:',err);}
     finally{signalPollBusy=false;}
-  },300);
+  },1000);
 
   // Start the handshake immediately; do not wait for an ephemeral hello packet.
   if(currentUser.id<partner.id){
@@ -1356,6 +1361,69 @@ function maybeMarkRtcUsable(){
   ensureLiveAudioControls();
 }
 
+
+let callMetrics={startedAt:0,restarts:0,relay:false};
+let turnCache=null;
+async function fetchTurnServers(){
+  if(turnCache&&turnCache.expires>Date.now())return turnCache.servers;
+  try{
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    if(!session)return [];
+    const res=await fetch('https://pmyfswozvkdpqgnsiibf.supabase.co/functions/v1/turn-credentials',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+session.access_token,'apikey':'sb_publishable_RrciEiRwRPkbU6yO6wt8Zg_BI0tSYEW','Content-Type':'application/json'},
+      body:'{}'
+    });
+    if(!res.ok)throw new Error('turn-credentials '+res.status);
+    const json=await res.json();
+    const servers=Array.isArray(json.iceServers)?json.iceServers:[];
+    turnCache={servers,expires:Date.now()+30*60*1000};
+    return servers;
+  }catch(err){
+    console.warn('Open Talk relay credentials unavailable; direct connection only:',err);
+    return [];
+  }
+}
+
+async function logCallSummary(outcome){
+  try{
+    if(!pc)return;
+    const stats=await pc.getStats();
+    let local='unknown',remote='unknown';
+    stats.forEach(r=>{
+      if(r.type==='candidate-pair'&&r.nominated&&r.state==='succeeded'){
+        const l=stats.get(r.localCandidateId),m=stats.get(r.remoteCandidateId);
+        local=l?.candidateType||local;remote=m?.candidateType||remote;
+      }
+    });
+    console.info('open-talk-call',JSON.stringify({outcome,setupMs:Math.round(performance.now()-callMetrics.startedAt),restarts:callMetrics.restarts,local,remote,relay:local==='relay'||remote==='relay'}));
+  }catch{}
+}
+
+let iceRestartTimer=null;
+async function attemptIceRestart(reason){
+  if(finishing||!pc||!signalingSessionId||!currentPartner)return;
+  const iAmOfferer=currentUser.id<currentPartner.id;
+  if(callMetrics.restarts>=3||!iAmOfferer){
+    // Answerer cannot restart; give the offerer a moment, then rebuild.
+    clearTimeout(iceRestartTimer);
+    iceRestartTimer=setTimeout(()=>{if(pc&&pc.connectionState!=='connected')scheduleRtcRecovery();},iAmOfferer?0:8000);
+    return;
+  }
+  callMetrics.restarts++;
+  try{
+    console.info('open-talk-ice-restart',reason,callMetrics.restarts);
+    pc.restartIce();
+    const offer=await pc.createOffer({iceRestart:true});
+    await pc.setLocalDescription(offer);
+    await waitForIceGathering(pc,4000);
+    if(pc?.localDescription?.type==='offer')await sendSignal({type:'offer',sdp:pc.localDescription});
+  }catch(err){
+    console.warn('Open Talk ICE restart failed:',err);
+    scheduleRtcRecovery();
+  }
+}
+
 async function ensurePeer(){
   if(pc)return pc;
   remoteStream=null;
@@ -1365,26 +1433,17 @@ async function ensurePeer(){
   audioFlowReady=false;
   clearTimeout(audioFlowTimer);
   audioFlowTimer=null;
-  // STUN handles direct peers; TURN is the fallback for restrictive Wi-Fi,
-  // carrier NAT and phone-to-phone networks that cannot connect directly.
-  // Keep the relay configurable for production deployments.
-  // Production TURN relay — Metered. Keep this object as the single source
-  // of truth for browser WebRTC. Direct STUN is attempted first; TURN is the
-  // reliable fallback for carrier NAT, restrictive Wi-Fi and iOS networks.
-  const turn=window.OPEN_TALK_TURN||{
-    urls:[
-      'turn:global.relay.metered.ca:80',
-      'turn:global.relay.metered.ca:80?transport=tcp',
-      'turn:global.relay.metered.ca:443',
-      'turns:global.relay.metered.ca:443?transport=tcp'
-    ],
-    username:'7a560205192bb2f93a79b277',
-    credential:'GNFIQKpNjgNxANr0'
-  };
+  // STUN handles direct peers; TURN relay is the fallback for restrictive
+  // Wi-Fi and carrier NAT (roughly 1 call in 5). Relay credentials are never
+  // stored in this public file: the turn-credentials edge function issues
+  // short-lived ones. If it is unavailable we still try direct connections.
+  callMetrics={startedAt:performance.now(),restarts:0,relay:false};
+  const relayServers=await fetchTurnServers();
+  if(pc)return pc;
   pc=new RTCPeerConnection({
     iceServers:[
       {urls:['stun:stun.cloudflare.com:3478','stun:stun.l.google.com:19302']},
-      turn
+      ...relayServers
     ],
     iceCandidatePoolSize:10
   });
@@ -1459,14 +1518,17 @@ async function ensurePeer(){
     rtcConnected=state==='connected';
     if(state==='connected'){
       clearTimeout(rtcConnectTimer);
+      clearTimeout(iceRestartTimer);
       $('#finish').disabled=false;
       verifyAudioFlow();
+      logCallSummary('connected');
     }else if(state==='failed'){
       $('#listen').textContent='We couldn’t establish the voice connection. Retrying…';
-      if(!finishing && signalingSessionId)scheduleRtcRecovery();
+      if(!finishing && signalingSessionId)attemptIceRestart('failed');
     }else if(state==='disconnected'){
       $('#listen').textContent='Voice connection interrupted. Reconnecting…';
-      if(!finishing && signalingSessionId)scheduleRtcRecovery();
+      clearTimeout(iceRestartTimer);
+      iceRestartTimer=setTimeout(()=>{if(pc&&pc.connectionState==='disconnected')attemptIceRestart('disconnected');},3000);
     }else if(state==='closed' && !finishing){
       $('#listen').textContent='Voice connection closed. Please find another person.';
     }
@@ -1475,13 +1537,13 @@ async function ensurePeer(){
   rtcConnectTimer=setTimeout(()=>{
     if(pc && pc.connectionState!=='connected' && !finishing && signalingSessionId){
       $('#listen').textContent='Still connecting — retrying the private voice link…';
-      scheduleRtcRecovery();
+      attemptIceRestart('connect-timeout');
     }
   },12000);
 
   pc.oniceconnectionstatechange=()=>{
     const ice=pc?.iceConnectionState;
-    if(ice==='failed' && !finishing && signalingSessionId)scheduleRtcRecovery();
+    if(ice==='failed' && !finishing && signalingSessionId)attemptIceRestart('ice-failed');
   };
 
   if(localStream){
