@@ -1,1 +1,0 @@
-exports.handler=async()=>({statusCode:200,headers:{"content-type":"application/json","access-control-allow-origin":"*"},body:JSON.stringify({ok:true,service:"open-talk",version:"1.0.0",timestamp:new Date().toISOString()})});

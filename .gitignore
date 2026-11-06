@@ -1,4 +1,0 @@
-node_modules/
-.env
-.netlify/
-.DS_Store
