@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final name = (_profile['display_name'] as String).split(' ').first;
-    final goal = AppConfig.dailyGoalMinutes * 60;
+    const goal = AppConfig.dailyGoalMinutes * 60;
     final progress = (_todaySeconds / goal).clamp(0.0, 1.0);
     final todayMin = _todaySeconds ~/ 60;
     final totalMin = _totalSeconds ~/ 60;

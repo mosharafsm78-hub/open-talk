@@ -26,6 +26,7 @@ jobs:
           if [ ! -d android ]; then
             flutter create --platforms android --org com.opentalk --project-name open_talk --no-pub .
           fi
+          rm -rf test
           python3 tool/patch_android.py
 
       - name: Install packages
