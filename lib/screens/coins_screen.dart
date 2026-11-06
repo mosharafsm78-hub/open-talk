@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../ads.dart';
 import '../theme.dart';
 
 /// Human-readable time left until [until], e.g. "45 min left", "3 h left", "1 d 2 h left".
@@ -19,6 +20,8 @@ String friendlyError(Object e) {
     return 'Not enough coins yet. Earn more in the Earn tab.';
   }
   if (m.contains('already_claimed')) return 'Already claimed.';
+  if (m.contains('daily_limit')) return 'You have watched all of today\'s videos. Come back tomorrow.';
+  if (m.contains('too_fast')) return 'Please wait a few seconds and try again.';
   if (m.contains('not_ready')) return 'Keep going, this one is not ready yet.';
   return 'Something went wrong. Please try again.';
 }
@@ -88,6 +91,29 @@ class _CoinsScreenState extends State<CoinsScreen> {
         final r = await _db.rpc('claim_daily') as int;
         if (mounted) showMessage(context, '+$r coins added');
       });
+
+  Future<void> _watchVideo() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final earned = await AdsService.showRewarded();
+      if (!earned) {
+        if (mounted) showMessage(context, 'Watch the full video to earn coins.');
+        return;
+      }
+      final r = await _db.rpc('claim_ad_reward') as Map<String, dynamic>;
+      await _load();
+      if (mounted) showMessage(context, '+${r['coins']} coins added');
+    } on AdUnavailable {
+      if (mounted) {
+        showMessage(context, 'No video is available right now. Try again in a moment.');
+      }
+    } catch (e) {
+      if (mounted) showMessage(context, friendlyError(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   Future<void> _claimAchievement(String key) => _run(() async {
         final r = await _db.rpc('claim_achievement', params: {'p_key': key});
@@ -165,6 +191,7 @@ class _CoinsScreenState extends State<CoinsScreen> {
                               achievements: _achievements,
                               busy: _busy,
                               onDaily: _claimDaily,
+                              onWatch: _watchVideo,
                               onClaim: _claimAchievement,
                             ),
                             _UnlockTab(
@@ -288,17 +315,21 @@ class _EarnTab extends StatelessWidget {
   final List<Map<String, dynamic>> achievements;
   final bool busy;
   final VoidCallback onDaily;
+  final VoidCallback onWatch;
   final void Function(String key) onClaim;
   const _EarnTab({
     required this.wallet,
     required this.achievements,
     required this.busy,
     required this.onDaily,
+    required this.onWatch,
     required this.onClaim,
   });
 
   @override
   Widget build(BuildContext context) {
+    final adsLeft = (wallet['ads_left'] as num).toInt();
+    final adReward = (wallet['ad_reward'] as num).toInt();
     final available = wallet['daily_available'] == true;
     final streak = (wallet['streak'] as num).toInt();
     final next = streak % 7 == 0 && !available ? 7 : 7 - (streak % 7);
@@ -344,6 +375,52 @@ class _EarnTab extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12)),
                   ),
                   child: const Text('Claim'),
+                )
+              else
+                const Icon(Icons.check_circle_rounded,
+                    color: AppColors.success),
+            ],
+          ),
+        ),
+        _Card(
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: const BoxDecoration(
+                    color: AppColors.accentSoft, shape: BoxShape.circle),
+                child: const Icon(Icons.play_circle_fill_rounded,
+                    color: AppColors.accent),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Watch a video',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
+                    Text(
+                      adsLeft > 0
+                          ? '+$adReward coins each. $adsLeft left today.'
+                          : 'All done for today. New videos tomorrow.',
+                      style: const TextStyle(
+                          fontSize: 13, color: AppColors.muted, height: 1.35),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (adsLeft > 0)
+                FilledButton(
+                  onPressed: busy ? null : onWatch,
+                  style: FilledButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Watch'),
                 )
               else
                 const Icon(Icons.check_circle_rounded,
@@ -635,9 +712,9 @@ class _BuyTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const bundles = [
-      ('Starter', 100, r'$0.99', null),
-      ('Popular', 550, r'$4.99', 'Most popular'),
-      ('Pro', 1200, r'$9.99', 'Best value'),
+      ('Starter pack', 100, r'$0.99', null),
+      ('Includes 10% bonus coins', 550, r'$4.99', 'Most popular'),
+      ('Includes 20% bonus coins', 1200, r'$9.99', 'Best value'),
     ];
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),

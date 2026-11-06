@@ -21,6 +21,12 @@ block = "".join(
 if block:
     text = text.replace("<application", block + "    <application", 1)
 text = re.sub(r'android:label="[^"]*"', 'android:label="Open Talk"', text, count=1)
+# AdMob app id (Google's public TEST id; replace with the real one before release).
+if "com.google.android.gms.ads.APPLICATION_ID" not in text:
+    text = re.sub(
+        r"(<application[^>]*>)",
+        r'\1\n        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>',
+        text, count=1)
 manifest.write_text(text)
 
 # --- Gradle: minSdk 24 (Agora requirement) ---------------------------------

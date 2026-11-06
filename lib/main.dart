@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'ads.dart';
 import 'config.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_setup_screen.dart';
@@ -19,6 +20,7 @@ Future<void> main() async {
     url: AppConfig.supabaseUrl,
     publishableKey: AppConfig.supabaseAnonKey,
   );
+  AdsService.init(); // not awaited: never delays the first screen
   runApp(const OpenTalkApp());
 }
 
