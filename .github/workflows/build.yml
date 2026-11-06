@@ -106,6 +106,8 @@ jobs:
           target: google_apis
           script: |
             adb install -r build/app/outputs/flutter-apk/app-release.apk
+            echo "=== WAKE_LOCK permission (needed for screen-off near the ear) ==="
+            adb shell dumpsys package com.opentalk.open_talk | grep -E "android.permission.WAKE_LOCK" || { echo "WAKE_LOCK MISSING"; exit 1; }
             adb logcat -c
             adb shell monkey -p com.opentalk.open_talk -c android.intent.category.LAUNCHER 1
             sleep 20

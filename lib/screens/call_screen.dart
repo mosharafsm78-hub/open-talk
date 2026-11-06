@@ -44,6 +44,8 @@ class _CallScreenState extends State<CallScreen> {
   String _stage = 'start';
 
   Timer? _clock;
+  StreamSubscription<dynamic>? _proxSub;
+  bool _near = false; // phone is at the ear
   Timer? _waitTimer;
   int _seconds = 0;
   late List<String> _topics;
@@ -57,10 +59,24 @@ class _CallScreenState extends State<CallScreen> {
     list.shuffle(Random());
     _topics = list;
     WakelockPlus.enable();
+    _listenProximity();
     _syncProximity();
     _loadPartner();
     _join();
   }
+
+  /// Backup for devices where the system screen-off lock is ignored: when the phone is at the
+  /// ear on the earpiece, we also cover the screen with black and ignore touches.
+  void _listenProximity() {
+    try {
+      _proxSub = ProximitySensor.events.listen((dynamic e) {
+        final near = e is bool ? e : (e is num ? e > 0 : false);
+        if (mounted && near != _near) setState(() => _near = near);
+      }, onError: (_) {});
+    } catch (_) {}
+  }
+
+  bool get _covered => _near && !_speaker && _phase != _Phase.ended && !_finishing;
 
   /// Like a normal phone call: while on the earpiece, the screen turns off
   /// when the phone is held to the ear. On speaker the screen stays on.
@@ -175,6 +191,7 @@ class _CallScreenState extends State<CallScreen> {
     _finishing = true;
     _syncProximity();
     WakelockPlus.disable();
+    _proxSub?.cancel();
     _clock?.cancel();
     _waitTimer?.cancel();
     final spoke = _seconds;
@@ -232,6 +249,7 @@ class _CallScreenState extends State<CallScreen> {
 
   @override
   void dispose() {
+    _proxSub?.cancel();
     ProximitySensor.setProximityScreenOff(false).then((_) {}, onError: (_) {});
     WakelockPlus.disable();
     _clock?.cancel();
@@ -266,7 +284,8 @@ class _CallScreenState extends State<CallScreen> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop && _problem == null) _confirmEnd();
       },
-      child: Scaffold(
+      child: Stack(children: [
+       Scaffold(
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
@@ -364,7 +383,12 @@ class _CallScreenState extends State<CallScreen> {
                   ),
           ),
         ),
-      ),
+       ),
+       if (_covered)
+         const Positioned.fill(
+           child: AbsorbPointer(child: ColoredBox(color: Colors.black)),
+         ),
+      ]),
     );
   }
 }

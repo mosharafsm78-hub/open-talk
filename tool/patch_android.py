@@ -19,6 +19,8 @@ perms = [
     "android.permission.ACCESS_NETWORK_STATE",
     "android.permission.BLUETOOTH_CONNECT",
     "android.permission.BLUETOOTH",
+    # Needed for the proximity (screen-off near the ear) wake lock; without it the call is silently refused.
+    "android.permission.WAKE_LOCK",
 ]
 block = "".join(
     f'    <uses-permission android:name="{p}"/>\n' for p in perms if p not in text
