@@ -1,6 +1,11 @@
 """Applies Open Talk's Android settings to the generated Flutter android/ folder."""
+import os
 import re
 import pathlib
+
+# Target CPU: arm64-v8a for real phones; the CI smoke test uses x86_64 (emulator).
+ABI = os.environ.get("OT_ABI", "arm64-v8a")
+ALL_ABIS = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
 
 root = pathlib.Path("android/app")
 
@@ -69,7 +74,7 @@ exts = [
 ]
 excl = ",\n                ".join(
     [f'"**/libagora_{e}_extension.so"' for e in exts]
-    + ['"**/armeabi-v7a/*.so"', '"**/x86_64/*.so"', '"**/x86/*.so"']
+    + [f'"**/{a}/*.so"' for a in ALL_ABIS if a != ABI]
 )
 pack = f"""
     packaging {{
@@ -94,7 +99,7 @@ f = root / "build.gradle.kts"
 if f.exists():
     g = f.read_text()
     if "abiFilters" not in g:
-        g = g.replace("defaultConfig {", 'defaultConfig {\n        ndk { abiFilters += listOf("arm64-v8a") }', 1)
+        g = g.replace("defaultConfig {", 'defaultConfig {\n        ndk { abiFilters += listOf("%s") }' % ABI, 1)
         f.write_text(g)
         print("abiFilters set")
 
