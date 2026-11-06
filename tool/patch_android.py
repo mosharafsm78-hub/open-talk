@@ -32,4 +32,25 @@ for name in ("build.gradle.kts", "build.gradle"):
         g = re.sub(r"minSdkVersion\s+[^\n]+", "minSdkVersion 24", g)
         f.write_text(g)
 
+# --- Force a modern compileSdk on every plugin (older plugins pin 31) ---------
+inject = """
+subprojects {
+    afterEvaluate {
+        val ext = extensions.findByName("android")
+        if (ext != null) {
+            ext.javaClass.methods
+                .firstOrNull { it.name == "compileSdkVersion" && it.parameterTypes.size == 1 && it.parameterTypes[0] == Int::class.javaPrimitiveType }
+                ?.invoke(ext, 36)
+        }
+    }
+}
+"""
+for name in ("build.gradle.kts",):
+    f = pathlib.Path("android") / name
+    if f.exists():
+        g = f.read_text()
+        if "compileSdkVersion" not in g:
+            f.write_text(inject + g)
+        print("injected into", f)
+
 print("android patched")

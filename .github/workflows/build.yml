@@ -37,7 +37,9 @@ jobs:
           for f in $(find "$PUB_CACHE/hosted" -path '*/android/build.gradle*' 2>/dev/null); do
             sed -i -E 's/compileSdkVersion[ (]+[0-9]+\)?/compileSdkVersion 36/; s/compileSdk[ =]+[0-9]+/compileSdk = 36/' "$f"
           done
-          grep -rn "compileSdk" "$PUB_CACHE"/hosted/pub.dev/agora_rtc_engine-*/android/build.gradle || true
+          ls "$PUB_CACHE/hosted"
+          grep -rn "compileSdk" "$PUB_CACHE"/hosted/*/agora_rtc_engine-*/android/ || true
+          head -20 android/build.gradle.kts
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
