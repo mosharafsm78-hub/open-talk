@@ -5,11 +5,19 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme.dart';
+import '../tips.dart';
 import 'call_screen.dart';
 
 class MatchingScreen extends StatefulWidget {
   final Map<String, dynamic> profile;
-  const MatchingScreen({super.key, required this.profile});
+  final String? wantGender; // 'male' | 'female' | null (anyone)
+  final String? wantCountry; // country name | null (anywhere)
+  const MatchingScreen({
+    super.key,
+    required this.profile,
+    this.wantGender,
+    this.wantCountry,
+  });
 
   @override
   State<MatchingScreen> createState() => _MatchingScreenState();
@@ -58,7 +66,10 @@ class _MatchingScreenState extends State<MatchingScreen>
     if (_busy || _matched || !mounted) return;
     _busy = true;
     try {
-      final rows = await _db.rpc('find_match') as List;
+      final rows = await _db.rpc('find_match', params: {
+        'p_gender': widget.wantGender,
+        'p_country': widget.wantCountry,
+      }) as List;
       if (!mounted) return;
       if (rows.isNotEmpty) {
         final m = rows.first as Map<String, dynamic>;
@@ -107,6 +118,15 @@ class _MatchingScreenState extends State<MatchingScreen>
     super.dispose();
   }
 
+  String? get _lookingFor {
+    final parts = <String>[
+      if (widget.wantGender != null)
+        widget.wantGender == 'female' ? 'Women' : 'Men',
+      if (widget.wantCountry != null) widget.wantCountry!,
+    ];
+    return parts.isEmpty ? null : 'Looking for: ${parts.join(' · ')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -115,7 +135,16 @@ class _MatchingScreenState extends State<MatchingScreen>
         if (!didPop) _cancel();
       },
       child: Scaffold(
-        body: SafeArea(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AppColors.accentSoft, AppColors.bg],
+              stops: [0, 0.55],
+            ),
+          ),
+          child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -173,8 +202,11 @@ class _MatchingScreenState extends State<MatchingScreen>
                       style:
                           TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 8),
-                  const Text('This usually takes a few seconds.',
-                      style: TextStyle(fontSize: 15, color: AppColors.muted)),
+                  Text(_lookingFor ?? 'This usually takes a few seconds.',
+                      style: const TextStyle(
+                          fontSize: 15, color: AppColors.muted)),
+                  const SizedBox(height: 28),
+                  const TipCard(),
                 ],
                 const Spacer(),
                 if (!_timedOut && !_permissionDenied)
@@ -185,6 +217,85 @@ class _MatchingScreenState extends State<MatchingScreen>
               ],
             ),
           ),
+        ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Rotates a short tip every 5 seconds while the user waits.
+class TipCard extends StatefulWidget {
+  const TipCard({super.key});
+
+  @override
+  State<TipCard> createState() => _TipCardState();
+}
+
+class _TipCardState extends State<TipCard> {
+  late final List<(String, String)> _tips = [...waitingTips]..shuffle();
+  int _index = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (mounted) setState(() => _index = (_index + 1) % _tips.length);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tip = _tips[_index];
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 132),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 450),
+        transitionBuilder: (child, anim) => FadeTransition(
+          opacity: anim,
+          child: SlideTransition(
+            position: Tween<Offset>(
+                    begin: const Offset(0, 0.12), end: Offset.zero)
+                .animate(anim),
+            child: child,
+          ),
+        ),
+        child: Column(
+          key: ValueKey(_index),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.lightbulb_rounded,
+                    size: 18, color: AppColors.gold),
+                const SizedBox(width: 6),
+                Text(tip.$1.toUpperCase(),
+                    style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
+                        color: AppColors.accent)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(tip.$2,
+                style: const TextStyle(
+                    fontSize: 16, height: 1.45, fontWeight: FontWeight.w500)),
+          ],
         ),
       ),
     );

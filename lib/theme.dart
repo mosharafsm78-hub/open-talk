@@ -10,6 +10,9 @@ class AppColors {
   static const accentSoft = Color(0xFFE9EEFF);
   static const danger = Color(0xFFD64545);
   static const success = Color(0xFF1E9E6A);
+  static const gold = Color(0xFFF5A623);
+  static const goldSoft = Color(0xFFFFF3DC);
+  static const accentDeep = Color(0xFF1F3FB5);
 }
 
 ThemeData buildTheme() {
@@ -120,4 +123,27 @@ void showMessage(BuildContext context, String text) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(text)));
+}
+
+/// Small gold coin used next to balances and prices.
+class CoinIcon extends StatelessWidget {
+  final double size;
+  const CoinIcon({super.key, this.size = 20});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFD36B), AppColors.gold],
+        ),
+      ),
+      child: Icon(Icons.star_rounded, size: size * 0.62, color: Colors.white),
+    );
+  }
 }

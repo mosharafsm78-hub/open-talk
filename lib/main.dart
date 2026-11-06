@@ -107,8 +107,9 @@ class _ProfileGateState extends State<ProfileGate> {
             ),
           );
         }
-        if (snap.data == null) {
+        if (snap.data == null || snap.data!['gender'] == null) {
           return ProfileSetupScreen(
+            existing: snap.data,
             onDone: () => setState(() => _future = _load()),
           );
         }

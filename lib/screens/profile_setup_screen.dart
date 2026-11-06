@@ -21,10 +21,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       ? null
       : widget.existing!['country'] as String;
   late String _level = (widget.existing?['level'] as String?) ?? 'beginner';
+  late String? _gender = widget.existing?['gender'] as String?;
   bool _saving = false;
   String? _error;
 
-  bool get _editing => widget.existing != null;
+  // Editing from Settings pops back; first-time (or completing an older profile) calls onDone.
+  bool get _editing => widget.onDone == null;
 
   Future<void> _save() async {
     final name = _name.text.trim();
@@ -34,6 +36,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     }
     if (_country == null) {
       setState(() => _error = 'Please choose your country.');
+      return;
+    }
+    if (_gender == null) {
+      setState(() => _error = 'Please choose your gender.');
       return;
     }
     setState(() {
@@ -48,13 +54,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           'display_name': name,
           'country': _country,
           'level': _level,
+          'gender': _gender,
         }).eq('id', uid);
       } else {
-        await db.from('profiles').insert({
+        await db.from('profiles').upsert({
           'id': uid,
           'display_name': name,
           'country': _country,
           'level': _level,
+          'gender': _gender,
         });
       }
       if (!mounted) return;
@@ -113,6 +121,31 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 onChanged: (v) => setState(() => _country = v),
               ),
               const SizedBox(height: 24),
+              const Text('You are',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _GenderTile(
+                      label: 'Male',
+                      icon: Icons.male_rounded,
+                      selected: _gender == 'male',
+                      onTap: () => setState(() => _gender = 'male'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _GenderTile(
+                      label: 'Female',
+                      icon: Icons.female_rounded,
+                      selected: _gender == 'female',
+                      onTap: () => setState(() => _gender = 'female'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               const Text('Your English level',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
@@ -143,6 +176,48 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GenderTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  const _GenderTile({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.accentSoft : AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected ? AppColors.accent : AppColors.line,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon,
+                size: 30, color: selected ? AppColors.accent : AppColors.muted),
+            const SizedBox(height: 4),
+            Text(label,
+                style:
+                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+          ],
         ),
       ),
     );
