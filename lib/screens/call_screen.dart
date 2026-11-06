@@ -3,7 +3,9 @@ import 'dart:math';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
+import 'package:proximity_sensor/proximity_sensor.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../config.dart';
 import '../theme.dart';
@@ -36,7 +38,7 @@ class _CallScreenState extends State<CallScreen> {
   _Phase _phase = _Phase.connecting;
   Map<String, dynamic>? _partner;
   bool _muted = false;
-  bool _speaker = true;
+  bool _speaker = false;
   bool _finishing = false;
   String? _problem;
   String _stage = 'start';
@@ -54,8 +56,17 @@ class _CallScreenState extends State<CallScreen> {
         topicsByLevel[widget.myLevel] ?? topicsByLevel['beginner']!);
     list.shuffle(Random());
     _topics = list;
+    WakelockPlus.enable();
+    _syncProximity();
     _loadPartner();
     _join();
+  }
+
+  /// Like a normal phone call: while on the earpiece, the screen turns off
+  /// when the phone is held to the ear. On speaker the screen stays on.
+  void _syncProximity() {
+    final on = !_speaker && _phase != _Phase.ended && !_finishing;
+    ProximitySensor.setProximityScreenOff(on).then((_) {}, onError: (_) {});
   }
 
   Future<void> _loadPartner() async {
@@ -162,6 +173,8 @@ class _CallScreenState extends State<CallScreen> {
   Future<void> _finish({String? note}) async {
     if (_finishing) return;
     _finishing = true;
+    _syncProximity();
+    WakelockPlus.disable();
     _clock?.cancel();
     _waitTimer?.cancel();
     final spoke = _seconds;
@@ -209,6 +222,8 @@ class _CallScreenState extends State<CallScreen> {
 
   @override
   void dispose() {
+    ProximitySensor.setProximityScreenOff(false).then((_) {}, onError: (_) {});
+    WakelockPlus.disable();
     _clock?.cancel();
     _waitTimer?.cancel();
     final e = _engine;
@@ -329,6 +344,7 @@ class _CallScreenState extends State<CallScreen> {
                             active: _speaker,
                             onTap: () async {
                               setState(() => _speaker = !_speaker);
+                              _syncProximity();
                               await _engine?.setEnableSpeakerphone(_speaker);
                             },
                           ),
