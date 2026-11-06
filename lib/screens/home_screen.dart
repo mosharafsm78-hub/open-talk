@@ -192,6 +192,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final level = _profile['level'] as String;
     final coins = (_wallet?['coins'] as num?)?.toInt() ?? 0;
     final dailyReady = _wallet?['daily_available'] == true;
+    final streak = (_wallet?['streak'] as num?)?.toInt() ?? 0;
+    final isNewUser = (_profile['total_seconds'] as num).toInt() == 0 && coins >= 10;
     final genderSecs = _secs('gender_seconds');
     final countrySecs = _secs('country_seconds');
 
@@ -250,6 +252,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               const SizedBox(height: 20),
+              if (isNewUser) ...[
+                InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: () => _openCoins(1),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.goldSoft,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Row(
+                      children: [
+                        CoinIcon(size: 28),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Welcome gift: 10 coins. Use them for 30 minutes of talking with the gender or country you choose.',
+                            style: TextStyle(
+                                fontSize: 14,
+                                height: 1.4,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               if (dailyReady) ...[
                 Container(
                   padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
@@ -263,7 +294,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: AppColors.gold),
                       const SizedBox(width: 12),
                       const Expanded(
-                        child: Text('Your daily reward is ready',
+                        child: Text(
+                            streak > 0
+                                ? 'Keep your $streak-day streak going'
+                                : 'Your daily reward is ready',
                             style: TextStyle(
                                 fontSize: 15, fontWeight: FontWeight.w700)),
                       ),

@@ -328,6 +328,8 @@ class _EarnTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final adsLeft = (wallet['ads_left'] as num).toInt();
+    final adCap = (wallet['ad_cap'] as num).toInt();
+    final watched = adCap - adsLeft;
     final adReward = (wallet['ad_reward'] as num).toInt();
     final dailyReward = (wallet['daily_reward'] as num).toInt();
     final dailyBonus = (wallet['daily_bonus'] as num).toInt();
@@ -406,11 +408,27 @@ class _EarnTab extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       adsLeft > 0
-                          ? '+$adReward coin each. $adsLeft left today.'
+                          ? '+$adReward coin each. 10 videos = 30 min of gender or country choice.'
                           : 'All done for today. New videos tomorrow.',
                       style: const TextStyle(
                           fontSize: 13, color: AppColors.muted, height: 1.35),
                     ),
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: watched / adCap,
+                        minHeight: 7,
+                        backgroundColor: AppColors.accentSoft,
+                        color: adsLeft == 0
+                            ? AppColors.success
+                            : AppColors.accent,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text('$watched of $adCap watched today',
+                        style: const TextStyle(
+                            fontSize: 12, color: AppColors.muted)),
                   ],
                 ),
               ),
@@ -718,9 +736,9 @@ class _BuyTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const bundles = [
-      ('Starter pack', 100, r'$0.99', null),
-      ('Includes 10% bonus coins', 550, r'$4.99', 'Most popular'),
-      ('Includes 20% bonus coins', 1200, r'$9.99', 'Best value'),
+      ('About 5 hours of choice', 100, r'$0.99', null),
+      ('About 27 hours of choice · 10% bonus', 550, r'$4.99', 'Most popular'),
+      ('About 60 hours of choice · 20% bonus', 1200, r'$9.99', 'Best value'),
     ];
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
