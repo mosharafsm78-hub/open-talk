@@ -330,6 +330,9 @@ class _EarnTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final adsLeft = (wallet['ads_left'] as num).toInt();
     final adReward = (wallet['ad_reward'] as num).toInt();
+    final dailyReward = (wallet['daily_reward'] as num).toInt();
+    final dailyBonus = (wallet['daily_bonus'] as num).toInt();
+    final minCall = (wallet['min_call_minutes'] as num).toInt();
     final available = wallet['daily_available'] == true;
     final streak = (wallet['streak'] as num).toInt();
     final next = streak % 7 == 0 && !available ? 7 : 7 - (streak % 7);
@@ -358,7 +361,7 @@ class _EarnTab extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       available
-                          ? '+5 coins. Every 7th day in a row gives +20 more.'
+                          ? '+$dailyReward coin. Every 7th day in a row gives +$dailyBonus more.'
                           : 'Come back tomorrow. $next more day${next == 1 ? '' : 's'} for the bonus.',
                       style: const TextStyle(
                           fontSize: 13, color: AppColors.muted, height: 1.35),
@@ -404,7 +407,7 @@ class _EarnTab extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       adsLeft > 0
-                          ? '+$adReward coins each. $adsLeft left today.'
+                          ? '+$adReward coin each. $adsLeft left today.'
                           : 'All done for today. New videos tomorrow.',
                       style: const TextStyle(
                           fontSize: 13, color: AppColors.muted, height: 1.35),
@@ -429,9 +432,15 @@ class _EarnTab extends StatelessWidget {
           ),
         ),
         const Padding(
-          padding: EdgeInsets.fromLTRB(4, 12, 0, 10),
+          padding: EdgeInsets.fromLTRB(4, 12, 0, 4),
           child: Text('Achievements',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 0, 0, 10),
+          child: Text(
+              'A conversation counts when it lasts $minCall minutes or more.',
+              style: const TextStyle(fontSize: 13, color: AppColors.muted)),
         ),
         for (final a in achievements) _AchievementTile(a: a, busy: busy, onClaim: onClaim),
       ],

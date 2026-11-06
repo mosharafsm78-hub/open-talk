@@ -279,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text('Claim +5'),
+                        child: Text('Claim +${(_wallet?['daily_reward'] as num?)?.toInt() ?? 1}'),
                       ),
                     ],
                   ),
