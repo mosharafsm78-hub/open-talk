@@ -80,4 +80,13 @@ for name in ("build.gradle.kts",):
             f.write_text(g)
             print("excluded agora extensions in", f)
 
+# --- Keep only 64-bit ARM native libs in the test APK (Agora ships all ABIs) --
+f = root / "build.gradle.kts"
+if f.exists():
+    g = f.read_text()
+    if "abiFilters" not in g:
+        g = g.replace("defaultConfig {", 'defaultConfig {\n        ndk { abiFilters += listOf("arm64-v8a") }', 1)
+        f.write_text(g)
+        print("abiFilters set")
+
 print("android patched")
