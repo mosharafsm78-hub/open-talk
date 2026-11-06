@@ -139,9 +139,9 @@ class _CallScreenState extends State<CallScreen> {
           _finish(note: "Your partner couldn't connect. Please try again.");
         }
       });
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        setState(() => _problem = 'Could not start the call. Check your connection.');
+        setState(() => _problem = 'Could not start the call.\n\n$e');
       }
     }
   }
