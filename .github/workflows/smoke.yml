@@ -58,6 +58,7 @@ jobs:
             adb logcat -d > launch.log || true
             echo "=== process alive? ==="
             adb shell pidof com.opentalk.open_talk || echo "NOT RUNNING"
+            adb shell pidof com.opentalk.open_talk > /dev/null || { grep -E "FATAL EXCEPTION" -A12 launch.log | head -40; exit 1; }
             echo "=== fatal / errors ==="
             grep -E "FATAL|AndroidRuntime|Process .* has died|MobileAds|ads" launch.log | head -60 || true
       - uses: actions/upload-artifact@v4

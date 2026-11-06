@@ -103,4 +103,18 @@ if f.exists():
         f.write_text(g)
         print("abiFilters set")
 
+# --- Release build: turn R8 code shrinking off. It strips classes that the ads/WorkManager
+# libraries load by reflection (WorkDatabase_Impl), which crashed the app at launch.
+f = root / "build.gradle.kts"
+if f.exists():
+    g = f.read_text()
+    if "isMinifyEnabled" not in g:
+        g = g.replace(
+            'signingConfig = signingConfigs.getByName("debug")',
+            'signingConfig = signingConfigs.getByName("debug")\n            isMinifyEnabled = false\n            isShrinkResources = false',
+            1,
+        )
+        f.write_text(g)
+        print("minify disabled")
+
 print("android patched")
