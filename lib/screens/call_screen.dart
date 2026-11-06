@@ -39,6 +39,7 @@ class _CallScreenState extends State<CallScreen> {
   bool _speaker = true;
   bool _finishing = false;
   String? _problem;
+  String _stage = 'start';
 
   Timer? _clock;
   Timer? _waitTimer;
@@ -78,15 +79,19 @@ class _CallScreenState extends State<CallScreen> {
 
   Future<void> _join() async {
     try {
+      _stage = 'token';
       final token = await _fetchToken();
+      _stage = 'create';
       final engine = createAgoraRtcEngine();
       _engine = engine;
+      _stage = 'initialize';
       await engine.initialize(RtcEngineContext(
         appId: AppConfig.agoraAppId,
         channelProfile: ChannelProfileType.channelProfileCommunication,
       ));
       engine.registerEventHandler(RtcEngineEventHandler(
         onJoinChannelSuccess: (connection, elapsed) {
+          _engine?.setEnableSpeakerphone(_speaker).then((_) {}, onError: (_) {});
           if (!mounted || _phase == _Phase.live) return;
           setState(() => _phase = _Phase.waiting);
         },
@@ -117,12 +122,16 @@ class _CallScreenState extends State<CallScreen> {
           // Non-fatal audio warnings are common; only surface hard failures.
         },
       ));
+      _stage = 'enableAudio';
       await engine.enableAudio();
+      _stage = 'audioProfile';
       await engine.setAudioProfile(
         profile: AudioProfileType.audioProfileSpeechStandard,
         scenario: AudioScenarioType.audioScenarioChatroom,
       );
-      await engine.setEnableSpeakerphone(_speaker);
+      _stage = 'speakerRoute';
+      await engine.setDefaultAudioRouteToSpeakerphone(_speaker);
+      _stage = 'joinChannel';
       await engine.joinChannel(
         token: token,
         channelId: widget.channel,
@@ -140,8 +149,12 @@ class _CallScreenState extends State<CallScreen> {
         }
       });
     } catch (e) {
+      try {
+        await _engine?.release();
+      } catch (_) {}
+      _engine = null;
       if (mounted) {
-        setState(() => _problem = 'Could not start the call.\n\n$e');
+        setState(() => _problem = 'Could not start the call.\n\n[$_stage] $e');
       }
     }
   }
