@@ -19,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late Map<String, dynamic> _profile = widget.profile;
   Map<String, dynamic>? _wallet;
+  Map<String, dynamic> _supply = {};
   int _todaySeconds = 0;
   int _totalSeconds = 0;
   String? _wantGender; // null = anyone
@@ -28,6 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
   SupabaseClient get _db => Supabase.instance.client;
 
   int _secs(String key) => (_wallet?[key] as num?)?.toInt() ?? 0;
+  int _sup(String key) => (_supply[key] as num?)?.toInt() ?? 0;
+  int _countryOnline(String c) =>
+      ((_supply['countries'] as Map?)?[c] as num?)?.toInt() ?? 0;
 
   @override
   void initState() {
@@ -35,7 +39,18 @@ class _HomeScreenState extends State<HomeScreen> {
     _refresh();
   }
 
+  Future<void> _loadSupply() async {
+    try {
+      await _db.rpc('touch_active');
+      final s = await _db.rpc('get_supply');
+      if (mounted && s is Map) {
+        setState(() => _supply = Map<String, dynamic>.from(s));
+      }
+    } catch (_) {}
+  }
+
   Future<void> _refresh() async {
+    _loadSupply();
     try {
       final today = await _db.rpc('today_seconds');
       final p = await _db
@@ -118,13 +133,26 @@ class _HomeScreenState extends State<HomeScreen> {
               ('female', 'Women'),
               ('male', 'Men'),
             ])
-              ListTile(
-                title: Text(o.$2),
-                trailing: (_wantGender ?? 'any') == o.$1
-                    ? const Icon(Icons.check_rounded, color: AppColors.accent)
-                    : null,
-                onTap: () => Navigator.pop(ctx, o.$1),
-              ),
+              Builder(builder: (_) {
+                final n = o.$1 == 'any'
+                    ? _sup('female_online') + _sup('male_online')
+                    : _sup('${o.$1}_online');
+                final none = o.$1 != 'any' && n == 0;
+                return ListTile(
+                  enabled: !none,
+                  title: Text(o.$2),
+                  subtitle: o.$1 == 'any'
+                      ? null
+                      : Text(none ? 'No one online right now' : '$n online now',
+                          style: TextStyle(
+                              color: none ? AppColors.muted : AppColors.success,
+                              fontSize: 13)),
+                  trailing: (_wantGender ?? 'any') == o.$1
+                      ? const Icon(Icons.check_rounded, color: AppColors.accent)
+                      : null,
+                  onTap: none ? null : () => Navigator.pop(ctx, o.$1),
+                );
+              }),
             const SizedBox(height: 8),
           ],
         ),
@@ -163,14 +191,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         : null,
                     onTap: () => Navigator.pop(ctx, ''),
                   ),
-                  for (final c in countries)
+                  for (final c in ([...countries]..sort((a, b) =>
+                      _countryOnline(b).compareTo(_countryOnline(a)))))
                     ListTile(
+                      enabled: _countryOnline(c) > 0,
                       title: Text(c),
+                      subtitle: Text(
+                          _countryOnline(c) > 0
+                              ? '${_countryOnline(c)} online now'
+                              : 'No one online right now',
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: _countryOnline(c) > 0
+                                  ? AppColors.success
+                                  : AppColors.muted)),
                       trailing: _wantCountry == c
                           ? const Icon(Icons.check_rounded,
                               color: AppColors.accent)
                           : null,
-                      onTap: () => Navigator.pop(ctx, c),
+                      onTap: _countryOnline(c) > 0
+                          ? () => Navigator.pop(ctx, c)
+                          : null,
                     ),
                 ],
               ),
@@ -450,6 +491,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+              if (genderSecs > 0 && _sup('female_online') > 0 && _wantGender == null) ...[
+                InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: _pickGender,
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentSoft,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.notifications_active_rounded,
+                            color: AppColors.accent),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                              '${_sup('female_online')} ${_sup('female_online') == 1 ? 'woman is' : 'women are'} online now. Use your gender minutes!',
+                              style: const TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
               _PrefRow(
                 icon: Icons.wc_rounded,
                 title: 'Talk with',

@@ -57,6 +57,7 @@ class _MatchingScreenState extends State<MatchingScreen>
       if (mounted) setState(() => _permissionDenied = true);
       return;
     }
+    _db.rpc('touch_active').then((_) {}, onError: (_) {});
     _poll?.cancel();
     _tick();
     _poll = Timer.periodic(const Duration(seconds: 2), (_) => _tick());

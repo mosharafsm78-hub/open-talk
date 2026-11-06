@@ -37,6 +37,7 @@ class _CoinsScreenState extends State<CoinsScreen> {
   SupabaseClient get _db => Supabase.instance.client;
 
   Map<String, dynamic>? _wallet;
+  Map<String, dynamic> _supply = {};
   List<Map<String, dynamic>> _achievements = [];
   bool _loading = true;
   bool _failed = false;
@@ -52,6 +53,10 @@ class _CoinsScreenState extends State<CoinsScreen> {
     try {
       final w = await _db.rpc('get_wallet') as Map<String, dynamic>;
       final a = await _db.rpc('list_achievements') as List;
+      try {
+        final sup = await _db.rpc('get_supply');
+        if (sup is Map) _supply = Map<String, dynamic>.from(sup);
+      } catch (_) {}
       if (!mounted) return;
       setState(() {
         _wallet = w;
@@ -195,6 +200,7 @@ class _CoinsScreenState extends State<CoinsScreen> {
                             ),
                             _UnlockTab(
                               wallet: _wallet!,
+                              supply: _supply,
                               busy: _busy,
                               onBuy: _buy,
                             ),
@@ -541,22 +547,31 @@ class _AchievementTile extends StatelessWidget {
 
 class _UnlockTab extends StatelessWidget {
   final Map<String, dynamic> wallet;
+  final Map<String, dynamic> supply;
   final bool busy;
   final Future<void> Function(String kind, String option, int price, String what)
       onBuy;
   const _UnlockTab(
-      {required this.wallet, required this.busy, required this.onBuy});
+      {required this.wallet,
+      required this.supply,
+      required this.busy,
+      required this.onBuy});
 
   @override
   Widget build(BuildContext context) {
     final coins = (wallet['coins'] as num).toInt();
+    final women = (supply['female_members'] as num?)?.toInt() ?? 0;
+    final womenNow = (supply['female_online'] as num?)?.toInt() ?? 0;
+    final fewWomen = women < 20;
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       children: [
         _PassSection(
           icon: Icons.wc_rounded,
           title: 'Choose gender',
-          subtitle: 'Talk only with men or only with women.',
+          subtitle: 'Talk only with men or only with women.'
+              '${womenNow > 0 ? ' $womenNow ${womenNow == 1 ? 'woman is' : 'women are'} online now.' : ''}'
+              '${fewWomen ? ' Few women have joined so far, so matching with women can take longer. Your minutes never expire.' : ''}',
           seconds: (wallet['gender_seconds'] as num).toInt(),
           coins: coins,
           busy: busy,
@@ -590,7 +605,7 @@ class _UnlockTab extends StatelessWidget {
         const Text(
           'Minutes are used only while you are talking with your choice on, '
           'never while searching. Calls shorter than 30 seconds are free. '
-          'With a choice on, finding someone can take a little longer.',
+          'With a choice on, finding someone can take a little longer. Unused minutes never expire.',
           style: TextStyle(fontSize: 13, color: AppColors.muted, height: 1.4),
         ),
       ],
