@@ -3,8 +3,9 @@ import os
 import re
 import pathlib
 
-# Target CPU: arm64-v8a for real phones; the CI smoke test uses x86_64 (emulator).
-ABI = os.environ.get("OT_ABI", "arm64-v8a")
+# Target CPUs (comma separated): arm64-v8a for the test APK, arm64+arm32 for the Play bundle,
+# x86_64 for the CI emulator smoke test.
+ABIS = os.environ.get("OT_ABI", "arm64-v8a").split(",")
 ALL_ABIS = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
 
 root = pathlib.Path("android/app")
@@ -76,7 +77,7 @@ exts = [
 ]
 excl = ",\n                ".join(
     [f'"**/libagora_{e}_extension.so"' for e in exts]
-    + [f'"**/{a}/*.so"' for a in ALL_ABIS if a != ABI]
+    + [f'"**/{a}/*.so"' for a in ALL_ABIS if a not in ABIS]
 )
 pack = f"""
     packaging {{
@@ -101,7 +102,7 @@ f = root / "build.gradle.kts"
 if f.exists():
     g = f.read_text()
     if "abiFilters" not in g:
-        g = g.replace("defaultConfig {", 'defaultConfig {\n        ndk { abiFilters += listOf("%s") }' % ABI, 1)
+        g = g.replace("defaultConfig {", 'defaultConfig {\n        ndk { abiFilters += listOf(%s) }' % ", ".join('"%s"' % a for a in ABIS), 1)
         f.write_text(g)
         print("abiFilters set")
 
@@ -118,5 +119,36 @@ if f.exists():
         )
         f.write_text(g)
         print("minify disabled")
+
+# --- Play Store signing (only when OT_SIGN=1; reads android/key.properties) ---
+if os.environ.get("OT_SIGN") == "1":
+    f = root / "build.gradle.kts"
+    g = f.read_text()
+    if "keystoreProps" not in g:
+        g = "import java.io.FileInputStream\nimport java.util.Properties\n\n" + g
+        g = g.replace(
+            "android {",
+            """val keystoreProps = Properties().apply {
+    load(FileInputStream(rootProject.file("key.properties")))
+}
+
+android {
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProps["keyAlias"] as String
+            keyPassword = keystoreProps["keyPassword"] as String
+            storeFile = rootProject.file("app/upload.jks")
+            storePassword = keystoreProps["storePassword"] as String
+        }
+    }""",
+            1,
+        )
+        g = g.replace(
+            'signingConfig = signingConfigs.getByName("debug")',
+            'signingConfig = signingConfigs.getByName("release")',
+            1,
+        )
+        f.write_text(g)
+        print("release signing configured")
 
 print("android patched")

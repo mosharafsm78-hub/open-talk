@@ -97,6 +97,12 @@ class SettingsScreen extends StatelessWidget {
                   mode: LaunchMode.externalApplication),
             ),
             _Item(
+              icon: Icons.description_outlined,
+              label: 'Terms of use',
+              onTap: () => launchUrl(Uri.parse(AppConfig.termsUrl),
+                  mode: LaunchMode.externalApplication),
+            ),
+            _Item(
               icon: Icons.logout_rounded,
               label: 'Log out',
               onTap: () => _logout(context),

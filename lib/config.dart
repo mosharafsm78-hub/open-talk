@@ -5,6 +5,8 @@ class AppConfig {
   static const supabaseAnonKey = 'sb_publishable_RrciEiRwRPkbU6yO6wt8Zg_BI0tSYEW';
   static const agoraAppId = '0025f1acf06d492c8e1426521a24e5c6';
   static const privacyUrl = 'https://mosharafsm78-hub.github.io/open-talk/privacy.html';
+  static const termsUrl = 'https://mosharafsm78-hub.github.io/open-talk/terms.html';
+  static const deleteUrl = 'https://mosharafsm78-hub.github.io/open-talk/delete-account.html';
   static const dailyGoalMinutes = 10;
 
   // AdMob. These are Google's public TEST ids (safe, show test ads only).

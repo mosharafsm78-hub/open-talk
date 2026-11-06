@@ -44,6 +44,9 @@ jobs:
           grep -rn "compileSdk" "$PUB_CACHE"/hosted/*/agora_rtc_engine-*/android/ || true
           head -20 android/build.gradle.kts
 
+      - name: App icon
+        run: dart run flutter_launcher_icons
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 

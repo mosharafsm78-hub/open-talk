@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../config.dart';
 
 import '../theme.dart';
 
@@ -142,7 +145,31 @@ class _AuthScreenState extends State<AuthScreen> {
                 loading: _loading,
                 onPressed: _submit,
               ),
-              const SizedBox(height: 16),
+              if (_signUp) ...[
+                const SizedBox(height: 14),
+                const Text(
+                  'You must be 18 or older. By continuing you agree to our Terms of Use and Privacy Policy.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 12.5, color: AppColors.muted, height: 1.4),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () => launchUrl(Uri.parse(AppConfig.termsUrl),
+                          mode: LaunchMode.externalApplication),
+                      child: const Text('Terms of Use'),
+                    ),
+                    TextButton(
+                      onPressed: () => launchUrl(Uri.parse(AppConfig.privacyUrl),
+                          mode: LaunchMode.externalApplication),
+                      child: const Text('Privacy Policy'),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 8),
               Center(
                 child: TextButton(
                   onPressed: () => setState(() {
