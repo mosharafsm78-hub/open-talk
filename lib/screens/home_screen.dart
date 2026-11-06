@@ -27,12 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   SupabaseClient get _db => Supabase.instance.client;
 
-  DateTime? _until(String key) {
-    final v = _wallet?[key] as String?;
-    if (v == null) return null;
-    final t = DateTime.parse(v).toLocal();
-    return t.isAfter(DateTime.now()) ? t : null;
-  }
+  int _secs(String key) => (_wallet?[key] as num?)?.toInt() ?? 0;
 
   @override
   void initState() {
@@ -56,8 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _totalSeconds = (p['total_seconds'] as num).toInt();
         _wallet = w;
         // A choice only stays selected while its pass is active.
-        if (_until('gender_until') == null) _wantGender = null;
-        if (_until('country_until') == null) _wantCountry = null;
+        if (_secs('gender_seconds') <= 0) _wantGender = null;
+        if (_secs('country_seconds') <= 0) _wantCountry = null;
       });
     } catch (_) {}
   }
@@ -104,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _pickGender() async {
-    if (_until('gender_until') == null) return _openCoins(1);
+    if (_secs('gender_seconds') <= 0) return _openCoins(1);
     final v = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: AppColors.surface,
@@ -139,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _pickCountry() async {
-    if (_until('country_until') == null) return _openCoins(1);
+    if (_secs('country_seconds') <= 0) return _openCoins(1);
     final v = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -197,8 +192,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final level = _profile['level'] as String;
     final coins = (_wallet?['coins'] as num?)?.toInt() ?? 0;
     final dailyReady = _wallet?['daily_available'] == true;
-    final genderUntil = _until('gender_until');
-    final countryUntil = _until('country_until');
+    final genderSecs = _secs('gender_seconds');
+    final countrySecs = _secs('country_seconds');
 
     return Scaffold(
       body: SafeArea(
@@ -427,7 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 value: _wantGender == null
                     ? 'Anyone'
                     : (_wantGender == 'female' ? 'Women' : 'Men'),
-                status: genderUntil == null ? null : timeLeft(genderUntil),
+                status: genderSecs <= 0 ? null : minutesLeft(genderSecs),
                 onTap: _pickGender,
               ),
               const SizedBox(height: 10),
@@ -435,7 +430,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icons.public_rounded,
                 title: 'From country',
                 value: _wantCountry ?? 'Anywhere',
-                status: countryUntil == null ? null : timeLeft(countryUntil),
+                status: countrySecs <= 0 ? null : minutesLeft(countrySecs),
                 onTap: _pickCountry,
               ),
               const SizedBox(height: 16),

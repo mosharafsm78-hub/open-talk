@@ -4,14 +4,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../ads.dart';
 import '../theme.dart';
 
-/// Human-readable time left until [until], e.g. "45 min left", "3 h left", "1 d 2 h left".
-String timeLeft(DateTime until) {
-  final d = until.difference(DateTime.now());
-  if (d.inMinutes < 1) return 'less than a minute left';
-  if (d.inMinutes < 60) return '${d.inMinutes} min left';
-  if (d.inHours < 24) return '${d.inHours} h left';
-  final h = d.inHours % 24;
-  return h == 0 ? '${d.inDays} d left' : '${d.inDays} d $h h left';
+/// Minutes left in a pass, e.g. "25 min left", "1 h 20 min left".
+String minutesLeft(int seconds) {
+  final m = (seconds / 60).ceil();
+  if (m < 60) return '$m min left';
+  final h = m ~/ 60;
+  final r = m % 60;
+  return r == 0 ? '$h h left' : '$h h $r min left';
 }
 
 String friendlyError(Object e) {
@@ -124,7 +123,7 @@ class _CoinsScreenState extends State<CoinsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Unlock $what?'),
+        title: Text('Add $what?'),
         content: Text('This will use $price coins.'),
         actions: [
           TextButton(
@@ -132,14 +131,14 @@ class _CoinsScreenState extends State<CoinsScreen> {
               child: const Text('Cancel')),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Unlock')),
+              child: const Text('Add')),
         ],
       ),
     );
     if (ok != true) return;
     await _run(
       () => _db.rpc('buy_pass', params: {'p_kind': kind, 'p_option': option}),
-      success: 'Unlocked. Choose it on the home screen.',
+      success: 'Added. Choose it on the home screen.',
     );
   }
 
@@ -530,13 +529,6 @@ class _UnlockTab extends StatelessWidget {
   const _UnlockTab(
       {required this.wallet, required this.busy, required this.onBuy});
 
-  DateTime? _until(String key) {
-    final v = wallet[key] as String?;
-    if (v == null) return null;
-    final t = DateTime.parse(v).toLocal();
-    return t.isAfter(DateTime.now()) ? t : null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final coins = (wallet['coins'] as num).toInt();
@@ -547,14 +539,16 @@ class _UnlockTab extends StatelessWidget {
           icon: Icons.wc_rounded,
           title: 'Choose gender',
           subtitle: 'Talk only with men or only with women.',
-          until: _until('gender_until'),
+          seconds: (wallet['gender_seconds'] as num).toInt(),
           coins: coins,
           busy: busy,
           options: [
-            _PassOption('1 hour', 40,
-                () => onBuy('gender', '1h', 40, 'gender choice for 1 hour')),
-            _PassOption('1 day', 200,
-                () => onBuy('gender', '1d', 200, 'gender choice for 1 day')),
+            _PassOption('30 min', 10,
+                () => onBuy('gender', '30m', 10, '30 minutes of gender choice')),
+            _PassOption('2 hours', 35,
+                () => onBuy('gender', '2h', 35, '2 hours of gender choice')),
+            _PassOption('5 hours', 80,
+                () => onBuy('gender', '5h', 80, '5 hours of gender choice')),
           ],
         ),
         const SizedBox(height: 8),
@@ -562,20 +556,23 @@ class _UnlockTab extends StatelessWidget {
           icon: Icons.public_rounded,
           title: 'Choose country',
           subtitle: 'Talk with people from one country you pick.',
-          until: _until('country_until'),
+          seconds: (wallet['country_seconds'] as num).toInt(),
           coins: coins,
           busy: busy,
           options: [
-            _PassOption('1 day', 150,
-                () => onBuy('country', '1d', 150, 'country choice for 1 day')),
-            _PassOption('2 days', 250,
-                () => onBuy('country', '2d', 250, 'country choice for 2 days')),
+            _PassOption('30 min', 10,
+                () => onBuy('country', '30m', 10, '30 minutes of country choice')),
+            _PassOption('2 hours', 35,
+                () => onBuy('country', '2h', 35, '2 hours of country choice')),
+            _PassOption('5 hours', 80,
+                () => onBuy('country', '5h', 80, '5 hours of country choice')),
           ],
         ),
         const SizedBox(height: 4),
         const Text(
-          'Buying again while a pass is active adds to the time you have left. '
-          'With a filter on, matching can take a little longer.',
+          'Minutes are used only while you are talking with your choice on, '
+          'never while searching. Calls shorter than 30 seconds are free. '
+          'With a choice on, finding someone can take a little longer.',
           style: TextStyle(fontSize: 13, color: AppColors.muted, height: 1.4),
         ),
       ],
@@ -594,7 +591,7 @@ class _PassSection extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final DateTime? until;
+  final int seconds; // minutes left, in seconds
   final int coins;
   final bool busy;
   final List<_PassOption> options;
@@ -602,7 +599,7 @@ class _PassSection extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.until,
+    required this.seconds,
     required this.coins,
     required this.busy,
     required this.options,
@@ -639,7 +636,7 @@ class _PassSection extends StatelessWidget {
               ),
             ],
           ),
-          if (until != null) ...[
+          if (seconds > 0) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -653,7 +650,7 @@ class _PassSection extends StatelessWidget {
                   const Icon(Icons.check_circle_rounded,
                       size: 18, color: AppColors.success),
                   const SizedBox(width: 6),
-                  Text('Active · ${timeLeft(until!)}',
+                  Text('Active · ${minutesLeft(seconds)}',
                       style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
