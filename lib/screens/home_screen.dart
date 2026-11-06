@@ -293,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Icon(Icons.card_giftcard_rounded,
                           color: AppColors.gold),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                             streak > 0
                                 ? 'Keep your $streak-day streak going'
