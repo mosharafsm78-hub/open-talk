@@ -179,13 +179,23 @@ class _CallScreenState extends State<CallScreen> {
     _waitTimer?.cancel();
     final spoke = _seconds;
     if (mounted) setState(() => _phase = _Phase.ended);
-    try {
-      await _engine?.leaveChannel();
-      await _engine?.release();
-    } catch (_) {}
+    // Tear down in the background so a slow engine can never block leaving.
+    final engine = _engine;
     _engine = null;
+    if (engine != null) {
+      () async {
+        try {
+          await engine.leaveChannel().timeout(const Duration(seconds: 3));
+        } catch (_) {}
+        try {
+          await engine.release().timeout(const Duration(seconds: 3));
+        } catch (_) {}
+      }();
+    }
     try {
-      await _db.rpc('end_call', params: {'p_call_id': widget.callId});
+      await _db
+          .rpc('end_call', params: {'p_call_id': widget.callId})
+          .timeout(const Duration(seconds: 4));
     } catch (_) {}
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
