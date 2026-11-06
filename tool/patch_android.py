@@ -53,4 +53,31 @@ for name in ("build.gradle.kts",):
             f.write_text(inject + g)
         print("injected into", f)
 
+# --- Drop Agora extensions a voice-only app never uses (big size win) ---------
+exts = [
+    "ai_echo_cancellation", "ai_echo_cancellation_ll", "ai_noise_suppression",
+    "ai_noise_suppression_ll", "audio_beauty", "clear_vision", "content_inspect",
+    "face_capture", "face_detection", "lip_sync", "pvc", "screen_capture",
+    "segmentation", "spatial_audio", "super_resolution", "video_av1_decoder",
+    "video_av1_encoder", "video_quality_analyzer",
+]
+excl = ",\n                ".join(f'"**/libagora_{e}_extension.so"' for e in exts)
+pack = f"""
+    packaging {{
+        jniLibs {{
+            excludes += setOf(
+                {excl}
+            )
+        }}
+    }}
+"""
+for name in ("build.gradle.kts",):
+    f = root / name
+    if f.exists():
+        g = f.read_text()
+        if "libagora_" not in g:
+            g = g.replace("android {", "android {" + pack, 1)
+            f.write_text(g)
+            print("excluded agora extensions in", f)
+
 print("android patched")

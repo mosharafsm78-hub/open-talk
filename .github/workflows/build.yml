@@ -55,6 +55,11 @@ jobs:
           name: open-talk-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
+      - name: Show what is inside the APK
+        run: |
+          unzip -lv build/app/outputs/flutter-apk/app-release.apk | sort -k1 -n -r | head -25
+          ls -la build/app/outputs/flutter-apk/app-release.apk
+
       - name: Publish APK to Releases
         env:
           GH_TOKEN: ${{ github.token }}
