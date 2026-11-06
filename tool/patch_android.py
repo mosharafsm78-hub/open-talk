@@ -61,7 +61,10 @@ exts = [
     "segmentation", "spatial_audio", "super_resolution", "video_av1_decoder",
     "video_av1_encoder", "video_quality_analyzer",
 ]
-excl = ",\n                ".join(f'"**/libagora_{e}_extension.so"' for e in exts)
+excl = ",\n                ".join(
+    [f'"**/libagora_{e}_extension.so"' for e in exts]
+    + ['"**/armeabi-v7a/*.so"', '"**/x86_64/*.so"', '"**/x86/*.so"']
+)
 pack = f"""
     packaging {{
         jniLibs {{
