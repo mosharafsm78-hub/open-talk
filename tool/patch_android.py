@@ -29,6 +29,19 @@ block = "".join(
 if block:
     text = text.replace("<application", block + "    <application", 1)
 text = re.sub(r'android:label="[^"]*"', 'android:label="Open Talk"', text, count=1)
+# Agora's SDK manifest pulls in screen-sharing foreground-service permissions the app never uses;
+# strip them so Play does not require a foreground-service declaration.
+if 'xmlns:tools=' not in text:
+    text = text.replace("<manifest ", '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1)
+unused = [
+    "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.SYSTEM_ALERT_WINDOW",
+]
+rm = "".join(
+    f'    <uses-permission android:name="{p}" tools:node="remove"/>\n' for p in unused
+)
+text = text.replace("<application", rm + "    <application", 1)
 # AdMob app id (Google's public TEST id; replace with the real one before release).
 if "com.google.android.gms.ads.APPLICATION_ID" not in text:
     text = re.sub(
